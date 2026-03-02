@@ -1,0 +1,44 @@
+# Build stage
+FROM golang:1.25-bookworm AS builder
+
+WORKDIR /build
+
+# Install build tools (garble for obfuscation)
+RUN go install mvdan.cc/garble@latest
+
+# Copy Makefile and project structure
+COPY Makefile ./
+COPY shared/ ./shared/
+COPY server/ ./server/
+
+# Build production binary with garble obfuscation (run from /build where Makefile is)
+RUN make server-production
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Install ca-certificates and wget for HTTPS requests and health checks
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates wget && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy binary and migrations from builder
+COPY --from=builder /build/server/bin/codetogether /app/
+COPY --from=builder /build/server/migrations /app/migrations
+
+# Expose port
+EXPOSE 9080
+
+# Run as non-root user for security
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:9080/health || exit 1
+
+# Run the server
+CMD ["/app/codetogether"]

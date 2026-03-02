@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Runs before tool calls (can block them)",
+  "properties": {
+    "cwd": {
+      "description": "Current working directory",
+      "type": "string"
+    },
+    "permission_mode": {
+      "description": "Permission mode (e.g., 'default', 'acceptEdits')",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Unique identifier for session",
+      "type": "string"
+    },
+    "tool_input": {
+      "description": "Input parameters for the tool",
+      "type": "object"
+    },
+    "tool_name": {
+      "description": "Name of the tool being called",
+      "type": "string"
+    },
+    "tool_use_id": {
+      "description": "Unique identifier for this tool use",
+      "type": "string"
+    },
+    "transcript_path": {
+      "description": "Path to the transcript file",
+      "type": "string"
+    }
+  },
+  "required": [
+    "cwd",
+    "permission_mode",
+    "session_id",
+    "tool_input",
+    "tool_name",
+    "tool_use_id",
+    "transcript_path"
+  ],
+  "title": "PreToolUse",
+  "type": "object"
+}

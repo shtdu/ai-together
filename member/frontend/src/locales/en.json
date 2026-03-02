@@ -1,0 +1,582 @@
+{
+  "app": {
+    "title": "Code Together",
+    "login": "Login"
+  },
+  "menus": {
+    "general": "General settings",
+    "shortcut": "Shortcut key",
+    "about": "About"
+  },
+  "components": {
+    "home": {},
+    "provider": {
+      "modelWhitelist": {
+        "label": "Supported Models",
+        "tooltip": "Declare which models this provider supports. Supports exact match (claude-sonnet-4) and wildcard (claude-*)",
+        "placeholder": "e.g., claude-*",
+        "add": "Add",
+        "remove": "Remove model",
+        "examples": {
+          "title": "Examples (click to expand)",
+          "exact": "Exact match",
+          "prefix": "Prefix match all Claude models",
+          "vendor": "Match models with vendor prefix"
+        }
+      },
+      "modelMapping": {
+        "label": "Model Mapping",
+        "tooltip": "Map external model names to provider-specific names. Supports wildcard expansion",
+        "keyPlaceholder": "External model (e.g., claude-*)",
+        "valuePlaceholder": "Internal model (e.g., anthropic/claude-*)",
+        "add": "Add",
+        "remove": "Remove mapping",
+        "examples": {
+          "title": "Examples (click to expand)",
+          "exact": "Exact mapping",
+          "wildcard": "Wildcard mapping, auto expands claude-sonnet-4 → anthropic/claude-sonnet-4",
+          "prefix": "Prefix mapping"
+        }
+      }
+    },
+    "main": {
+      "hero": {
+        "eyebrow": "Code Together Client",
+        "title": "Team Collaboration AI Coding",
+        "lead": "The green heatmap highlights daily compute and token usage so we can monitor each vendor's load."
+      },
+      "heatmap": {
+        "ariaLabel": "Daily compute consumption heatmap",
+        "legendLow": "Low",
+        "legendHigh": "High",
+        "cellTitle": "{label}: {count} requests",
+        "metrics": {
+          "requests": "Requests",
+          "inputTokens": "Input tokens",
+          "outputTokens": "Output tokens",
+          "reasoningTokens": "Reasoning tokens",
+          "cost": "Cost"
+        }
+      },
+      "tabs": {
+        "ariaLabel": "Model vendor switcher",
+        "addCard": "Add model vendor"
+      },
+      "relayToggle": {
+        "label": "Claude proxy",
+        "hostClaude": "Host Claude Code",
+        "hostCodex": "Host Codex",
+        "hostOpenCode": "Host OpenCode",
+        "tooltip": "Route traffic through local relay to manage API keys centrally.",
+        "statusOn": "Managed",
+        "statusOff": "Not managed",
+        "noProviderError": "Cannot enable {tool}: at least one enabled provider is required"
+      },
+      "logs": {
+        "view": "View logs",
+        "streamOn": "Stream",
+        "streamOff": "Batch"
+      },
+      "reports": {
+        "view": "Daily tools report"
+      },
+      "controls": {
+        "github": "Open project GitHub",
+        "githubUpdate": "Open GitHub (update available)",
+        "theme": "Toggle theme",
+        "settings": "Open settings",
+        "mcp": "Open MCP panel",
+        "skill": "Open skill catalog",
+        "import": "Import cc-switch config",
+        "serverIntegration": "Server Integration",
+        "launchTool": "Launch Tool"
+      },
+      "versionLabel": "Version {version}",
+      "importConfig": {
+        "tooltip": "Import {providers} providers · {servers} MCP servers",
+        "success": "Imported {providers} providers and {servers} MCP servers",
+        "empty": "Everything from cc-switch is already in sync",
+        "error": "Failed to import cc-switch config"
+      },
+      "providers": {
+        "requests": "Requests",
+        "tokens": "Tokens",
+        "cost": "Cost",
+        "successRate": "Success rate",
+        "loading": "Refreshing...",
+        "noData": "No data yet today"
+      },
+      "form": {
+        "createTitle": "Add model vendor",
+        "editTitle": "Edit model vendor",
+        "labels": {
+          "name": "Vendor name",
+          "apiUrl": "API endpoint",
+          "apiKey": "API key",
+          "enabled": "Enabled",
+          "level": "Priority Level"
+        },
+        "placeholders": {
+          "name": "e.g. Qiniu MaaS",
+          "apiUrl": "https://api.qnaigc.com/v1",
+          "apiKey": "sk-xxxxx"
+        },
+        "hints": {
+          "level": "Lower numbers = higher priority. Level 1 providers are tried first, then Level 2, etc.",
+          "nameCannotBeChanged": "Provider name cannot be changed after creation"
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "save": "Save",
+          "delete": "Delete"
+        },
+        "switch": {
+          "on": "Active",
+          "off": "Paused"
+        },
+        "confirmDeleteTitle": "Remove vendor",
+        "confirmDeleteMessage": "Are you sure you want to remove {name}? This action cannot be undone.",
+        "errors": {
+          "invalidUrl": "Please enter a valid API URL",
+          "duplicateName": "A provider with this name already exists. Please use a different name.",
+          "invalidModelMapping": "Model mapping configuration is invalid. Please ensure the target model is in the supported models list.",
+          "modelMappingValidation": "Model mapping validation failed. Please check that all mapped target models are included in the supported models list.",
+          "saveFailed": "Failed to save provider. Please try again."
+        }
+      },
+      "levelDesc": {
+        "highest": "Highest Priority",
+        "high": "High Priority",
+        "mediumHigh": "Medium-High Priority",
+        "medium": "Medium Priority",
+        "normal": "Normal Priority",
+        "mediumLow": "Medium-Low Priority",
+        "low": "Low Priority",
+        "lower": "Lower Priority",
+        "veryLow": "Very Low Priority",
+        "lowest": "Lowest Priority"
+      },
+      "errors": {
+        "noAddPermission": "Only managers can add providers",
+        "noEditPermission": "Only managers can edit providers",
+        "noDeletePermission": "Only managers can delete providers"
+      },
+      "platforms": {
+        "claude": "Claude Code",
+        "codex": "Codex",
+        "opencode": "OpenCode"
+      }
+    },
+    "logs": {
+      "eyebrow": "Request diagnostics",
+      "title": "Request logs",
+      "subtitle": "Inspect recent relay activity for AI tools providers.",
+      "loading": "Loading...",
+      "refresh": "Refresh",
+      "applyFilters": "Apply filters",
+      "empty": "No logs yet",
+      "lastUpdated": "Last updated {time}",
+      "filters": {
+        "platform": "Platform",
+        "allPlatforms": "All platforms",
+        "provider": "Provider",
+        "allProviders": "All providers",
+        "providerPlaceholder": "Provider name",
+        "limit": "Limit"
+      },
+      "tabs": {
+        "all": "All logs",
+        "errors": "Errors only"
+      },
+      "summary": {
+        "total": "Requests",
+        "requests": "Total requests",
+        "errors": "Failures",
+        "errorHint": "Count & failure rate",
+        "tokens": "Total tokens",
+        "tokenHint": "Input + output tokens",
+        "cache": "Cache reads",
+        "cacheHint": "Read hits across responses",
+        "costHint": "24h total cost",
+        "todayScope": "Today · {date}",
+        "last24HoursScope": "Last 24 hours",
+        "stats24h": "Last 24 Hours Statistics"
+      },
+      "table": {
+        "time": "Time",
+        "platform": "Platform",
+        "provider": "Provider",
+        "model": "Model",
+        "httpCode": "HTTP",
+        "stream": "Stream",
+        "duration": "Duration",
+        "tokens": "Cost",
+        "status": "Status"
+      },
+      "tokenLabels": {
+        "input": "Input",
+        "output": "Output",
+        "reasoning": "Reasoning",
+        "cacheWrite": "Cache write",
+        "cacheRead": "Cache read",
+        "cost": "Cost"
+      },
+      "streamOn": "Streaming",
+      "streamOff": "Single response",
+      "back": "Back to home",
+      "nextRefresh": "Next refresh in {seconds}s",
+      "query": "Query"
+    },
+    "server": {
+      "title": "Server Integration",
+      "sections": {
+        "authentication": "Authentication",
+        "syncStatus": "Sync Status"
+      },
+      "formats": {
+        "never": "Never",
+        "invalidDate": "Invalid date",
+        "justNow": "Just now",
+        "minutesAgo": "{minutes} minutes ago"
+      },
+      "labels": {
+        "status": "Status",
+        "lastConfigSync": "Last Config Sync",
+        "pendingUsageRecords": "Pending Sync Usage Records",
+        "backgroundSync": "Background Sync",
+        "role": "Role"
+      },
+      "description": "Connect to your team server to sync configurations and usage statistics.",
+      "confirmPush": {
+        "title": "Confirm Push to Server",
+        "message": "Are you sure you want to push your local provider configurations to the server?",
+        "warning": "This will overwrite the master copy on the server. Only managers can perform this action."
+      },
+      "status": {
+        "running": "Running",
+        "stopped": "Stopped"
+      },
+      "sync": {
+        "syncNow": "Sync Now",
+        "syncing": "Syncing...",
+        "completed": "Sync completed",
+        "failed": "Sync failed"
+      },
+      "push": {
+        "push": "Push to Server",
+        "pushWithChanges": "Push Changes",
+        "pushing": "Pushing...",
+        "success": "Configuration pushed to server successfully",
+        "onlyManagers": "Only managers can push to server"
+      },
+      "auth": {
+        "login": "Login",
+        "logout": "Logout",
+        "loginFailed": "Login failed",
+        "logoutSuccess": "Logged out successfully",
+        "logoutFailed": "Logout failed",
+        "loginRequired": "Please log in first",
+        "formLabels": {
+          "email": "Email",
+          "password": "Password"
+        },
+        "placeholders": {
+          "email": "user{'@'}example.com",
+          "password": "••••••••"
+        }
+      },
+      "validation": {
+        "fillAllFields": "Please fill in all fields"
+      },
+      "actions": {
+        "back": "Back"
+      },
+      "serverConnection": {
+        "title": "Server Connection",
+        "serverUrl": "URL",
+        "placeholder": "https://server.example.com",
+        "save": "Save",
+        "test": "Test",
+        "lockedHint": "Server URL is locked while logged in. Please log out to change the server address."
+      },
+      "serverStatus": {
+        "connected": "Connected",
+        "connectionFailed": "Connection Failed",
+        "notTested": "Not Tested"
+      },
+      "notifications": {
+        "connectionSuccess": "Connection successful",
+        "connectionFailed": "Connection failed",
+        "urlRequired": "Server URL is required",
+        "urlSaved": "Server URL saved and connection verified",
+        "testFailed": "Connection test failed. URL not saved.",
+        "restartTitle": "Restart required",
+        "restartToApply": "Server URL saved. The app will now restart to apply server integration."
+      }
+    },
+    "general": {
+      "title": {
+        "application": "Application settings",
+        "exterior": "Appearance settings",
+        "power": "Permission settings",
+        "update": "Application update"
+      },
+      "label": {
+        "assistant_access": "Accessibility permissions",
+        "automatic_up": "Automatically check for updates",
+        "disk_access": "Full disk access",
+        "language": "Interface language",
+        "next_up": "Automatically check for updates next time",
+        "startup": "Started when logged in",
+        "theme": "Theme mode",
+        "heatmap": "Show dashboard heatmap",
+        "show24hStats": "Show 24-hour statistics",
+        "homeTitle": "Show home title",
+        "autoStart": "Launch at login"
+      },
+      "subLabel": {
+        "sb_assistant_access": "Accessibility permission is required to operate clipboard contents",
+        "sb_disk_access": "Full disk access is required to implement file preview"
+      },
+      "buttons": {
+        "authorized": "Auth",
+        "go_authorized": "Auth now",
+        "back": "Back to home",
+        "restart": "Restart now"
+      },
+      "import": {
+        "label": "Import cc-switch data",
+        "path": "Config file: {path}",
+        "detail": "{providers} providers · {servers} MCP servers ready to import",
+        "synced": "All providers and MCP servers are already synced",
+        "cta": "Import now",
+        "syncedButton": "Up to date",
+        "importing": "Importing...",
+        "upload": "Upload JSON",
+        "uploadTitle": "Select cc-switch JSON file",
+        "confirm": "Confirm import",
+        "noFile": "No config file selected",
+        "loadError": "Failed to read selected config",
+        "clear": "Clear selection",
+        "reupload": "Upload another JSON",
+        "missingDefault": "No cc-switch config detected. Upload a JSON manually to import."
+      }
+    },
+    "mcp": {
+      "hero": {
+        "eyebrow": "MCP Manager",
+        "title": "Manage MCP Servers",
+        "lead": "Keep every stdio or HTTP MCP server in one place and track which platform currently loads it."
+      },
+      "controls": {
+        "back": "Back to home",
+        "settings": "Open settings",
+        "refresh": "Refresh",
+        "create": "New server"
+      },
+      "section": {
+        "title": "Registered servers",
+        "subtitle": "Synced from ~/.code-together/mcp.json and saved immediately"
+      },
+      "list": {
+        "loading": "Loading servers...",
+        "empty": "No MCP servers yet. Use the button below to create one.",
+        "loadError": "Failed to load MCP servers",
+        "saveError": "Failed to save MCP servers",
+        "edit": "Edit server",
+        "delete": "Delete server",
+        "placeholderWarning": "Replace placeholders first: {vars}"
+      },
+      "toast": {
+        "placeholder": "Replace placeholders first: {vars}"
+      },
+      "status": {
+        "active": "Enabled",
+        "inactive": "Disabled"
+      },
+      "types": {
+        "stdio": "Local stdio process",
+        "stdioShort": "Local process",
+        "http": "Remote HTTP",
+        "httpShort": "HTTP service"
+      },
+      "platforms": {
+        "claude": "Claude Code",
+        "codex": "Codex",
+        "opencode": "OpenCode"
+      },
+      "form": {
+        "createTitle": "Create MCP server",
+        "editTitle": "Edit MCP server",
+        "name": "Server name",
+        "type": "Type",
+        "command": "Command",
+        "args": "Arguments",
+        "argsHint": "One argument per line. They will be passed in order.",
+        "url": "Service URL",
+        "website": "Website",
+        "tips": "Helper note",
+        "tipsHint": "Example: Visit ref.tools to get your API key",
+        "env": "Environment variables",
+        "envKey": "Key",
+        "envValue": "Value",
+        "envAdd": "Add variable",
+        "envRemove": "Delete variable",
+        "headers": "HTTP headers",
+        "headerKey": "Header name",
+        "headerValue": "Header value",
+        "headerAdd": "Add header",
+        "headerRemove": "Delete header",
+        "platforms": {
+          "title": "Target platforms"
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "save": "Save",
+          "delete": "Delete"
+        },
+        "errors": {
+          "name": "Please enter a server name",
+          "command": "Command is required for stdio servers",
+          "url": "HTTP servers require a URL",
+          "duplicate": "This name already exists"
+        },
+        "deleteTitle": "Delete MCP server",
+        "deleteMessage": "Are you sure you want to delete {name}? This action cannot be undone."
+      }
+    },
+    "skill": {
+      "hero": {
+        "eyebrow": "Skill Library",
+        "title": "Claude Skill",
+        "lead": "Fetch Claude skills from the managed repositories. Click the top-right button to add more sources."
+      },
+      "actions": {
+        "back": "Back to home",
+        "loading": "Processing...",
+        "refresh": "Refresh list",
+        "view": "View on GitHub",
+        "install": "Install to Claude Code",
+        "uninstall": "Uninstall",
+        "installError": "Failed to install {name}. Please retry",
+        "uninstallError": "Failed to uninstall {name}. Please retry"
+      },
+      "list": {
+        "title": "Available skills",
+        "subtitle": "Metadata is parsed from each SKILL.md front matter.",
+        "loading": "Loading skills...",
+        "empty": "No skills detected in the repository.",
+        "error": "Failed to load skills. Please check your network and retry.",
+        "noDescription": "SKILL.md does not include a description",
+        "missingRepo": "Missing repository information for this skill"
+      },
+      "repos": {
+        "open": "Manage repositories",
+        "title": "Skill sources",
+        "subtitle": "Add GitHub repositories to control where skills are fetched from.",
+        "urlPlaceholder": "https://github.com/owner/repo",
+        "branchPlaceholder": "Branch",
+        "addLabel": "Add repository",
+        "viewLabel": "Open on GitHub",
+        "removeLabel": "Remove repository",
+        "loadError": "Failed to load repositories",
+        "addError": "Failed to add repository",
+        "removeError": "Failed to remove repository",
+        "formError": "Owner and repository are required",
+        "loading": "Loading repositories...",
+        "empty": "No repositories configured.",
+        "branchLabel": "Branch: {branch}"
+      }
+    },
+    "themesetting": {
+      "select": {
+        "opt_dark": "Dark Mode",
+        "opt_light": "Bright Mode"
+      }
+    },
+    "shortcut": {
+      "title": "Keyboard shortcuts",
+      "helper": "Record shortcuts to control the app from anywhere.",
+      "rows": {
+        "openMain": "Open main window",
+        "openPreferences": "Open preferences window"
+      },
+      "descriptions": {
+        "openMain": "Must include at least one modifier and a main key",
+        "openPreferences": "Use a distinct combo to avoid conflicts"
+      },
+      "messages": {
+        "saved": "Shortcut saved",
+        "failed": "Failed to save shortcut",
+        "invalid": "Invalid combination, include a modifier"
+      },
+      "placeholder": "Press keys to record"
+    },
+    "reports": {
+      "eyebrow": "DAILY ACTIVITY REPORT",
+      "title": "Agent Activity Report",
+      "loading": "Loading report...",
+      "errorLoading": "Failed to load report",
+      "retry": "Retry",
+      "noData": "No activity recorded for this date",
+      "noDataHint": "Try selecting a different date",
+      "back": "Back to Home",
+      "previousDay": "Previous day",
+      "nextDay": "Next day",
+      "kpi": {
+        "title": "Daily Tools Metrics",
+        "totalSessions": "Total Sessions",
+        "activeSessions": "{count} active sessions",
+        "agentActions": "Agent Calls",
+        "actionsPerPrompt": "Tool agent actions count",
+        "highActivity": "High activity (>500 actions)",
+        "totalTime": "Total Time",
+        "totalTimeHint": "Cumulative time of all sessions",
+        "interactions": "Interaction Events",
+        "humanEvents": "Human-in-the-loop events",
+        "autonomyRatio": "AI Tool Autonomy Ratio",
+        "actionsPerPrompts": "{prompts} prompts for {actions} actions",
+        "autonomyHint": "Agent actions / Interaction events",
+        "autonomous": "Autonomous",
+        "guided": "Guided",
+        "semiAutonomous": "Semi-Autonomous"
+      },
+      "timeline": {
+        "title": "Activity Timeline",
+        "filterShort": "Filter sessions < 5min",
+        "showAllTooltip": "Show all sessions",
+        "filterTooltip": "Hide sessions shorter than 5 minutes",
+        "start": "Start",
+        "duration": "Duration",
+        "deepWork": "Deep Work Block",
+        "noSessions": "No sessions match the current filter"
+      },
+      "interaction": {
+        "title": "User Interaction Matrix",
+        "permissions": "Permissions",
+        "prompts": "User Input",
+        "events": "Events",
+        "avgLength": "Avg Prompt Length",
+        "maxLength": "Max Prompt Length",
+        "minLength": "Min Prompt Length",
+        "chars": "chars",
+        "permissionRatio": "Permission Ratio",
+        "autonomous": "Autonomous",
+        "guided": "Guided",
+        "semiAutonomous": "Semi-Autonomous"
+      },
+      "table": {
+        "title": "Session Details",
+        "id": "Session ID",
+        "start": "Start Time",
+        "repository": "Repository",
+        "duration": "Duration",
+        "prompts": "User Input",
+        "permissions": "Permissions",
+        "sortDuration": "Sort by Duration",
+        "sortStart": "Sort by Start Time",
+        "noSessions": "No sessions for this date"
+      }
+    }
+  }
+}

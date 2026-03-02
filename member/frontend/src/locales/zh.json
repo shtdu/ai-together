@@ -1,0 +1,582 @@
+{
+  "app": {
+    "title": "Code Together",
+    "login": "登录"
+  },
+  "menus": {
+    "general": "通用设置",
+    "shortcut": "快捷键",
+    "about": "关于"
+  },
+  "components": {
+    "home": {},
+    "provider": {
+      "modelWhitelist": {
+        "label": "模型白名单",
+        "tooltip": "声明该供应商支持的模型。支持精确匹配（claude-sonnet-4）和通配符（claude-*）",
+        "placeholder": "输入模型名称，如 claude-*",
+        "add": "添加",
+        "remove": "删除模型",
+        "examples": {
+          "title": "示例（点击展开）",
+          "exact": "精确匹配",
+          "prefix": "前缀匹配所有 Claude 模型",
+          "vendor": "匹配带供应商前缀的模型"
+        }
+      },
+      "modelMapping": {
+        "label": "模型映射",
+        "tooltip": "将外部模型名称映射到供应商内部模型名称。支持通配符展开",
+        "keyPlaceholder": "外部模型名（如 claude-*）",
+        "valuePlaceholder": "内部模型名（如 anthropic/claude-*）",
+        "add": "添加",
+        "remove": "删除映射",
+        "examples": {
+          "title": "示例（点击展开）",
+          "exact": "精确映射",
+          "wildcard": "通配符映射，自动展开 claude-sonnet-4 → anthropic/claude-sonnet-4",
+          "prefix": "前缀映射"
+        }
+      }
+    },
+    "main": {
+      "hero": {
+        "eyebrow": "一起编程客户端",
+        "title": "团队协作 AI 编程",
+        "lead": "下方绿砖墙展示每日算力与额度消耗情况，帮助我们快速洞察不同供应商的负载趋势"
+      },
+      "heatmap": {
+        "ariaLabel": "每日Token消耗热力图",
+        "legendLow": "低",
+        "legendHigh": "高",
+        "cellTitle": "{label}：{count} 次请求",
+        "metrics": {
+          "requests": "请求次数",
+          "inputTokens": "输入 Token",
+          "outputTokens": "输出 Token",
+          "reasoningTokens": "推理 Token",
+          "cost": "金额"
+        }
+      },
+      "tabs": {
+        "ariaLabel": "模型供应商切换",
+        "addCard": "新增模型供应商"
+      },
+      "relayToggle": {
+        "label": "Claude proxy",
+        "hostClaude": "托管 Claude Code",
+        "hostCodex": "托管 Codex",
+        "hostOpenCode": "托管 OpenCode",
+        "tooltip": "通过本地转发托管模型访问，团队统一管理密钥与配额。",
+        "statusOn": "已托管",
+        "statusOff": "未托管",
+        "noProviderError": "无法托管 {tool}：至少需要一个已启用的模型供应商"
+      },
+      "logs": {
+        "view": "查看日志",
+        "streamOn": "流式",
+        "streamOff": "普通"
+      },
+      "reports": {
+        "view": "每日工具报告"
+      },
+      "controls": {
+        "github": "打开 GitHub",
+        "githubUpdate": "打开 GitHub（发现新版本）",
+        "theme": "切换主题",
+        "settings": "打开设置",
+        "mcp": "打开 MCP 面板",
+        "skill": "打开 Skill 列表",
+        "import": "导入 cc-switch 配置",
+        "serverIntegration": "服务器集成",
+        "launchTool": "启动工具"
+      },
+      "versionLabel": "版本 {version}",
+      "importConfig": {
+        "tooltip": "导入 {providers} 个供应商 · {servers} 个 MCP 服务器",
+        "success": "已导入 {providers} 个供应商与 {servers} 个 MCP 服务器",
+        "empty": "cc-switch 中的供应商与 MCP 均已同步",
+        "error": "导入 cc-switch 配置失败"
+      },
+      "providers": {
+        "requests": "请求数",
+        "tokens": "Tokens",
+        "cost": "花费",
+        "successRate": "成功率",
+        "loading": "刷新中...",
+        "noData": "今日暂无数据"
+      },
+      "form": {
+        "createTitle": "新增模型供应商",
+        "editTitle": "编辑模型供应商",
+        "labels": {
+          "name": "供应商名称",
+          "apiUrl": "API 地址",
+          "apiKey": "API 密钥",
+          "enabled": "启用状态",
+          "level": "优先级分组"
+        },
+        "placeholders": {
+          "name": "例如：Qiniu MaaS",
+          "apiUrl": "https://api.qnaigc.com/v1",
+          "apiKey": "sk-xxxxx"
+        },
+        "hints": {
+          "level": "数字越小优先级越高，Level 1 会被优先尝试，失败后依次尝试 Level 2、Level 3 等",
+          "nameCannotBeChanged": "创建后供应商名称不能更改"
+        },
+        "actions": {
+          "cancel": "取消",
+          "save": "保存",
+          "delete": "删除"
+        },
+        "switch": {
+          "on": "已启用",
+          "off": "未启用"
+        },
+        "confirmDeleteTitle": "删除供应商",
+        "confirmDeleteMessage": "确认删除 {name} 吗？操作不可撤销",
+        "errors": {
+          "invalidUrl": "请输入合法的 API 地址",
+          "duplicateName": "已存在同名提供商，请使用不同的名称。",
+          "invalidModelMapping": "模型映射配置无效。请确保目标模型在支持模型列表中。",
+          "modelMappingValidation": "模型映射验证失败。请检查所有映射的目标模型是否都包含在支持模型列表中。",
+          "saveFailed": "保存供应商失败。请重试。"
+        }
+      },
+      "levelDesc": {
+        "highest": "最高优先级",
+        "high": "高优先级",
+        "mediumHigh": "中高优先级",
+        "medium": "中等优先级",
+        "normal": "普通优先级",
+        "mediumLow": "中低优先级",
+        "low": "低优先级",
+        "lower": "较低优先级",
+        "veryLow": "很低优先级",
+        "lowest": "最低优先级"
+      },
+      "errors": {
+        "noAddPermission": "仅管理员可添加供应商",
+        "noEditPermission": "仅管理员可编辑供应商",
+        "noDeletePermission": "仅管理员可删除供应商"
+      },
+      "platforms": {
+        "claude": "Claude Code",
+        "codex": "Codex",
+        "opencode": "OpenCode"
+      }
+    },
+    "logs": {
+      "eyebrow": "请求追踪",
+      "title": "代理请求日志",
+      "subtitle": "查看 Claude Code 与 OpenCode 代理的最新访问记录。",
+      "loading": "加载中...",
+      "refresh": "刷新",
+      "applyFilters": "应用筛选",
+      "empty": "暂无日志记录",
+      "lastUpdated": "最近更新：{time}",
+      "filters": {
+        "platform": "平台",
+        "allPlatforms": "全部平台",
+        "provider": "模型供应商",
+        "allProviders": "全部模型供应商",
+        "providerPlaceholder": "输入模型供应商名称",
+        "limit": "条数上限"
+      },
+      "tabs": {
+        "all": "全部日志",
+        "errors": "仅错误"
+      },
+      "summary": {
+        "total": "请求数量",
+        "requests": "累计请求次数",
+        "errors": "失败次数",
+        "errorHint": "数量与失败率",
+        "tokens": "Token 总量",
+        "tokenHint": "输入 + 输出 Tokens",
+        "cache": "缓存命中",
+        "cacheHint": "提示词读取命中数量",
+        "costHint": "近 24 小时总花费",
+        "todayScope": "今日 · {date}",
+        "last24HoursScope": "最近 24 小时",
+        "stats24h": "最近24小时统计"
+      },
+      "table": {
+        "time": "时间",
+        "platform": "平台",
+        "provider": "供应商",
+        "model": "模型",
+        "httpCode": "HTTP",
+        "stream": "传输",
+        "duration": "耗时",
+        "tokens": "费用",
+        "status": "状态"
+      },
+      "tokenLabels": {
+        "input": "输入",
+        "output": "输出",
+        "reasoning": "推理",
+        "cacheWrite": "缓存写入",
+        "cacheRead": "缓存读取",
+        "cost": "金额"
+      },
+      "streamOn": "流式",
+      "streamOff": "普通",
+      "back": "返回主页",
+      "nextRefresh": "距离下次刷新 {seconds} 秒",
+      "query": "查询"
+    },
+    "server": {
+      "title": "服务器集成",
+      "sections": {
+        "authentication": "身份验证",
+        "syncStatus": "同步状态"
+      },
+      "formats": {
+        "never": "从未",
+        "invalidDate": "无效日期",
+        "justNow": "刚刚",
+        "minutesAgo": "{minutes} 分钟之前"
+      },
+      "labels": {
+        "status": "状态",
+        "lastConfigSync": "上次配置同步",
+        "pendingUsageRecords": "待同步使用记录",
+        "backgroundSync": "后台同步",
+        "role": "角色"
+      },
+      "description": "连接到团队服务器以同步配置和使用统计。",
+      "confirmPush": {
+        "title": "确认推送到服务器",
+        "message": "确定要将本地配置推送到服务器吗？",
+        "warning": "这将覆盖服务器上的主副本。仅管理员可执行此操作。"
+      },
+      "status": {
+        "running": "运行中",
+        "stopped": "已停止"
+      },
+      "sync": {
+        "syncNow": "立即同步",
+        "syncing": "同步中...",
+        "completed": "同步完成",
+        "failed": "同步失败"
+      },
+      "push": {
+        "push": "推送到服务器",
+        "pushWithChanges": "推送变更",
+        "pushing": "推送中...",
+        "success": "配置已成功推送到服务器",
+        "onlyManagers": "仅管理员可推送到服务器"
+      },
+      "auth": {
+        "login": "登录",
+        "logout": "登出",
+        "loginFailed": "登录失败",
+        "logoutSuccess": "已成功登出",
+        "logoutFailed": "登出失败",
+        "loginRequired": "请先登录",
+        "formLabels": {
+          "email": "邮箱",
+          "password": "密码"
+        },
+        "placeholders": {
+          "email": "user{'@'}example.com",
+          "password": "••••••••"
+        }
+      },
+      "validation": {
+        "fillAllFields": "请填写所有字段"
+      },
+      "actions": {
+        "back": "返回"
+      },
+      "serverConnection": {
+        "title": "服务器连接",
+        "serverUrl": "地址",
+        "placeholder": "https://server.example.com",
+        "save": "保存",
+        "test": "测试",
+        "lockedHint": "登录期间服务器地址已锁定，请先登出后再修改。"
+      },
+      "serverStatus": {
+        "connected": "已连接",
+        "connectionFailed": "连接失败",
+        "notTested": "未测试"
+      },
+      "notifications": {
+        "connectionSuccess": "连接成功",
+        "connectionFailed": "连接失败",
+        "urlRequired": "服务器地址不能为空",
+        "urlSaved": "服务器地址已保存并验证连接",
+        "testFailed": "连接测试失败，地址未保存",
+        "restartTitle": "需要重启",
+        "restartToApply": "服务器地址已保存，应用将重启以启用服务器集成功能。"
+      }
+    },
+    "general": {
+      "title": {
+        "power": "权限设置",
+        "application": "应用设置",
+        "exterior": "外观设置",
+        "update": "应用更新"
+      },
+      "label": {
+        "assistant_access": "辅助功能访问权限",
+        "disk_access": "完全磁盘访问权限",
+        "startup": "登录时启动",
+        "language": "界面语言",
+        "theme": "主题模式",
+        "heatmap": "显示主界面热力墙",
+        "show24hStats": "显示24小时统计",
+        "homeTitle": "显示首页标题",
+        "autoStart": "开机自启动",
+        "automatic_up": "自动检查更新",
+        "next_up": "下次启动自动检查更新"
+      },
+      "subLabel": {
+        "sb_assistant_access": "需要无障碍访问权限来操作剪切板内容",
+        "sb_disk_access": "需要完全磁盘访问权限来实现文件预览"
+      },
+      "buttons": {
+        "authorized": "已授权",
+        "go_authorized": "去授权",
+        "back": "返回首页",
+        "restart": "立即重启"
+      },
+      "import": {
+        "label": "导入 cc-switch 配置",
+        "path": "配置文件：{path}",
+        "detail": "可导入 {providers} 个服务商 · {servers} 个 MCP 服务",
+        "synced": "当前服务商与 MCP 服务已同步",
+        "cta": "立即导入",
+        "syncedButton": "已同步",
+        "importing": "正在导入...",
+        "upload": "上传 JSON",
+        "uploadTitle": "选择自定义 cc-switch JSON 文件",
+        "confirm": "确认导入",
+        "noFile": "尚未选择配置文件",
+        "loadError": "读取配置文件失败",
+        "clear": "清除选择",
+        "reupload": "重新上传",
+        "missingDefault": "未检测到 cc-switch 配置文件，可手动上传 JSON 进行导入"
+      }
+    },
+    "mcp": {
+      "hero": {
+        "eyebrow": "MCP 管理",
+        "title": "管理 MCP 服务器",
+        "lead": "集中维护本地 / 远程 MCP Servers，了解各平台的启用状态并快速编辑配置。"
+      },
+      "controls": {
+        "back": "返回主页",
+        "settings": "打开设置",
+        "refresh": "刷新列表",
+        "create": "新增服务器"
+      },
+      "section": {
+        "title": "已注册服务器",
+        "subtitle": "数据来自 ~/.code-together/mcp.json，修改后立即保存"
+      },
+      "list": {
+        "loading": "正在载入服务器...",
+        "empty": "暂无 MCP 服务器，点击下方按钮快速创建",
+        "loadError": "加载 MCP 服务器失败",
+        "saveError": "保存 MCP 服务器失败",
+        "edit": "编辑服务器",
+        "delete": "删除服务器",
+        "placeholderWarning": "请先替换变量：{vars}"
+      },
+      "toast": {
+        "placeholder": "请先替换变量：{vars}"
+      },
+      "status": {
+        "active": "已启用",
+        "inactive": "未启用"
+      },
+      "types": {
+        "stdio": "本地进程 (stdio)",
+        "stdioShort": "本地进程",
+        "http": "远程 HTTP",
+        "httpShort": "HTTP 服务"
+      },
+      "platforms": {
+        "claude": "Claude Code",
+        "codex": "Codex",
+        "opencode": "OpenCode"
+      },
+      "form": {
+        "createTitle": "新增 MCP 服务器",
+        "editTitle": "编辑 MCP 服务器",
+        "name": "服务器名称",
+        "type": "类型",
+        "command": "执行命令",
+        "args": "命令参数",
+        "argsHint": "每行一个参数，保存时会自动按顺序传入",
+        "url": "服务地址",
+        "website": "官网地址",
+        "tips": "提示信息",
+        "tipsHint": "例如：请前往 ref.tools 获取 API Key",
+        "env": "环境变量",
+        "envKey": "变量名",
+        "envValue": "变量值",
+        "envAdd": "新增变量",
+        "envRemove": "删除变量",
+        "headers": "HTTP 请求头",
+        "headerKey": "请求头名称",
+        "headerValue": "请求头值",
+        "headerAdd": "新增请求头",
+        "headerRemove": "删除请求头",
+        "platforms": {
+          "title": "目标平台"
+        },
+        "actions": {
+          "cancel": "取消",
+          "save": "保存",
+          "delete": "删除"
+        },
+        "errors": {
+          "name": "请输入服务器名称",
+          "command": "stdio 类型需要提供 command",
+          "url": "http 类型需要提供 URL",
+          "duplicate": "名称已存在，请使用其他名称"
+        },
+        "deleteTitle": "删除 MCP 服务器",
+        "deleteMessage": "确认删除 {name} 吗？操作不可撤销"
+      }
+    },
+    "skill": {
+      "hero": {
+        "eyebrow": "Skill 仓库",
+        "title": "Claude Skill",
+        "lead": "从 Skill 仓库中获取 Claude Skill，点击右上角按钮可添加更多 Skill 仓库。"
+      },
+      "actions": {
+        "back": "返回首页",
+        "loading": "处理中...",
+        "refresh": "刷新列表",
+        "view": "查看 GitHub",
+        "install": "安装到 Claude Code",
+        "uninstall": "卸载",
+        "installError": "安装 {name} 失败，请重试",
+        "uninstallError": "卸载 {name} 失败，请重试"
+      },
+      "list": {
+        "title": "可用技能",
+        "subtitle": "描述信息来源于各目录内 SKILL.md 的 front matter。",
+        "loading": "正在加载技能...",
+        "empty": "仓库中没有可用技能。",
+        "error": "技能列表加载失败，请检查网络后重试。",
+        "noDescription": "SKILL.md 未提供描述",
+        "missingRepo": "缺少对应的仓库信息，无法安装"
+      },
+      "repos": {
+        "open": "管理仓库",
+        "title": "技能仓库",
+        "subtitle": "维护 GitHub 仓库以加载更多技能来源。",
+        "urlPlaceholder": "https://github.com/owner/repo",
+        "branchPlaceholder": "分支",
+        "addLabel": "新增仓库",
+        "viewLabel": "打开 GitHub",
+        "removeLabel": "删除仓库",
+        "loadError": "仓库列表加载失败",
+        "addError": "新增仓库失败",
+        "removeError": "删除仓库失败",
+        "formError": "请填写所有者和仓库名称",
+        "loading": "正在加载仓库...",
+        "empty": "当前没有配置任何仓库。",
+        "branchLabel": "分支：{branch}"
+      }
+    },
+    "themesetting": {
+      "select": {
+        "opt_light": "亮色模式",
+        "opt_dark": "暗色模式"
+      }
+    },
+    "shortcut": {
+      "title": "快捷键",
+      "helper": "按下需要的组合键，随时唤起应用。",
+      "rows": {
+        "openMain": "打开主窗口",
+        "openPreferences": "打开偏好设置窗口"
+      },
+      "descriptions": {
+        "openMain": "必须至少包含一个修饰键和一个主键",
+        "openPreferences": "建议设置不同的组合以避免冲突"
+      },
+      "messages": {
+        "saved": "快捷键已保存",
+        "failed": "快捷键保存失败",
+        "invalid": "组合无效，请包含修饰键"
+      },
+      "placeholder": "点击并按下组合键"
+    },
+    "reports": {
+      "eyebrow": "每日活动报告",
+      "title": "AI 智能体活动报告",
+      "loading": "加载报告中...",
+      "errorLoading": "加载报告失败",
+      "retry": "重试",
+      "noData": "该日期无活动记录",
+      "noDataHint": "请尝试选择其他日期",
+      "back": "返回主页",
+      "previousDay": "前一天",
+      "nextDay": "后一天",
+      "kpi": {
+        "title": "每日工具指标",
+        "totalSessions": "总会话数",
+        "activeSessions": "{count} 个活跃会话",
+        "agentActions": "智能体调用",
+        "actionsPerPrompt": "工具智能体操作数量",
+        "highActivity": "高活跃度（>500 次操作）",
+        "totalTime": "总时长",
+        "totalTimeHint": "所有会话的累计时间",
+        "interactions": "交互事件",
+        "humanEvents": "人工干预事件",
+        "autonomyRatio": "AI工具自主比例",
+        "actionsPerPrompts": "{prompts} 次提示对应 {actions} 次操作",
+        "autonomyHint": "智能体操作/交互事件",
+        "autonomous": "自主运行",
+        "guided": "引导式",
+        "semiAutonomous": "半自主"
+      },
+      "timeline": {
+        "title": "活动时间线",
+        "filterShort": "过滤短会话 (<5分钟)",
+        "showAllTooltip": "显示所有会话",
+        "filterTooltip": "隐藏短于 5 分钟的会话",
+        "start": "开始时间",
+        "duration": "持续时间",
+        "deepWork": "深度工作块",
+        "noSessions": "没有符合当前筛选条件的会话"
+      },
+      "interaction": {
+        "title": "用户交互矩阵",
+        "permissions": "权限请求",
+        "prompts": "用户输入",
+        "events": "事件",
+        "avgLength": "平均提示词长度",
+        "maxLength": "最大提示词长度",
+        "minLength": "最小提示词长度",
+        "chars": "字符",
+        "permissionRatio": "权限比率",
+        "autonomous": "自主运行",
+        "guided": "引导式",
+        "semiAutonomous": "半自主"
+      },
+      "table": {
+        "title": "会话详情",
+        "id": "会话ID",
+        "start": "开始时间",
+        "repository": "代码仓库",
+        "duration": "持续时间",
+        "prompts": "用户输入",
+        "permissions": "权限请求",
+        "sortDuration": "按时长排序",
+        "sortStart": "按开始时间排序",
+        "noSessions": "该日期无会话"
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Runs when user submits a prompt, before Claude processes it",
+  "properties": {
+    "cwd": {
+      "description": "Current working directory",
+      "type": "string"
+    },
+    "permission_mode": {
+      "description": "Permission mode (e.g., 'default', 'acceptEdits')",
+      "type": "string"
+    },
+    "prompt": {
+      "description": "User prompt submitted",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Unique identifier for session",
+      "type": "string"
+    },
+    "transcript_path": {
+      "description": "Path to the transcript file",
+      "type": "string"
+    }
+  },
+  "required": [
+    "cwd",
+    "permission_mode",
+    "prompt",
+    "session_id",
+    "transcript_path"
+  ],
+  "title": "UserPromptSubmit",
+  "type": "object"
+}

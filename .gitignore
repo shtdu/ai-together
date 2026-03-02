@@ -1,0 +1,83 @@
+# Environment files with secrets
+.env
+*.env.local
+*.env.production
+.env.test
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code settings
+.claude/settings.local.json
+.claude/settings.json
+
+# Build artifacts
+*/dist/
+*/build/
+node_modules/
+frontend/node_modules
+frontend/bindings
+frontend/dist
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+
+# Task
+.task
+bin
+.gocache/
+
+# Server
+server_run.log
+server.log
+server/switch-server
+server/coverage.out
+server/coverage.html
+server/tmp
+server/ui/node_modules
+server/ui/node_modules/*
+server/docs/*
+server/covdata/
+server/coverage_config.out
+server/coverage_handlers.out
+server/coverage_middleware.out
+server/private.key
+
+# Member
+member/frontend/node_modules/*
+member/frontend/dist/*
+member/frontend/bindings/*
+member/build/
+member/tmp
+member/codeswitch
+member/bin
+
+# Go workspace
+go.work.sum
+tmp/*
+go.work
+
+# Shared tools
+shared/tools/hook-events-tool/hook-events-tool
+shared/tools/hook-schema-analyzer/hook-schema-analyzer
+shared/tools/hook-collector/hook-collector
+shared/tools/hook-browser/hook-browser
+
+# Test coverage
+*.out
+*.html
+coverage/

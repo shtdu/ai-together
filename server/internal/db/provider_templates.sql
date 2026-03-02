@@ -1,0 +1,1 @@
+-- This file is intentionally empty. ProviderTemplate feature has been removed.

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Runs before Claude Code is about to run a compact operation",
+  "properties": {
+    "custom_instructions": {
+      "type": [
+        "string"
+      ]
+    },
+    "cwd": {
+      "description": "Current working directory",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Unique identifier for session",
+      "type": "string"
+    },
+    "transcript_path": {
+      "description": "Path to the transcript file",
+      "type": "string"
+    },
+    "trigger": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "custom_instructions",
+    "cwd",
+    "session_id",
+    "transcript_path",
+    "trigger"
+  ],
+  "title": "PreCompact",
+  "type": "object"
+}

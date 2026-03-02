@@ -1,0 +1,34 @@
+// Copyright (c) 2025 Code Together
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+package events
+
+// Runs when subagent tasks complete
+type SubagentStop struct {
+	// Unique identifier for the subagent
+	AgentId string `json:"agent_id"`
+	// Path to the subagent transcript file
+	AgentTranscriptPath string `json:"agent_transcript_path"`
+	// Current working directory
+	Cwd string `json:"cwd"`
+	// Permission mode (e.g., 'default', 'acceptEdits')
+	PermissionMode string `json:"permission_mode"`
+	// Unique identifier for session
+	SessionId string `json:"session_id"`
+	// Whether the stop hook is active
+	StopHookActive bool `json:"stop_hook_active"`
+	// Path to the transcript file
+	TranscriptPath string `json:"transcript_path"`
+}

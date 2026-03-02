@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "postgres-test": {
+      "command": "npx",
+      "args": ["-y", "@5shuang/mcp-postgres-server"],
+      "env": {
+        "DATABASE_URL": "postgresql://localhost:5432/codetogether_test?sslmode=disable"
+      }
+    },
+    "postgres-dev": {
+      "command": "npx",
+      "args": ["-y", "@5shuang/mcp-postgres-server"],
+      "env": {
+        "DATABASE_URL": "postgresql://localhost:5432/codetogether?sslmode=disable"
+      }
+    }
+  }
+}

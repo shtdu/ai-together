@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Runs when subagent tasks complete",
+  "properties": {
+    "agent_id": {
+      "description": "Unique identifier for the subagent",
+      "type": "string"
+    },
+    "agent_transcript_path": {
+      "description": "Path to the subagent transcript file",
+      "type": "string"
+    },
+    "cwd": {
+      "description": "Current working directory",
+      "type": "string"
+    },
+    "permission_mode": {
+      "description": "Permission mode (e.g., 'default', 'acceptEdits')",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Unique identifier for session",
+      "type": "string"
+    },
+    "stop_hook_active": {
+      "description": "Whether the stop hook is active",
+      "type": "boolean"
+    },
+    "transcript_path": {
+      "description": "Path to the transcript file",
+      "type": "string"
+    }
+  },
+  "required": [
+    "agent_id",
+    "agent_transcript_path",
+    "cwd",
+    "permission_mode",
+    "session_id",
+    "stop_hook_active",
+    "transcript_path"
+  ],
+  "title": "SubagentStop",
+  "type": "object"
+}

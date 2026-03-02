@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Runs when Claude Code session ends",
+  "properties": {
+    "cwd": {
+      "description": "Current working directory",
+      "type": "string"
+    },
+    "reason": {
+      "description": "Reason for session end",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Unique identifier for session",
+      "type": "string"
+    },
+    "transcript_path": {
+      "description": "Path to the transcript file",
+      "type": "string"
+    }
+  },
+  "required": [
+    "cwd",
+    "reason",
+    "session_id",
+    "transcript_path"
+  ],
+  "title": "SessionEnd",
+  "type": "object"
+}
