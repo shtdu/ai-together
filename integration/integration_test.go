@@ -62,7 +62,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Logger = ctx.Logger
 
 	// Create anonymous client
-	anonClient, err := integrationclient.NewAnonymousClient(s.ServerURL, s.Logger)
+	anonClient, err := integrationclient.NewAnonymousClient(s.ServerURL, s.Logger, false)
 	s.Require().NoError(err, "Failed to create anonymous client")
 	s.AnonymousClient = anonClient
 
@@ -156,6 +156,7 @@ func (s *IntegrationTestSuite) loginAdminUser() {
 		s.ServerURL,
 		func() (string, error) { return s.AdminToken, nil },
 		s.Logger,
+		false,
 	)
 	s.Require().NoError(err, "Failed to create authenticated client")
 
@@ -174,6 +175,7 @@ func (s *IntegrationTestSuite) createAuthenticatedClient(token string) *integrat
 		s.ServerURL,
 		func() (string, error) { return token, nil },
 		s.Logger,
+		false,
 	)
 	s.Require().NoError(err, "Failed to create authenticated client")
 	return client
