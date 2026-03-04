@@ -31,8 +31,8 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/your-username/code-together.git
-   cd code-together
+   git clone https://github.com/your-username/ai-together.git
+   cd ai-together
    ```
 
 3. Install dependencies:
@@ -260,8 +260,8 @@ See [integration/INTEGRATION_TEST_SETUP.md](integration/INTEGRATION_TEST_SETUP.m
 
 ## Questions?
 
-- Check existing [GitHub Issues](https://github.com/code-together/code-together/issues)
-- Start a [Discussion](https://github.com/code-together/code-together/discussions)
+- Check existing [GitHub Issues](https://github.com/shtdu/ai-together/issues)
+- Start a [Discussion](https://github.com/shtdu/ai-together/discussions)
 - Read the [Documentation](README.md)
 
 Thank you for contributing to Code Together!

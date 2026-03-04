@@ -47,7 +47,7 @@ curl -X POST http://localhost:8088/api/v1/setup/admin \
 # 5. Run tests (in a new terminal)
 cd integration
 set -a && source .env.test && set +a
-go test -v github.com/code-together/integration
+go test -v github.com/shtdu/integration
 
 # 6. Stop server (Ctrl+C in terminal with test-server.sh)
 # Coverage report will be generated automatically
@@ -116,7 +116,7 @@ cd ../server && go run .
 ```bash
 cd integration
 set -a && source .env.test && set +a
-go test -v github.com/code-together/integration
+go test -v github.com/shtdu/integration
 ```
 
 ### Specific Suite
@@ -155,7 +155,7 @@ cd integration && ./test-server.sh
 
 # Terminal 2: Run tests
 set -a && source .env.test && set +a
-go test -v github.com/code-together/integration
+go test -v github.com/shtdu/integration
 
 # Terminal 1: Stop server (Ctrl+C)
 # Coverage report: ../server/coverage.html

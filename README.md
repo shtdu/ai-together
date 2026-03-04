@@ -1,7 +1,7 @@
 # Code Together
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Go Report Card](https://goreportcard.com/badge/github.com/code-together/code-together)](https://goreportcard.com/report/github.com/code-together/code-together)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shtdu/ai-together)](https://goreportcard.com/report/github.com/shtdu/ai-together)
 
 A provider proxy platform for centralized management of AI coding tools (Claude Code, Codex, OpenCode), offering transparent request routing, intelligent failover, and team collaboration features.
 
@@ -34,7 +34,7 @@ Requests are dynamically routed by the proxy handler based on current provider p
 
 ## Download and Installation
 
-[macOS](https://github.com/code-together/code-together/releases) | [Windows](https://github.com/code-together/code-together/releases)
+[macOS](https://github.com/shtdu/ai-together/releases) | [Windows](https://github.com/shtdu/ai-together/releases)
 
 ## User Manual
 

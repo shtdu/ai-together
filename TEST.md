@@ -132,7 +132,7 @@ cd integration && ./test-server.sh
 # Terminal 2: Run tests
 cd integration
 set -a && source .env.test && set +a
-go test -v github.com/code-together/integration
+go test -v github.com/shtdu/integration
 ```
 
 ### Integration Test Documentation

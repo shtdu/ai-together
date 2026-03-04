@@ -1,7 +1,7 @@
 # Code Together
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Go Report Card](https://goreportcard.com/badge/github.com/code-together/code-together)](https://goreportcard.com/report/github.com/code-together/code-together)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shtdu/ai-together)](https://goreportcard.com/report/github.com/shtdu/ai-together)
 
 集中管理 AI 编码工具（Claude Code、Codex、OpenCode）的服务商代理平台，提供透明的请求路由、智能故障转移和团队协作功能。
 
@@ -34,7 +34,7 @@ Code Together 由四个主要组件组成：
 
 ## 下载与安装
 
-[macOS](https://github.com/code-together/code-together/releases) | [Windows](https://github.com/code-together/code-together/releases)
+[macOS](https://github.com/shtdu/ai-together/releases) | [Windows](https://github.com/shtdu/ai-together/releases)
 
 ## 使用手册
 

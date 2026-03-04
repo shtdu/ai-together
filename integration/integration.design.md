@@ -597,16 +597,16 @@ integration/
 
 **Example `integration/go.mod`:**
 ```go
-module github.com/code-together/integration
+module github.com/shtdu/integration
 
 go 1.25
 
 require (
-    github.com/code-together/shared/integration v0.0.0
+    github.com/shtdu/shared/integration v0.0.0
     github.com/stretchr/testify v1.11.1
 )
 
-replace github.com/code-together/shared/integration => ../shared/integration
+replace github.com/shtdu/shared/integration => ../shared/integration
 ```
 
 ### Shared Integration Client
