@@ -10,6 +10,9 @@ jobs:
   server-build:
     name: Server Build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -21,11 +24,9 @@ jobs:
           cache: false
 
       - name: Download dependencies
-        working-directory: ./server
         run: go mod download
 
       - name: Verify build
-        working-directory: ./server
         run: |
           go build -v ./...
           echo "✓ Server builds successfully"
@@ -35,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./member/frontend
+        working-directory: ./member
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -58,11 +59,9 @@ jobs:
         run: npm run build
 
       - name: Download Go dependencies
-        working-directory: ./member
         run: go mod download
 
       - name: Verify build
-        working-directory: ./member
         run: |
           go build -v ./...
           echo "✓ member builds successfully"
@@ -70,6 +69,9 @@ jobs:
   manager-build:
     name: Manager Build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./manager
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -87,11 +89,9 @@ jobs:
           cache-dependency-path: 'manager/pnpm-lock.yaml'
 
       - name: Install dependencies
-        working-directory: ./manager
         run: pnpm install --frozen-lockfile
 
       - name: Build manager UI
-        working-directory: ./manager
         run: pnpm build
         env:
           CI: true
