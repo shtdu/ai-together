@@ -1,12 +1,15 @@
 # BDD Test Implementation Design
 
 **Date:** 2025-03-16
-**Status:** Design Approved
+**Status:** Draft - Under Review
 **Priority:** High
+**Version:** 1.1 (Revised based on code review feedback)
 
 ## Executive Summary
 
 This design document outlines the implementation of a comprehensive Behavior-Driven Development (BDD) test suite for the AI Together platform using the [godog](https://github.com/cucumber/godog) framework. The BDD suite will convert the existing 171 integration tests into ~247 Gherkin scenarios organized by domain, providing better test documentation, improved maintainability, and enhanced collaboration between technical and non-technical stakeholders.
+
+**Note:** This document is currently under review. See the "Revision History" section for details on changes being made based on feedback.
 
 **Key Objectives:**
 - Convert 171 integration tests to BDD scenarios using godog
@@ -17,15 +20,55 @@ This design document outlines the implementation of a comprehensive Behavior-Dri
 
 ## Table of Contents
 
-1. [Architecture](#architecture)
-2. [Project Structure](#project-structure)
-3. [Test Mapping Strategy](#test-mapping-strategy)
-4. [Test Context & State Management](#test-context--state-management)
-5. [Step Definitions](#step-definitions)
-6. [Feature Files](#feature-files)
-7. [Integration with Existing Infrastructure](#integration-with-existing-infrastructure)
-8. [Test Execution](#test-execution)
-9. [Implementation Plan](#implementation-plan)
+1. [Revision History](#revision-history)
+2. [Architecture](#architecture)
+3. [Project Structure](#project-structure)
+4. [Test Mapping Strategy](#test-mapping-strategy)
+5. [Test Context & State Management](#test-context--state-management)
+6. [Step Definitions](#step-definitions)
+7. [Feature Files](#feature-files)
+8. [Integration with Existing Infrastructure](#integration-with-existing-infrastructure)
+9. [Test Execution](#test-execution)
+10. [Implementation Plan](#implementation-plan)
+
+## Revision History
+
+### Version 1.1 (2025-03-16) - Under Review
+
+**Changes based on code review feedback:**
+
+**Critical Fixes:**
+- Fixed module name from `github.com/shtdu/bdd` to `github.com/code-together/bdd`
+- Added comprehensive Test Server Lifecycle Management section
+- Updated import paths to use absolute paths with workspace mode
+- Fixed inconsistent test count references
+
+**Important Enhancements:**
+- Added concurrency safety to `BDDTestContext` with `sync.Mutex`
+- Added comprehensive Cleanup Strategy with resource tracking
+- Added Error Handling Strategy with guidelines and patterns
+- Added Test Data Management section with utility functions
+- Enhanced CI/CD configuration with:
+  - Database setup and health checks
+  - Test server lifecycle management
+  - Artifact collection and test reporting
+  - Docker Compose alternative
+  - Proper cleanup in all scenarios
+
+**Documentation Improvements:**
+- Updated status to "Draft - Under Review"
+- Added Revision History section
+- Improved code examples with better error handling
+- Added inline documentation for concurrency safety
+
+### Version 1.0 (2025-03-16) - Initial Draft
+
+**Initial design document created:**
+- Architecture and project structure
+- Test conversion strategy (171 tests → ~247 scenarios)
+- Feature file organization by EARS domains
+- Step definition patterns
+- Implementation timeline (8 weeks, 8 phases)
 
 ## Architecture
 
@@ -162,42 +205,90 @@ Scenario: Create a new Claude provider
 // step_definitions/context.go
 package step_definitions
 
+import (
+    "sync"
+)
+
+// BDDTestContext holds shared state across scenarios
+// IMPORTANT: Not thread-safe. Each scenario should have its own context instance.
+// For parallel scenario execution, use context.ScenarioContext (godog's internal context).
 type BDDTestContext struct {
-    // Server connection
+    mu sync.Mutex // Protects all fields below
+
+    // Server connection (immutable after setup)
     ServerURL       string
     TestDBURL       string
 
-    // API clients
+    // API clients (immutable after setup)
     AnonymousClient *integrationclient.ClientWithResponses
     Client          *integrationclient.ClientWithResponses
     ManagerClient   *integration_manager.ClientWithResponses
 
-    // Authentication
+    // Authentication (per-scenario)
     AdminToken      string
     MemberToken     string
     CurrentUser     *UserInfo
 
-    // Test data storage (for sharing between steps)
+    // Test data storage (per-scenario, for sharing between steps)
     LastProviderID    int64
     LastUserID        string
     LastTeamID        int64
     LastLicenseID     string
     CreatedResourceIDs map[string]string
 
-    // Response storage (for assertions)
+    // Response storage (per-scenario, for assertions)
     LastStatusCode    int
     LastResponse      interface{}
     LastErrorResponse string
+
+    // Resource tracking for cleanup
+    createdProviders   []int64
+    createdUsers      []string
+    createdTeams      []int64
 }
 
+// UserInfo represents user information for scenarios
 type UserInfo struct {
     Email    string
     Password string
     Name     string
-    Role     string
+    Role     string // "admin" or "member"
     Token    string
 }
+
+// SetLastResponse stores the last response in a thread-safe manner
+func (ctx *BDDTestContext) SetLastResponse(code int, resp interface{}, errMsg string) {
+    ctx.mu.Lock()
+    defer ctx.mu.Unlock()
+    ctx.LastStatusCode = code
+    ctx.LastResponse = resp
+    ctx.LastErrorResponse = errMsg
+}
+
+// GetLastResponse retrieves the last response in a thread-safe manner
+func (ctx *BDDTestContext) GetLastResponse() (int, interface{}, string) {
+    ctx.mu.Lock()
+    defer ctx.mu.Unlock()
+    return ctx.LastStatusCode, ctx.LastResponse, ctx.LastErrorResponse
+}
+
+// TrackCreatedResource adds a resource to the cleanup list
+func (ctx *BDDTestContext) TrackCreatedResource(resourceType, id string) {
+    ctx.mu.Lock()
+    defer ctx.mu.Unlock()
+    if ctx.CreatedResourceIDs == nil {
+        ctx.CreatedResourceIDs = make(map[string]string)
+    }
+    ctx.CreatedResourceIDs[resourceType] = id
+}
 ```
+
+**Concurrency Safety Notes:**
+
+- The BDDTestContext uses a mutex to protect all mutable fields
+- Each scenario gets its own context instance (no sharing between scenarios)
+- For parallel scenario execution, use godog's internal context, not the shared test context
+- API clients are immutable after setup and don't require locking
 
 ### Scenario Lifecycle
 
@@ -209,6 +300,264 @@ type UserInfo struct {
 **After Scenario:**
 1. Clean up created resources via API
 2. Reset context to initial state
+
+### Cleanup Strategy
+
+Each scenario is responsible for cleaning up resources it creates. The cleanup strategy uses a **tracking + cleanup hook** approach:
+
+```go
+// godog/godog_suite_test.go
+func InitializeScenario(ctx *godog.ScenarioContext) {
+    scenarioCtx := &step_definitions.ScenarioContext{
+        BDDTestContext: testContext,
+    }
+
+    // Register all step definitions
+    RegisterAuthSteps(scenarioCtx, ctx)
+    RegisterProviderSteps(scenarioCtx, ctx)
+    // ... other step registrations
+
+    // Before scenario hook
+    ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+        // Reset scenario state
+        scenarioCtx.ResetScenarioState()
+
+        // Login as manager (default)
+        if err := scenarioCtx.LoginAsManager(); err != nil {
+            return ctx, fmt.Errorf("failed to login as manager: %w", err)
+        }
+
+        return ctx, nil
+    })
+
+    // After scenario hook (cleanup)
+    ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
+        // Clean up resources even if scenario failed
+        cleanupErr := scenarioCtx.CleanupScenarioResources()
+        if cleanupErr != nil {
+            // Log cleanup error but don't fail the scenario
+            log.Printf("WARNING: Cleanup failed: %v", cleanupErr)
+        }
+
+        return ctx, err
+    })
+}
+```
+
+**Resource Cleanup Implementation:**
+
+```go
+// step_definitions/context.go
+func (ctx *ScenarioContext) CleanupScenarioResources() error {
+    apiCtx := context.Background()
+    var cleanupErrors []error
+
+    // Clean up providers (using tracked IDs)
+    if len(ctx.createdProviders) > 0 {
+        for _, providerID := range ctx.createdProviders {
+            resp, err := ctx.Client.DeleteApiV1ProvidersProviderIdWithResponse(
+                apiCtx, providerID)
+            if err != nil {
+                cleanupErrors = append(cleanupErrors,
+                    fmt.Errorf("failed to delete provider %d: %w", providerID, err))
+            } else if resp.StatusCode() != 204 && resp.StatusCode() != 404 {
+                cleanupErrors = append(cleanupErrors,
+                    fmt.Errorf("provider %d deletion returned status %d",
+                        providerID, resp.StatusCode()))
+            }
+        }
+        ctx.createdProviders = nil
+    }
+
+    // Clean up users
+    if len(ctx.createdUsers) > 0 {
+        for _, userID := range ctx.createdUsers {
+            resp, err := ctx.ManagerClient.DeleteApiV1UsersUserIdWithResponse(
+                apiCtx, userID)
+            if err != nil || (resp.StatusCode() != 204 && resp.StatusCode() != 404) {
+                cleanupErrors = append(cleanupErrors,
+                    fmt.Errorf("failed to delete user %s", userID))
+            }
+        }
+        ctx.createdUsers = nil
+    }
+
+    // Clean up teams
+    if len(ctx.createdTeams) > 0 {
+        for _, teamID := range ctx.createdTeams {
+            // Skip default team (ID 1)
+            if teamID == 1 {
+                continue
+            }
+            resp, err := ctx.ManagerClient.DeleteApiV1TeamsTeamIdWithResponse(
+                apiCtx, teamID)
+            if err != nil || (resp.StatusCode() != 204 && resp.StatusCode() != 404) {
+                cleanupErrors = append(cleanupErrors,
+                    fmt.Errorf("failed to delete team %d", teamID))
+            }
+        }
+        ctx.createdTeams = nil
+    }
+
+    // Return combined error if any cleanup failed
+    if len(cleanupErrors) > 0 {
+        return fmt.Errorf("cleanup errors: %v", cleanupErrors)
+    }
+
+    return nil
+}
+```
+
+**Cleanup Guarantees:**
+
+- Resources are cleaned up even if the scenario fails
+- Cleanup failures are logged but don't fail the scenario
+- Each resource type is cleaned up independently (failure in one doesn't stop others)
+- 404 responses are treated as success (resource already deleted)
+
+### Error Handling Strategy
+
+Godog steps should return errors to indicate failure. The error handling strategy:
+
+```go
+// Step implementation pattern
+func (ctx *ScenarioContext) iCreateAProviderWithKind(kind string) error {
+    // 1. Prepare request
+    uniqueName := generateUniqueProviderName("test-provider")
+    req := integrationclient.PostApiV1ProvidersJSONRequestBody{
+        Name:  uniqueName,
+        Kind:  kind,
+        ApiKey: "sk-test-123",
+    }
+
+    // 2. Execute API call
+    resp, err := ctx.Client.PostApiV1ProvidersWithResponse(
+        context.Background(), req)
+
+    // 3. Handle errors
+    if err != nil {
+        // Network/transport error - fail the scenario
+        return fmt.Errorf("failed to create provider: %w", err)
+    }
+
+    // 4. Store response for assertions
+    ctx.SetLastResponse(resp.StatusCode(), resp.JSON201, "")
+
+    // 5. Track for cleanup
+    if resp.StatusCode() == 201 && resp.JSON201 != nil {
+        ctx.TrackProvider(resp.JSON201.Id)
+    }
+
+    // 6. Return nil to indicate step success
+    return nil
+}
+```
+
+**Error Handling Guidelines:**
+
+1. **Return errors for step failures** - Godog treats non-nil error as step failure
+2. **Use fmt.Errorf with context** - Include what failed and why
+3. **Don't use assertions in steps** - Let godog handle test failures via errors
+4. **Store response data for assertions** - Use `Then` steps to verify outcomes
+5. **Log warnings for non-critical issues** - Use `log.Printf()` for issues that shouldn't fail the step
+
+**Assertion Step Pattern:**
+
+```go
+func (ctx *ScenarioContext) theProviderShouldBeCreatedSuccessfully() error {
+    statusCode, _, errMsg := ctx.GetLastResponse()
+
+    if statusCode != 201 {
+        return fmt.Errorf("expected status 201, got %d. Error: %s",
+            statusCode, errMsg)
+    }
+
+    return nil
+}
+```
+
+### Test Data Management
+
+Generating unique test data is critical for test isolation:
+
+```go
+// support/helpers.go
+package support
+
+import (
+    "fmt"
+    "time"
+    "github.com/google/uuid"
+)
+
+// generateUniqueProviderName creates a unique provider name
+func GenerateUniqueProviderName(base string) string {
+    timestamp := time.Now().UnixNano()
+    return fmt.Sprintf("%s-%d", base, timestamp)
+}
+
+// generateUniqueEmail creates a unique email address
+func GenerateUniqueEmail(base string) string {
+    return fmt.Sprintf("%s-%s@example.com", base, uuid.New().String()[:8])
+}
+
+// generateUniqueTeamName creates a unique team name
+func GenerateUniqueTeamName(base string) string {
+    timestamp := time.Now().Format("20060102-150405")
+    return fmt.Sprintf("%s-%s", base, timestamp)
+}
+
+// Test data fixtures
+const (
+    TestAPIKeyClaude   = "sk-test-claude-123"
+    TestAPIKeyCodex    = "sk-test-codex-123"
+    TestAPIKeyOpenCode = "sk-test-opencode-123"
+
+    TestPasswordStrong = "TestPassword123!"
+    TestPasswordWeak   = "weak"
+)
+```
+
+**Test Data Strategy:**
+
+1. **Use timestamps for uniqueness** - `time.Now().UnixNano()` provides high uniqueness
+2. **Use UUIDs for distributed systems** - `uuid.New()` for global uniqueness
+3. **Define test constants** - Reusable test values in one place
+4. **Generate per-scenario data** - Each scenario creates its own data
+5. **Clean up after scenarios** - Delete created resources in After hook
+
+**Example Usage in Steps:**
+
+```go
+func (ctx *ScenarioContext) iHaveAUniqueProviderName() error {
+    ctx.providerName = support.GenerateUniqueProviderName("test-provider")
+    return nil
+}
+
+func (ctx *ScenarioContext) iCreateAUserWithRole(role string) error {
+    email := support.GenerateUniqueEmail("user")
+    password := support.TestPasswordStrong
+
+    req := integrationclient.PostApiV1UsersJSONRequestBody{
+        Email:    openapi_types.Email(email),
+        Password: password,
+        Name:     "Test User",
+        Role:     role,
+    }
+
+    resp, err := ctx.Client.PostApiV1UsersWithResponse(context.Background(), req)
+    if err != nil {
+        return fmt.Errorf("failed to create user: %w", err)
+    }
+
+    ctx.SetLastResponse(resp.StatusCode(), resp.JSON201, "")
+    if resp.StatusCode() == 201 && resp.JSON201 != nil {
+        ctx.TrackUser(resp.JSON201.Id)
+    }
+
+    return nil
+}
+```
 
 ## Step Definitions
 
@@ -334,7 +683,7 @@ Feature: Provider Management
 
 ```go
 // bdd/go.mod
-module github.com/shtdu/bdd
+module github.com/code-together/bdd
 
 go 1.24
 
@@ -342,10 +691,16 @@ require (
     github.com/cucumber/godog v0.14.1
     github.com/stretchr/testify v1.9.0
     github.com/code-together/shared v1.0.0
+    github.com/code-together/integration_manager v1.0.0
 )
 
-// Uses existing integration module
-replace github.com/code-together/shared => ../shared
+// Local development: use absolute paths or workspace mode
+// In production: remove these replace directives
+replace github.com/code-together/shared => /Users/jian/workspaces/github/code-tegether.opensource/shared
+replace github.com/code-together/integration_manager => /Users/jian/workspaces/github/code-tegether.opensource/manager
+
+// Alternative: Use Go workspace (go.work)
+// go.work file in project root handles module resolution
 ```
 
 ### Fixture Reuse
@@ -371,9 +726,77 @@ func LoadFixtureData() (*FixtureData, error) {
 }
 ```
 
+### Test Server Lifecycle Management
+
+The BDD suite requires a running test server. Two approaches are supported:
+
+**Approach 1: External Test Server (Recommended for Local Development)**
+
+```bash
+# Terminal 1: Start test server manually
+cd integration
+./test-server.sh
+
+# Terminal 2: Run BDD tests
+cd bdd
+make test-bdd
+```
+
+**Approach 2: Programmatic Test Server (Recommended for CI/CD)**
+
+The Makefile will automatically manage test server lifecycle:
+
+```makefile
+# bdd/Makefile
+.PHONY: test-bdd
+test-bdd:
+	@echo "Ensuring test server is running..."
+	@$(MAKE) -s ensure-test-server
+	@cd godog && go test -v -godog.format=pretty -godog.paths="../features"
+
+ensure-test-server:
+	@curl -s http://localhost:8088/health > /dev/null 2>&1 || \
+		(echo "Starting test server..." && \
+		 cd ../integration && \
+		 ./test-server.sh > /tmp/test-server.log 2>&1 & \
+		 sleep 3)
+```
+
+**Test Server Health Check:**
+
+```go
+// support/test_context.go
+func waitForTestServer(serverURL string, timeout time.Duration) error {
+    client := &http.Client{Timeout: 2 * time.Second}
+    start := time.Now()
+
+    for time.Since(start) < timeout {
+        resp, err := client.Get(serverURL + "/health")
+        if err == nil && resp.StatusCode == 200 {
+            return nil
+        }
+        time.Sleep(500 * time.Millisecond)
+    }
+
+    return fmt.Errorf("test server not ready after %v", timeout)
+}
+```
+
+**Database Setup:**
+
+The test server requires a test database:
+
+```bash
+# Create test database (one-time setup)
+createdb codetogether_test
+
+# Or use docker-compose
+docker-compose -f docker-compose.test.yml up -d postgres
+```
+
 ### Test Server Integration
 
-The BDD suite uses the same test server as integration tests:
+The BDD suite uses the same test server and database as integration tests:
 
 ```bash
 # Start test server (reused from integration/)
@@ -382,6 +805,13 @@ cd ../integration && ./test-server.sh
 # Run BDD tests
 cd bdd && make test-bdd
 ```
+
+**Test Server Configuration:**
+
+The test server runs on port 8088 and uses:
+- Database: `codetogether_test`
+- JWT Secret: `default_secret_key_for_development`
+- License Public Key: From test fixtures
 
 ## Test Execution
 
@@ -430,15 +860,171 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.24'
 
+      - name: Set up test database
+        run: |
+          docker run -d --name postgres-test \
+            -e POSTGRES_DB=codetogether_test \
+            -e POSTGRES_USER=test \
+            -e POSTGRES_PASSWORD=test \
+            -p 5432:5432 \
+            postgres:14
+
+      - name: Wait for database
+        run: |
+          for i in {1..30}; do
+            if docker exec postgres-test pg_isready -U test; then
+              echo "Database is ready"
+              break
+            fi
+            echo "Waiting for database... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run database migrations
+        run: |
+          cd server
+          go run migrations/main.go
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/codetogether_test?sslmode=disable
+
+      - name: Start test server
+        run: |
+          cd integration
+          ./test-server.sh > /tmp/test-server.log 2>&1 &
+          echo $! > /tmp/test-server.pid
+          sleep 5
+
       - name: Run BDD tests
         run: |
           cd bdd
           make test-bdd-ci
+        env:
+          TEST_SERVER_URL: http://localhost:8088
+          TEST_DATABASE_URL: postgres://test:test@localhost:5432/codetogether_test?sslmode=disable
+
+      - name: Stop test server
+        if: always()
+        run: |
+          if [ -f /tmp/test-server.pid ]; then
+            kill $(cat /tmp/test-server.pid) || true
+          fi
+
+      - name: Stop database
+        if: always()
+        run: |
+          docker stop postgres-test || true
+          docker rm postgres-test || true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bdd-test-results
+          path: |
+            bdd/test-results.xml
+            /tmp/test-server.log
+
+      - name: Publish test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: BDD Test Report
+          path: bdd/test-results.xml
+          reporter: java-junit
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bdd-coverage-report
+          path: bdd/coverage.html
+```
+
+**Alternative: Docker Compose for CI/CD**
+
+For simpler CI/CD setup, use docker-compose:
+
+```yaml
+# bdd/docker-compose.test.yml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: codetogether_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  test-server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://test:test@postgres:5432/codetogether_test?sslmode=disable
+      PORT: 8088
+      JWT_SECRET: test_secret
+    ports:
+      - "8088:8088"
+
+  bdd-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      test-server:
+        condition: service_started
+    environment:
+      TEST_SERVER_URL: http://test-server:8088
+      TEST_DATABASE_URL: postgres://test:test@postgres:5432/codetogether_test?sslmode=disable
+    command: make test-bdd-ci
+```
+
+**GitHub Actions Workflow with Docker Compose:**
+
+```yaml
+# .github/workflows/bdd-tests-docker.yml
+name: BDD Tests (Docker)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  bdd-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run BDD tests with docker-compose
+        run: |
+          cd bdd
+          docker-compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from bdd-tests
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bdd-test-results
+          path: bdd/test-results.xml
 ```
 
 ## Implementation Plan
@@ -458,9 +1044,10 @@ jobs:
 - [ ] Create first "hello world" scenario
 
 **Deliverables:**
-- Working `go test github.com/shtdu/bdd/...`
+- Working `go test github.com/code-together/bdd/...`
 - Test server starts and connects
 - First scenario runs successfully
+- Test server lifecycle management verified
 
 ### Phase 2: Core Authentication & User Management (Week 2)
 
