@@ -35,7 +35,6 @@ Before requesting review, ensure all CI checks pass:
 - [ ] **Lint** - Code formatting and style checks
 - [ ] **Build** - All modules build successfully
 - [ ] **Test** - Unit tests pass
-- [ ] **Integration Test** - Integration tests with PostgreSQL pass
 
 ## Testing
 
