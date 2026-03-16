@@ -79,9 +79,18 @@ jobs:
         working-directory: ./integration
         run: |
           set -a && source .env.test && set +a
-          go test -v github.com/code-together/integration
+          go test -v -coverprofile=coverage.out -covermode=atomic github.com/code-together/integration
         env:
           CGO_ENABLED: 0
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./integration/coverage.out
+          flags: integration
+          name: integration-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test logs
         if: failure()

@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shtdu/ai-together)](https://goreportcard.com/report/github.com/shtdu/ai-together)
+[![codecov](https://codecov.io/gh/shtdu/ai-together/branch/main/graph/badge.svg?token=B8K5YM7W8C)](https://app.codecov.io/gh/shtdu/ai-together)
 
 A provider proxy platform for centralized management of AI coding tools (Claude Code, Codex, OpenCode), offering transparent request routing, intelligent failover, and team collaboration features.
 
