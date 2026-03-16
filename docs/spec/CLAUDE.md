@@ -1,4 +1,4 @@
-# vibe_doc — MECE Product Documentation
+# spec — MECE Product Documentation
 
 This directory contains **product-focused documentation** for Code Together, structured using the **MECE** methodology: **M**utually **E**xclusive and **C**ollectively **E**xhaustive.
 
@@ -101,9 +101,9 @@ Each feature document should follow this structure:
 
 ## Related Documentation
 
-- **Technical implementation:** `../docs/epic_0/architecture.md` - System architecture
-- **Module development:** `../member/CLAUDE.md`, `../server/CLAUDE.md` - Technical guides
-- **License types:** `../docs/epic_0/constitution.md` - Design principles and technology choices
+- **Technical implementation:** `../epic_0/architecture.md` - System architecture
+- **Module development:** `../../member/CLAUDE.md`, `../../server/CLAUDE.md` - Technical guides
+- **Design principles:** `../epic_0/constitution.md` - Design principles and technology choices
 
 ---
 
