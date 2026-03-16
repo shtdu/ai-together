@@ -101,7 +101,7 @@ import KPICards from './KPICards.vue'
 import TimelineGantt from './TimelineGantt.vue'
 import InteractionSection from './InteractionSection.vue'
 import SessionTable from './SessionTable.vue'
-import { fetchDailyReport, getTodayDate, getPreviousDay, getNextDay, getMinDate, RETENTION_DAYS, type DailyReport, type ToolReport } from '../../services/reports'
+import { fetchDailyReport, getTodayDate, getPreviousDay, getNextDay, getMinDate, type DailyReport } from '../../services/reports'
 
 const router = useRouter()
 const { t } = useI18n()

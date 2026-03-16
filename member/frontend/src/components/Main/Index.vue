@@ -211,8 +211,8 @@
               </div>
               <!-- <p class="card-subtitle">{{ card.apiUrl }}</p> -->
               <p
-                v-for="stats in [providerStatDisplay(card.name)]"
-                :key="`metrics-${card.id}`"
+                v-for="(stats, idx) in [providerStatDisplay(card.name)]"
+                :key="`metrics-${card.id}-${idx}`"
                 class="card-metrics"
               >
                 <template v-if="stats.state !== 'ready'">
@@ -426,7 +426,7 @@ import { fetchCurrentVersion } from '../../services/version'
 import { fetchAppSettings, type AppSettings } from '../../services/appSettings'
 import { getCurrentTheme, setTheme, type ThemeMode } from '../../utils/ThemeManager'
 import { useRouter } from 'vue-router'
-import { isAuthenticated, getCurrentUser, type User } from '../../services/auth'
+import { isAuthenticated, getCurrentUser } from '../../services/auth'
 import { canEditSettings } from '../../services/permission'
 import { showToast } from '../../utils/toast'
 
@@ -929,16 +929,6 @@ const providerStatDisplay = (providerName: string): ProviderStatDisplay => {
   }
 }
 
-const normalizeUrlWithScheme = (value: string) => {
-  if (!value) return ''
-  try {
-    const url = new URL(value)
-    return url.toString()
-  } catch {
-    return `https://${value}`
-  }
-}
-
 const startProviderStatsTimer = () => {
   stopProviderStatsTimer()
   providerStatsTimer = window.setInterval(() => {
@@ -1012,14 +1002,6 @@ const goToLogs = () => {
 
 const goToReports = () => {
   router.push('/reports')
-}
-
-const goToMcp = () => {
-  router.push('/mcp')
-}
-
-const goToSkill = () => {
-  router.push('/skill')
 }
 
 const goToServer = () => {
