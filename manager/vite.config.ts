@@ -20,10 +20,4 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
   },
-  // Explicitly configure Rollup options for better Docker compatibility
-  rollupOptions: {
-    input: {
-      main: 'index.html',
-    },
-  },
 })
