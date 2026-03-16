@@ -219,8 +219,9 @@ func TestHookService_WriteQueue_GracefulShutdown(t *testing.T) {
 
 	hs := NewHookService()
 
-	// Queue 10 events without waiting for results
+	// Queue 10 events and WAIT for each result to ensure writes complete
 	eventCount := 10
+	var results []chan error
 	for i := 0; i < eventCount; i++ {
 		event := map[string]interface{}{
 			"session_id":      "test-shutdown",
@@ -239,17 +240,23 @@ func TestHookService_WriteQueue_GracefulShutdown(t *testing.T) {
 
 		select {
 		case hs.writeQueue <- req:
-			// Don't wait for result - testing shutdown while queue has items
+			results = append(results, resultChan)
 		default:
 			t.Fatal("failed to queue event")
 		}
 	}
 
-	// Wait for queue to drain (writer goroutine processes events)
-	time.Sleep(50 * time.Millisecond)
+	// Wait for ALL writes to complete before querying
+	for i, resultChan := range results {
+		if err := <-resultChan; err != nil {
+			t.Fatalf("write %d failed: %v", i, err)
+		}
+	}
+
+	// Small delay to ensure DB transaction is fully committed
+	time.Sleep(10 * time.Millisecond)
 
 	// Verify all events were stored BEFORE closing
-	// Note: hookdb.HookDB is still valid here
 	events, err := storage.GetSessionEvents(hookdb.HookDB, "test-shutdown", "test")
 	if err != nil {
 		t.Fatalf("failed to get events: %v", err)
@@ -263,9 +270,6 @@ func TestHookService_WriteQueue_GracefulShutdown(t *testing.T) {
 	if err := hs.Close(); err != nil {
 		t.Fatalf("Close failed: %v", err)
 	}
-
-	// Note: After Close(), hookdb.HookDB is nil, so we can't query anymore
-	// But we've already verified the events were stored
 }
 
 // TestHookService_GetHealth_QueueMetrics tests health endpoint includes queue metrics
