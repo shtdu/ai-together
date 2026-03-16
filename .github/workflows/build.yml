@@ -53,17 +53,24 @@ jobs:
           node-version: '24'
 
       - name: Install frontend dependencies
+        working-directory: ./frontend
         run: npm install
 
-      - name: Build frontend assets
+      - name: Build frontend assets (production)
+        working-directory: ./frontend
         run: npm run build
+        env:
+          PRODUCTION: 'true'
+
+      - name: Go mod tidy
+        run: go mod tidy
 
       - name: Download Go dependencies
         run: go mod download
 
-      - name: Verify build
+      - name: Verify member build
         run: |
-          go build -v ./...
+          go build -v -o bin/CodeTogether ./...
           echo "✓ member builds successfully"
 
   manager-build:

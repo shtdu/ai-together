@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./member/frontend
+        working-directory: ./member
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -61,11 +61,17 @@ jobs:
           node-version: '24'
 
       - name: Install frontend dependencies
+        working-directory: ./frontend
         run: npm install
 
-      - name: Build frontend assets
+      - name: Build frontend assets (production)
+        working-directory: ./frontend
         run: npm run build
+        env:
+          PRODUCTION: 'true'
+
+      - name: Go mod tidy
+        run: go mod tidy
 
       - name: Run tests
-        working-directory: ./member
         run: go test -v ./...
