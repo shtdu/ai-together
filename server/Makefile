@@ -66,18 +66,18 @@ itest:
 
 # Coverage
 cover:
-	@go test ./... -coverprofile=coverage.out -covermode=atomic
+	@go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration') -coverprofile=coverage.out -covermode=atomic
 	@go tool cover -func=coverage.out | tail -1
 	@echo "Coverage report: coverage.out"
 
 cover-html:
-	@go test ./... -coverprofile=coverage.out -covermode=atomic
+	@go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration') -coverprofile=coverage.out -covermode=atomic
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "HTML coverage report: coverage.html"
 	@open coverage.html 2>/dev/null || true
 
 cover-func:
-	@go test ./... -coverprofile=coverage.out -covermode=atomic
+	@go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration') -coverprofile=coverage.out -covermode=atomic
 	@go tool cover -func=coverage.out | sort -k3 -n
 
 # Code Generation
