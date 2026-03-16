@@ -136,11 +136,11 @@ server-test:
 	@cd $(SERVER_DIR) && go test ./... -v
 
 server-cover:
-	@cd $(SERVER_DIR) && go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil') -coverprofile=coverage.out -covermode=atomic
+	@cd $(SERVER_DIR) && go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration') -coverprofile=coverage.out -covermode=atomic
 	@cd $(SERVER_DIR) && go tool cover -func=coverage.out | tail -1
 
 server-cover-html:
-	@cd $(SERVER_DIR) && go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil') -coverprofile=coverage.out -covermode=atomic
+	@cd $(SERVER_DIR) && go test $$(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration') -coverprofile=coverage.out -covermode=atomic
 	@cd $(SERVER_DIR) && go tool cover -html=coverage.out -o coverage.html
 	@echo "✓ HTML coverage report: $(SERVER_DIR)/coverage.html"
 	@open $(SERVER_DIR)/coverage.html 2>/dev/null || true
