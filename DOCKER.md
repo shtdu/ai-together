@@ -444,13 +444,13 @@ lsof -ti:8080 | xargs kill -9
 
 ### Images
 
-- **Image:** `cnjax/code-together-manager`
+- **Image:** `genewoo/ai-together-manager`
 - **Tag:** `latest` (or specific version tags like `v1.0.0`)
 - **Port:** `80` (Internal Nginx port)
 
 ### Server
 
-- **Image:** `cnjax/code-together-server`
+- **Image:** `genewoo/ai-together-server`
 
 ### PostgreSQL
 - **Image:** `postgres:latest`

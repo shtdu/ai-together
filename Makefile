@@ -203,9 +203,9 @@ docs: ## Compile manuals to HTML
 .PHONY: docker docker-server docker-manager docker-push docker-push-server docker-push-manager
 
 DOCKER_TAG ?= latest
-DOCKER_REGISTRY ?= cnjax
-SERVER_IMAGE = $(DOCKER_REGISTRY)/code-together-server
-MANAGER_IMAGE = $(DOCKER_REGISTRY)/code-together-manager
+DOCKER_REGISTRY ?= genewoo
+SERVER_IMAGE = $(DOCKER_REGISTRY)/ai-together-server
+MANAGER_IMAGE = $(DOCKER_REGISTRY)/ai-together-manager
 
 docker: docker-server docker-manager ## Build all Docker images
 

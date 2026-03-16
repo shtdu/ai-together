@@ -30,13 +30,13 @@ services:
 
   server:
     # 使用 docker.gh-proxy.com 代理 Docker Hub
-    # 原始地址: cnjax/code-together-server:latest
-    # 代理地址: docker.gh-proxy.com/cnjax/code-together-server:latest
+    # 原始地址: genewoo/ai-together-server:latest
+    # 代理地址: docker.gh-proxy.com/genewoo/ai-together-server:latest
     # 如果需要本地构建，取消注释以下几行并注释掉 image 行：
     # build:
     #   context: .
     #   dockerfile: ./server/Dockerfile
-    image: docker.gh-proxy.com/cnjax/code-together-server:${IMAGE_TAG:-latest}
+    image: docker.gh-proxy.com/genewoo/ai-together-server:${IMAGE_TAG:-latest}
     container_name: code-together-server
     restart: unless-stopped
     depends_on:
@@ -58,9 +58,9 @@ services:
 
   manager:
     # 使用 docker.gh-proxy.com 代理 Docker Hub
-    # 原始地址: cnjax/code-together-manager:latest
-    # 代理地址: docker.gh-proxy.com/cnjax/code-together-manager:latest
-    image: docker.gh-proxy.com/cnjax/code-together-manager:${IMAGE_TAG:-latest}
+    # 原始地址: genewoo/ai-together-manager:latest
+    # 代理地址: docker.gh-proxy.com/genewoo/ai-together-manager:latest
+    image: docker.gh-proxy.com/genewoo/ai-together-manager:${IMAGE_TAG:-latest}
     container_name: code-together-manager
     restart: unless-stopped
     depends_on:

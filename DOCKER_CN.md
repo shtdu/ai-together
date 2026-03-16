@@ -121,12 +121,12 @@ sudo systemctl restart docker
 
    ```bash
    # 在可访问 Docker Hub 的服务器上
-   docker pull cnjax/code-together-server:latest
-   docker pull cnjax/code-together-manager:latest
+   docker pull genewoo/ai-together-server:latest
+   docker pull genewoo/ai-together-manager:latest
 
    # 保存为文件
-   docker save cnjax/code-together-server:latest | gzip > server.tar.gz
-   docker save cnjax/code-together-manager:latest | gzip > manager.tar.gz
+   docker save genewoo/ai-together-server:latest | gzip > server.tar.gz
+   docker save genewoo/ai-together-manager:latest | gzip > manager.tar.gz
    ```
 
 ### 方案 4: 使用阿里云容器镜像服务（推荐中国用户）
@@ -146,14 +146,14 @@ sudo systemctl restart docker
 
 ```bash
 # 从 Docker Hub 拉取
-docker pull cnjax/code-together-server:latest
-docker pull cnjax/code-together-manager:latest
+docker pull genewoo/ai-together-server:latest
+docker pull genewoo/ai-together-manager:latest
 
 # 重新标记
-docker tag cnjax/code-together-server:latest \
+docker tag genewoo/ai-together-server:latest \
   registry.cn-hangzhou.aliyuncs.com/你的命名空间/server:latest
 
-docker tag cnjax/code-together-manager:latest \
+docker tag genewoo/ai-together-manager:latest \
   registry.cn-hangzhou.aliyuncs.com/你的命名空间/manager:latest
 
 # 推送到阿里云

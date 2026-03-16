@@ -11,8 +11,8 @@ on:
 env:
   REGISTRY: docker.io
   # Using distinct names for Docker Hub repositories
-  SERVER_IMAGE: cnjax/code-together-server
-  MANAGER_IMAGE: cnjax/code-together-manager
+  SERVER_IMAGE: genewoo/ai-together-server
+  MANAGER_IMAGE: genewoo/ai-together-manager
 
 permissions:
   contents: read

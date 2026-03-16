@@ -20,7 +20,7 @@ services:
       retries: 5
 
   server:
-    image: cnjax/code-together-server:${IMAGE_TAG:-latest}
+    image: genewoo/ai-together-server:${IMAGE_TAG:-latest}
     container_name: code-together-server
     restart: unless-stopped
     depends_on:
@@ -42,7 +42,7 @@ services:
     # No external port mapping - only accessible via manager reverse proxy
 
   manager:
-    image: cnjax/code-together-manager:${IMAGE_TAG:-latest}
+    image: genewoo/ai-together-manager:${IMAGE_TAG:-latest}
     container_name: code-together-manager
     restart: unless-stopped
     depends_on:
