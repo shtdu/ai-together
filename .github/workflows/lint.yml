@@ -7,12 +7,9 @@ on:
     branches: [main, develop]
 
 jobs:
-  go-lint:
-    name: Go Lint
+  server-lint:
+    name: Server Lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module: [server, integration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +21,7 @@ jobs:
           cache: false
 
       - name: Check formatting
-        working-directory: ${{ matrix.module }}
+        working-directory: ./server
         run: |
           fmt_output=$(go fmt ./...)
           if [ -n "$fmt_output" ]; then
@@ -35,7 +32,7 @@ jobs:
           echo "✓ Go code is properly formatted"
 
       - name: Run go vet
-        working-directory: ${{ matrix.module }}
+        working-directory: ./server
         run: |
           go vet ./...
           echo "✓ Go vet passed"

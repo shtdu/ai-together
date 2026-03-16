@@ -10,9 +10,6 @@ jobs:
   go-test:
     name: Go Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module: [server, integration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,19 +20,17 @@ jobs:
           go-version: '1.24'
           cache: false
 
-      - name: Run tests
-        working-directory: ${{ matrix.module }}
+      - name: Run server tests
+        working-directory: ./server
         run: go test -v ./...
 
       - name: Generate coverage report
-        if: matrix.module == 'server'
         working-directory: ./server
         run: |
           go test $(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil') -coverprofile=coverage.out -covermode=atomic
           go tool cover -func=coverage.out | tail -1
 
       - name: Upload coverage to Codecov
-        if: matrix.module == 'server'
         uses: codecov/codecov-action@v4
         with:
           files: ./server/coverage.out

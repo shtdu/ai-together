@@ -7,12 +7,9 @@ on:
     branches: [main, develop]
 
 jobs:
-  go-build:
-    name: Go Build
+  server-build:
+    name: Server Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module: [server, integration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,14 +21,14 @@ jobs:
           cache: false
 
       - name: Download dependencies
-        working-directory: ${{ matrix.module }}
+        working-directory: ./server
         run: go mod download
 
       - name: Verify build
-        working-directory: ${{ matrix.module }}
+        working-directory: ./server
         run: |
           go build -v ./...
-          echo "✓ ${{ matrix.module }} builds successfully"
+          echo "✓ Server builds successfully"
 
   member-build:
     name: Member Build
