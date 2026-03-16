@@ -6,7 +6,7 @@ require (
 	github.com/code-together/integration_manager v0.0.0-00010101000000-000000000000
 	github.com/code-together/shared v0.0.0
 	github.com/jackc/pgx/v5 v5.8.0
-	github.com/oapi-codegen/runtime v1.1.2
+	github.com/oapi-codegen/runtime v1.2.0
 	github.com/stretchr/testify v1.11.1
 )
 
