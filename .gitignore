@@ -77,4 +77,5 @@ shared/tools/hook-browser/hook-browser
 *.out
 *.html
 !member/frontend/index.html
+!manager/index.html
 coverage/
