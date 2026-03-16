@@ -34,9 +34,6 @@ jobs:
   member-build:
     name: Member Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./member
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -53,11 +50,11 @@ jobs:
           node-version: '24'
 
       - name: Install frontend dependencies
-        working-directory: ../member/frontend
+        working-directory: member/frontend
         run: npm install
 
       - name: Build frontend assets (production)
-        working-directory: ../member/frontend
+        working-directory: member/frontend
         run: npm run build
         env:
           PRODUCTION: 'true'
