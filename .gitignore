@@ -17,7 +17,7 @@
 
 # Build artifacts
 */dist/
-*/build/
+# */build/
 node_modules/
 frontend/node_modules
 frontend/bindings
@@ -60,9 +60,9 @@ server/private.key
 # Member
 member/frontend/node_modules/*
 member/frontend/dist/*
-# member/frontend/bindings/*
-!member/frontend/index.html
-member/build/
+member/frontend/bindings/*
+! member/build/
+! member/frontend/index.html
 member/tmp
 member/codeswitch
 member/bin
