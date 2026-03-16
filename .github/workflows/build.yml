@@ -102,7 +102,7 @@ jobs:
 
       - name: Verify build output
         run: |
-          if [ ! -d "manager/dist" ]; then
+          if [ ! -d "dist" ]; then
             echo "Build output directory not found"
             exit 1
           fi
