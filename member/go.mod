@@ -12,7 +12,7 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.60
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.44.3
+	modernc.org/sqlite v1.46.1
 )
 
 require (
