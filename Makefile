@@ -84,14 +84,18 @@ tools: ## Show tools-specific commands
 	@echo ""
 
 # Common tasks
-.PHONY: build dev test clean shared-api-gen
+.PHONY: build dev test clean shared-api-gen shared-test
 build: server-build member-build manager-build
 
 shared-api-gen: ## Regenerate shared API client from OpenAPI spec
 	@cd shared/integration && go generate
 	@echo "✓ Shared API client regenerated"
+
+shared-test:
+	@cd shared && go test ./... -v
+
 dev: server-dev member-dev ## Run server and member in dev mode
-test: server-test member-test
+test: server-test member-test shared-test
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(SERVER_BUILD_DIR) $(MEMBER_DIR)/bin $(MANAGER_DIR)/dist hook-collector hook-browser

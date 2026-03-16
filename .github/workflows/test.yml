@@ -39,6 +39,37 @@ jobs:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  shared-test:
+    name: Shared Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Run shared tests
+        working-directory: ./shared
+        run: go test -v ./...
+
+      - name: Generate coverage report
+        working-directory: ./shared
+        run: go test -coverprofile=coverage.out -covermode=atomic ./... || echo "Coverage generation had warnings"
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./shared/coverage.out
+          flags: shared
+          name: shared-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   member-test:
     name: Member Test
     runs-on: ubuntu-latest
