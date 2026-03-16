@@ -2,7 +2,7 @@
 
 > **Current Status: 171/171 tests passing (100%)** ✅
 >
-> Complete integration test suite for the Code Together server API.
+> Complete integration test suite for the AI Together server API.
 > **3 tests skipped due to server-side issues.**
 
 ## Quick Links

@@ -1,6 +1,6 @@
 # spec — MECE Product Documentation
 
-This directory contains **product-focused documentation** for Code Together, structured using the **MECE** methodology: **M**utually **E**xclusive and **C**ollectively **E**xhaustive.
+This directory contains **product-focused documentation** for AI Together, structured using the **MECE** methodology: **M**utually **E**xclusive and **C**ollectively **E**xhaustive.
 
 ## Purpose
 

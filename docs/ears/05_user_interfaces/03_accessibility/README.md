@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Ensure Code Together is usable by people with disabilities, following WCAG guidelines and platform-specific accessibility standards.
+Ensure AI Together is usable by people with disabilities, following WCAG guidelines and platform-specific accessibility standards.
 
 ## Current Implementation
 

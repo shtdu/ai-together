@@ -1,6 +1,6 @@
 # Privacy
 
-Code Together is designed to be privacy-first. We never access or store prompt or response content from AI tools.
+AI Together is designed to be privacy-first. We never access or store prompt or response content from AI tools.
 
 ## Purpose
 

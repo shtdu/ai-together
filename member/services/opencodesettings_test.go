@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ func TestGetCodeTogetherProvider(t *testing.T) {
 				"provider": map[string]interface{}{
 					"codetogether": map[string]interface{}{
 						"npm":  "@ai-sdk/openai-compatible",
-						"name": "Code Together",
+						"name": "AI Together",
 					},
 				},
 			},

@@ -1,10 +1,10 @@
 # CLAUDE.md - Server
 
-This file provides guidance for working with the Code Together server (backend API).
+This file provides guidance for working with the AI Together server (backend API).
 
 ## Module Overview
 
-The server is a Go backend that provides centralized management, authentication, and usage tracking for the Code Together platform. It handles team management, provider configuration, and aggregates usage data from member clients.
+The server is a Go backend that provides centralized management, authentication, and usage tracking for the AI Together platform. It handles team management, provider configuration, and aggregates usage data from member clients.
 
 **Module name:** `switch-server`
 **Module path:** `server/`

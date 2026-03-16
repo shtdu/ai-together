@@ -1,4 +1,4 @@
-# Code Together
+# AI Together
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shtdu/ai-together)](https://goreportcard.com/report/github.com/shtdu/ai-together)
@@ -15,7 +15,7 @@ A provider proxy platform for centralized management of AI coding tools (Claude 
 
 ## System Architecture
 
-Code Together consists of four main components:
+AI Together consists of four main components:
 
 - **Member Client** (`member/`) - Desktop client running a local HTTP proxy service
 - **Server** (`server/`) - Backend API service providing centralized management and collaboration features

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -221,7 +221,7 @@ func main() {
 	// 'Bind' is a list of Go struct instances. The frontend has access to the methods of these instances.
 	// 'Mac' options tailor the application when running an macOS.
 	app := application.New(application.Options{
-		Name:        "Code Together",
+		Name:        "AI Together",
 		Description: "Claude Code and Codex provier manager",
 		Services:    servicesList,
 		Assets: application.AssetOptions{
@@ -232,10 +232,10 @@ func main() {
 		},
 	})
 
-	// Set minimal menu to show only app name (Code Together) on macOS
+	// Set minimal menu to show only app name (AI Together) on macOS
 	menu := application.NewMenu()
 	if runtime.GOOS == "darwin" {
-		menu.AddRole(application.AppMenu)  // Adds "Code Together" menu with About, Preferences, Quit
+		menu.AddRole(application.AppMenu)  // Adds "AI Together" menu with About, Preferences, Quit
 		menu.AddRole(application.EditMenu) // Adds Edit menu with Undo, Redo, Cut, Copy, Paste, Select All
 	}
 	app.Menu.Set(menu)
@@ -267,7 +267,7 @@ func main() {
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
 	mainWindow := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:     "Code Together",
+		Title:     "AI Together",
 		Width:     1024,
 		Height:    800,
 		MinWidth:  600,
@@ -328,8 +328,8 @@ func main() {
 	})
 
 	systray := app.SystemTray.New()
-	// systray.SetLabel("Code Together")
-	systray.SetTooltip("Code Together")
+	// systray.SetLabel("AI Together")
+	systray.SetTooltip("AI Together")
 	if lightIcon := loadTrayIcon("assets/icon.png"); len(lightIcon) > 0 {
 		systray.SetIcon(lightIcon)
 	}

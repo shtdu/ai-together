@@ -5,11 +5,11 @@
 	"info": {
 		"0000": {
 			"ProductVersion": "0.4.0.1",
-			"CompanyName": "Code Together",
+			"CompanyName": "AI Together",
 			"FileDescription": "Manage Claude & Codex relays, providers, and request logs.",
-			"LegalCopyright": "(c) 2025, Code Together",
-			"ProductName": "Code Together",
-			"Comments": "Code Together desktop relay controller"
+			"LegalCopyright": "(c) 2025, AI Together",
+			"ProductName": "AI Together",
+			"Comments": "AI Together desktop relay controller"
 		}
 	}
 }

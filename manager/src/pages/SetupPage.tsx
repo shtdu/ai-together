@@ -166,7 +166,7 @@ export default function SetupPage() {
       <Card sx={{ maxWidth: 600, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom textAlign="center">
-            Welcome to Code Together
+            Welcome to AI Together
           </Typography>
           <Typography
             variant="body2"

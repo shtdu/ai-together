@@ -66,7 +66,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 3 }}>
           <CodeIcon />
           <Typography variant="h6" noWrap fontWeight="bold">
-            Code Together
+            AI Together
           </Typography>
         </Box>
 

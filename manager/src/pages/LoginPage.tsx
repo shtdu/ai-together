@@ -53,7 +53,7 @@ export default function LoginPage() {
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom textAlign="center">
-            Code Together
+            AI Together
           </Typography>
           <Typography
             variant="body2"

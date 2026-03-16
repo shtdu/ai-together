@@ -1,6 +1,6 @@
 # User Interfaces
 
-Code Together provides two interfaces for different user types and use cases.
+AI Together provides two interfaces for different user types and use cases.
 
 ## Purpose
 

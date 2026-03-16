@@ -1,4 +1,4 @@
-# Code Together Design Constitution
+# AI Together Design Constitution
 
 **Version:** 1.0
 **Last Updated:** February 2025
@@ -7,7 +7,7 @@
 
 ## Purpose
 
-This document captures the fundamental design principles that govern the Code Together project. All technical decisions SHOULD align with these principles unless explicitly justified.
+This document captures the fundamental design principles that govern the AI Together project. All technical decisions SHOULD align with these principles unless explicitly justified.
 
 ---
 

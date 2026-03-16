@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-// Package integration_manager provides a client for the Code Together Manager API.
+// Package integration_manager provides a client for the AI Together Manager API.
 // It is auto-generated from the OpenAPI specification at docs/client_api/server_api_manager.yaml.
 //
 //go:generate oapi-codegen -package integration_manager -generate types,client,spec ../../docs/client_api/server_api_manager.yaml > generated.go

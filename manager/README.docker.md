@@ -1,6 +1,6 @@
 # Manager Docker Deployment
 
-The Code Together Manager UI is packaged as a Docker container with nginx serving the React SPA and acting as a reverse proxy to the backend server.
+The AI Together Manager UI is packaged as a Docker container with nginx serving the React SPA and acting as a reverse proxy to the backend server.
 
 ## Quick Start
 

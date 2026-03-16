@@ -1,4 +1,4 @@
-# Code Together
+# AI Together
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shtdu/ai-together)](https://goreportcard.com/report/github.com/shtdu/ai-together)
@@ -15,7 +15,7 @@
 
 ## 系统架构
 
-Code Together 由四个主要组件组成：
+AI Together 由四个主要组件组成：
 
 - **Member Client** (`member/`) - 桌面客户端，运行本地 HTTP 代理服务
 - **Server** (`server/`) - 后端 API 服务，提供集中管理和协作功能

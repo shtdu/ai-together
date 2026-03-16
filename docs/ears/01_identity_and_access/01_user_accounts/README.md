@@ -1,6 +1,6 @@
 # User Accounts
 
-Users create accounts to access Code Together. Accounts can be standalone (single-user) or connected to a team server.
+Users create accounts to access AI Together. Accounts can be standalone (single-user) or connected to a team server.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ Allow users to securely access the system with appropriate permissions based on 
 
 ### 1. Account Creation
 
-**User Story:** As a new organization creator, I want to create my organization so my team can start using Code Together.
+**User Story:** As a new organization creator, I want to create my organization so my team can start using AI Together.
 
 #### Ubiquitous Requirements (Password Rules)
 

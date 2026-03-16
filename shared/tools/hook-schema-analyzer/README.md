@@ -228,4 +228,4 @@ go build -o hook-schema-analyzer .
 
 ## License
 
-Part of the Code Together project.
+Part of the AI Together project.

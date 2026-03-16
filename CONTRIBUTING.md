@@ -1,6 +1,6 @@
-# Contributing to Code Together
+# Contributing to AI Together
 
-Thank you for your interest in contributing to Code Together! We appreciate your help in making this project better.
+Thank you for your interest in contributing to AI Together! We appreciate your help in making this project better.
 
 ## Table of Contents
 
@@ -264,4 +264,4 @@ See [integration/INTEGRATION_TEST_SETUP.md](integration/INTEGRATION_TEST_SETUP.m
 - Start a [Discussion](https://github.com/shtdu/ai-together/discussions)
 - Read the [Documentation](README.md)
 
-Thank you for contributing to Code Together!
+Thank you for contributing to AI Together!

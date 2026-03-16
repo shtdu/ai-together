@@ -1,6 +1,6 @@
 # Integration Tests
 
-This module contains black-box integration tests for the Code Together server API.
+This module contains black-box integration tests for the AI Together server API.
 
 ## Prerequisites
 

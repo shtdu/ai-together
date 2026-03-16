@@ -1,6 +1,6 @@
 # Hook Browser
 
-A terminal user interface (TUI) for browsing and searching through hook event data collected by the Code Together platform. Built with [tview](https://github.com/rivo/tview) featuring a modern purple-themed design.
+A terminal user interface (TUI) for browsing and searching through hook event data collected by the AI Together platform. Built with [tview](https://github.com/rivo/tview) featuring a modern purple-themed design.
 
 ## Features
 
@@ -325,4 +325,4 @@ When adding features:
 
 ## License
 
-Part of the Code Together project. See main repository LICENSE.
+Part of the AI Together project. See main repository LICENSE.

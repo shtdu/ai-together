@@ -1,6 +1,6 @@
 # Testing Guide
 
-Quick guide for running tests in the Code Together codebase.
+Quick guide for running tests in the AI Together codebase.
 
 ## Overview
 

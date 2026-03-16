@@ -1,6 +1,6 @@
 # Multi-Tenancy
 
-Each Code Together customer (organization) is a separate tenant with completely isolated data. Users from one organization never see or interact with data from another organization.
+Each AI Together customer (organization) is a separate tenant with completely isolated data. Users from one organization never see or interact with data from another organization.
 
 ## Purpose
 

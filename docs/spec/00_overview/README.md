@@ -1,6 +1,6 @@
 # Product Overview
 
-Code Together is a **team collaboration platform for AI development tools**. It helps teams manage AI service providers, track usage, and control costs across their organization.
+AI Together is a **team collaboration platform for AI development tools**. It helps teams manage AI service providers, track usage, and control costs across their organization.
 
 ## Purpose
 
@@ -10,7 +10,7 @@ AI development tools (Claude Code, Codex, OpenCode) require API keys and provide
 - Switching providers requires updating every developer's setup
 - Costs are opaque until bills arrive
 
-Code Together solves these problems by:
+AI Together solves these problems by:
 - **Centralized configuration** - Managers set up providers once, everyone gets them automatically
 - **Transparent routing** - Developers use their normal tools, requests route through configured providers
 - **Automatic failover** - If a provider fails, automatically switch to backup providers
@@ -119,7 +119,7 @@ System behaviors that protect users and organizations:
 ### Member Experience
 
 ```
-1. Install Code Together desktop app
+1. Install AI Together desktop app
 2. Login to team account (or use standalone)
 3. Desktop app auto-configures AI tools
 4. Use AI tools normally - requests route through configured providers

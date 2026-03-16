@@ -1,6 +1,6 @@
 # Roles & Permissions
 
-Code Together has two user roles with different permissions. This ensures users can access appropriate features based on their responsibilities.
+AI Together has two user roles with different permissions. This ensures users can access appropriate features based on their responsibilities.
 
 ## Purpose
 

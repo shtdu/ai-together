@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-// Package integration provides a client factory for the Code Together server API.
+// Package integration provides a client factory for the AI Together server API.
 package integration
 
 import (

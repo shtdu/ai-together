@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ func (css *ClaudeSettingsService) EnableProxy() error {
 		}
 	}
 
-	// Merge Code Together hooks into settings
+	// Merge AI Together hooks into settings
 	settings = mergeCTHooks(settings)
 
 	// Get or create env map
@@ -182,7 +182,7 @@ func getEnvString(env map[string]any, key string) string {
 // Using map[string]any to preserve all fields (permissions, hooks, statusLine, enabledPlugins, etc.)
 type claudeSettingsFile map[string]any
 
-// getCTHookConfig returns the Code Together hook configuration template
+// getCTHookConfig returns the AI Together hook configuration template
 // The hook command sends event data to the local proxy for collection
 func getCTHookConfig() map[string]any {
 	return map[string]any{
@@ -254,7 +254,7 @@ func shouldAddHook(settings map[string]any, hookType string) bool {
 	return true
 }
 
-// mergeCTHooks merges Code Together hooks into existing settings
+// mergeCTHooks merges AI Together hooks into existing settings
 // Preserves all existing user hooks, only adds hooks that don't already exist
 func mergeCTHooks(settings map[string]any) map[string]any {
 	// Create a copy to avoid modifying the original
@@ -270,7 +270,7 @@ func mergeCTHooks(settings map[string]any) map[string]any {
 
 	hooks := result["hooks"].(map[string]any)
 
-	// Hook event types that Code Together collects
+	// Hook event types that AI Together collects
 	hookEvents := []string{
 		"Notification",
 		"PermissionRequest",

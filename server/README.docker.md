@@ -1,6 +1,6 @@
 # Server Docker Deployment
 
-The Code Together server can be easily deployed using Docker.
+The AI Together server can be easily deployed using Docker.
 
 ## Quick Start
 

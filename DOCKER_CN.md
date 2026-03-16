@@ -1,6 +1,6 @@
 # Docker 部署指南（中国用户）
 
-本指南专为中国用户提供 Code Together 平台的 Docker 部署说明。
+本指南专为中国用户提供 AI Together 平台的 Docker 部署说明。
 
 ## ⚠️ 网络连接问题
 
@@ -308,7 +308,7 @@ docker exec code-together-db pg_dump -U codetogether code_together > backup_$(da
 创建 `backup.sh`：
 ```bash
 #!/bin/bash
-# Code Together 数据库备份脚本
+# AI Together 数据库备份脚本
 
 BACKUP_DIR="./backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

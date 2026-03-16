@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Code Together license system controls access to features based on configurable limits for user seats and AI provider configurations. The system uses Ed25519 cryptographic signing to ensure license integrity and supports multiple license tiers with increasing capabilities.
+The AI Together license system controls access to features based on configurable limits for user seats and AI provider configurations. The system uses Ed25519 cryptographic signing to ensure license integrity and supports multiple license tiers with increasing capabilities.
 
 ### Key Concepts
 

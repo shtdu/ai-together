@@ -1,6 +1,6 @@
-# Code Together Product Documentation
+# AI Together Product Documentation
 
-This directory contains **product-focused documentation** for Code Together, organized using the **MECE** methodology: **M**utually **E**xclusive and **C**ollectively **E**xhaustive.
+This directory contains **product-focused documentation** for AI Together, organized using the **MECE** methodology: **M**utually **E**xclusive and **C**ollectively **E**xhaustive.
 
 ## Quick Navigation
 

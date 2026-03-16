@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, only the latest version of Code Together is supported with security updates.
+Currently, only the latest version of AI Together is supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -10,7 +10,7 @@ Currently, only the latest version of Code Together is supported with security u
 
 ## Reporting a Vulnerability
 
-We take the security of Code Together seriously. If you discover a security vulnerability, please report it responsibly.
+We take the security of AI Together seriously. If you discover a security vulnerability, please report it responsibly.
 
 ### How to Report
 
@@ -35,9 +35,9 @@ When reporting a vulnerability, please include:
 
 ### Security Best Practices
 
-If you're using Code Together, we recommend following these security best practices:
+If you're using AI Together, we recommend following these security best practices:
 
-* **Keep Updated**: Always use the latest version of Code Together
+* **Keep Updated**: Always use the latest version of AI Together
 * **Strong Credentials**: Use strong, unique passwords for all accounts
 * **JWT Secret**: Change the default `JWT_SECRET` in production environments
 * **Database Credentials**: Use strong database passwords and limit database access
@@ -48,7 +48,7 @@ If you're using Code Together, we recommend following these security best practi
 
 ### Security Features
 
-Code Together includes several security features:
+AI Together includes several security features:
 
 * **JWT Authentication**: Token-based authentication for API access
 * **Role-Based Access Control (RBAC)**: Fine-grained permissions using Casbin
@@ -76,11 +76,11 @@ cd manager && pnpm update
 
 ## License
 
-Code Together is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+AI Together is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 ## Privacy
 
-Code Together is designed with privacy in mind. We do not store user prompts or AI responses. Only usage metadata is collected for analytics purposes. For more information, see our [Privacy Policy](docs/privacy.md) (if available).
+AI Together is designed with privacy in mind. We do not store user prompts or AI responses. Only usage metadata is collected for analytics purposes. For more information, see our [Privacy Policy](docs/privacy.md) (if available).
 
 ## Contact
 
