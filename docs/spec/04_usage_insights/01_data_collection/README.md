@@ -48,7 +48,7 @@ Every AI tool request generates a record with:
 
 ```
 1. User's AI tool makes request
-2. Request passes through Code Together proxy
+2. Request passes through AI Together proxy
 3. Proxy extracts metadata (no content inspection)
 4. Response returns to user
 5. Proxy extracts token counts from response

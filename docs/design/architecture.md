@@ -3,7 +3,7 @@
 **Last Updated:** February 2025
 **Epic:** Epic 0 - Core Platform Foundation
 
-This document describes the architecture of the Code Together project from a system design perspective, covering design principles, technology choices, deployment patterns, and operational considerations.
+This document describes the architecture of the AI Together project from a system design perspective, covering design principles, technology choices, deployment patterns, and operational considerations.
 
 ## Table of Contents
 
@@ -119,7 +119,7 @@ AI Tool → Proxy (extracts metadata only) → Server (stores metadata)
 
 ## System Overview
 
-Code Together is a **distributed multi-tenant SaaS platform** for AI provider management with the following characteristics:
+AI Together is a **distributed multi-tenant SaaS platform** for AI provider management with the following characteristics:
 
 - **Three-tier architecture:** Client → Application → Data
 - **Multi-protocol support:** Claude, Codex, OpenCode with extensible provider model
@@ -129,7 +129,7 @@ Code Together is a **distributed multi-tenant SaaS platform** for AI provider ma
 
 ## Overview
 
-Code Together is a three-tier distributed system:
+AI Together is a three-tier distributed system:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

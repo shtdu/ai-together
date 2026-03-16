@@ -76,7 +76,7 @@ This project uses a three-tier documentation structure:
 
 ## Project Overview
 
-Code Together is a team collaboration platform for managing AI coding tools (Claude Code, Codex, and OpenCode). It provides centralized provider management, team-level settings, usage statistics, and automatic configuration distribution across team members.
+AI Together is a team collaboration platform for managing AI coding tools (Claude Code, Codex, and OpenCode). It provides centralized provider management, team-level settings, usage statistics, and automatic configuration distribution across team members.
 
 The system consists of four main components:
 1. **Server** (`server/`) - Backend API for centralized management, authentication, and usage tracking

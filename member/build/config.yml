@@ -4,12 +4,12 @@
 version: '3'
 # This information is used to generate the build assets.
 info:
-  companyName: "Code Together" # The name of the company
-  productName: "Code Together" # The name of the application
+  companyName: "AI Together" # The name of the company
+  productName: "AI Together" # The name of the application
   productIdentifier: "com.codeswitch.app" # The unique product identifier
   description: "Manage Claude & Codex & OpenCode relays, providers, and request logs." # The application description
-  copyright: "(c) 2025, Code Together" # Copyright text
-  comments: "Code Together desktop relay controller" # Comments
+  copyright: "(c) 2025, AI Together" # Copyright text
+  comments: "AI Together desktop relay controller" # Comments
   version: "0.4.0.1" # The application version
 # Dev mode configuration
 dev_mode:

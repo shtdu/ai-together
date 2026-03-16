@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Code Together",
+    "title": "AI Together",
     "login": "Login"
   },
   "menus": {
@@ -41,7 +41,7 @@
     },
     "main": {
       "hero": {
-        "eyebrow": "Code Together Client",
+        "eyebrow": "AI Together Client",
         "title": "Team Collaboration AI Coding",
         "lead": "The green heatmap highlights daily compute and token usage so we can monitor each vendor's load."
       },

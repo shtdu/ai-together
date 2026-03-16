@@ -1,10 +1,10 @@
 # Accessibility
 
-Code Together interfaces are designed to be accessible to users with disabilities.
+AI Together interfaces are designed to be accessible to users with disabilities.
 
 ## Purpose
 
-Ensure all users can effectively use Code Together, regardless of ability.
+Ensure all users can effectively use AI Together, regardless of ability.
 
 ## Status
 
@@ -12,7 +12,7 @@ Ensure all users can effectively use Code Together, regardless of ability.
 
 ## Accessibility Standards
 
-Code Together aims to meet:
+AI Together aims to meet:
 - **WCAG 2.1 Level AA** - Web Content Accessibility Guidelines
 - **Section 508** - U.S. federal accessibility requirements
 

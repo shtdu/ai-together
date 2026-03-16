@@ -1,6 +1,6 @@
 # Performance
 
-Code Together is designed for minimal performance impact on AI tool usage.
+AI Together is designed for minimal performance impact on AI tool usage.
 
 ## Purpose
 

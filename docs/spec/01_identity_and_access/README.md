@@ -14,7 +14,7 @@ Enable secure access control, user management, and feature differentiation based
 
 ## Overview
 
-Code Together supports two types of users with different permissions. Organizations (tenants) are completely isolated from each other. License types determine which features are available.
+AI Together supports two types of users with different permissions. Organizations (tenants) are completely isolated from each other. License types determine which features are available.
 
 ## Subdomains
 

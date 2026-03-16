@@ -1,6 +1,6 @@
 # Compliance
 
-Code Together is designed to comply with relevant data protection and security regulations.
+AI Together is designed to comply with relevant data protection and security regulations.
 
 ## Purpose
 

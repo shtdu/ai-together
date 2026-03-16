@@ -1,6 +1,6 @@
 # Security
 
-Code Together implements multiple layers of security to protect user data and system access.
+AI Together implements multiple layers of security to protect user data and system access.
 
 ## Purpose
 

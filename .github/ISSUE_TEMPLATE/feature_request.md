@@ -8,7 +8,7 @@ assignees: ''
 
 ## Feature Description
 
-A clear and concise description of the feature you'd like to see added to Code Together.
+A clear and concise description of the feature you'd like to see added to AI Together.
 
 ## Use Case
 

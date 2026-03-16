@@ -127,7 +127,7 @@ Provide managers with a comprehensive interface for managing their team's AI too
 
 ```
 ┌─────────────────────────────────────────────┐
-│ ☰  Code Together        [Admin] [Logout]    │
+│ ☰  AI Together        [Admin] [Logout]    │
 ├─────────────────────────────────────────────┤
 │ Dashboard                                     │
 │ Users                                        │

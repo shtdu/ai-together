@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ const (
 	opencodeAuthTokenValue   = "code-together"
 	opencodeSchemaURL        = "https://opencode.ai/config.json"
 	codetogetherProviderID   = "codetogether"
-	codetogetherProviderName = "Code Together"
+	codetogetherProviderName = "AI Together"
 	codetogetherProviderNpm  = "@ai-sdk/openai-compatible"
 )
 
@@ -309,7 +309,7 @@ func ensureProviderStructure(settings opencodeSettingsFile) {
 	}
 }
 
-// getCodeTogetherProvider retrieves the Code Together provider configuration
+// getCodeTogetherProvider retrieves the AI Together provider configuration
 // Returns the provider config map, or nil if not found
 func getCodeTogetherProvider(settings opencodeSettingsFile) (map[string]interface{}, error) {
 	if settings == nil {
@@ -329,7 +329,7 @@ func getCodeTogetherProvider(settings opencodeSettingsFile) (map[string]interfac
 	return ctProvider, nil
 }
 
-// setCodeTogetherProvider sets or updates the Code Together provider configuration
+// setCodeTogetherProvider sets or updates the AI Together provider configuration
 // Always uses "default" as the model ID - the relay service handles model mapping
 func setCodeTogetherProvider(settings opencodeSettingsFile, baseURL string, providers []Provider) {
 	ensureProviderStructure(settings)
@@ -345,7 +345,7 @@ func setCodeTogetherProvider(settings opencodeSettingsFile, baseURL string, prov
 	// Set the top-level model field
 	settings["model"] = modelID
 
-	// Create the Code Together provider config
+	// Create the AI Together provider config
 	ctProvider := map[string]interface{}{
 		"npm":  codetogetherProviderNpm,
 		"name": codetogetherProviderName,

@@ -106,7 +106,7 @@ Give members a simple, unobtrusive way to use AI tools with team-configured prov
 
 ```
 ┌─────────────────────────────────────────┐
-│ Code Together    [Server] [Settings] [Log] │
+│ AI Together    [Server] [Settings] [Log] │
 ├─────────────────────────────────────────┤
 │ [Usage Heatmap - GitHub style]          │
 ├─────────────────────────────────────────┤
@@ -145,7 +145,7 @@ Give members a simple, unobtrusive way to use AI tools with team-configured prov
 
 ### System Tray Menu
 
-- Show Code Together
+- Show AI Together
 - Enable/disable Claude Code proxy
 - Enable/disable Codex proxy
 - Enable/disable OpenCode proxy
@@ -183,7 +183,7 @@ Give members a simple, unobtrusive way to use AI tools with team-configured prov
 
 1. Download `CodeTogether.dmg`
 2. Open disk image
-3. Drag Code Together to Applications
+3. Drag AI Together to Applications
 4. App installs to `/Applications`
 5. Launch from Launchpad or Applications
 

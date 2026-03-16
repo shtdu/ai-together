@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This guide explains how to deploy the complete Code Together platform (Server API + Manager UI) using Docker and Docker Compose.
+This guide explains how to deploy the complete AI Together platform (Server API + Manager UI) using Docker and Docker Compose.
 
 # 🇨🇳 中国用户专用部署
 
@@ -221,7 +221,7 @@ docker exec code-together-db pg_dump -U codetogether code_together > backup_$(da
 Create `backup.sh`:
 ```bash
 #!/bin/bash
-# Backup script for Code Together database
+# Backup script for AI Together database
 
 BACKUP_DIR="./backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

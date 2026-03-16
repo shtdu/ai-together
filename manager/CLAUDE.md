@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-The Manager client is the administrative web interface for the Code Together platform. It provides team-level dashboards, usage analytics, user management, and token usage tracking for AI coding tools (Claude Code, Codex, and OpenCode).
+The Manager client is the administrative web interface for the AI Together platform. It provides team-level dashboards, usage analytics, user management, and token usage tracking for AI coding tools (Claude Code, Codex, and OpenCode).
 
 This is a **React 18 + TypeScript** single-page application (SPA) built with:
 - **Vite** for build tooling and dev server

@@ -1,6 +1,6 @@
 # Performance
 
-Code Together is designed for high performance with minimal overhead on AI tool requests.
+AI Together is designed for high performance with minimal overhead on AI tool requests.
 
 ## Purpose
 

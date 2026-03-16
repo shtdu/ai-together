@@ -1,4 +1,4 @@
-# Code Together Server
+# AI Together Server
 
 ## Air (Live Reload)
 
@@ -68,7 +68,7 @@ The server implements role-based permissions using Casbin:
 
 ### License System
 
-The Code Together server includes a license management system that controls user seat limits and AI provider configuration limits based on license tier. When no valid license is active, the system defaults to Tier 0.0 (Community) with basic limits.
+The AI Together server includes a license management system that controls user seat limits and AI provider configuration limits based on license tier. When no valid license is active, the system defaults to Tier 0.0 (Community) with basic limits.
 
 #### License Impact
 

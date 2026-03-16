@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Code Together
+// Copyright (c) 2025 AI Together
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-// Package integration provides a type-safe client for the Code Together member client API.
+// Package integration provides a type-safe client for the AI Together member client API.
 // It is generated from the OpenAPI specification at docs/client_api/server_api.yaml.
 //
 // This spec is optimized for member client integration and includes:

@@ -34,7 +34,7 @@ If applicable, add screenshots to help explain your problem.
 ## Environment
 
 - **OS**: [e.g. macOS 14, Windows 11, Ubuntu 22.04]
-- **Code Together Version**: [e.g. v1.0.0]
+- **AI Together Version**: [e.g. v1.0.0]
 - **AI Tool**: [e.g. Claude Code, Codex, OpenCode]
 - **Browser** (if applicable): [e.g. Chrome 120, Safari 17]
 

@@ -1,6 +1,6 @@
 # Licensing
 
-Code Together uses a 2-type license system: Open Source (free) and Commercial (paid). The system gracefully degrades when no license is active.
+AI Together uses a 2-type license system: Open Source (free) and Commercial (paid). The system gracefully degrades when no license is active.
 
 ## Purpose
 
