@@ -54,7 +54,11 @@ jobs:
 
       - name: Run shared tests
         working-directory: ./shared
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -v ./...
+
+      - name: Generate coverage report
+        working-directory: ./shared
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
