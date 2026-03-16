@@ -1,13 +1,5 @@
 version: 2
 updates:
-  # Root Go module
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "go"
 
   # Server Go module
   - package-ecosystem: "gomod"
@@ -43,19 +35,19 @@ updates:
   - package-ecosystem: "npm"
     directory: "/manager"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     labels:
       - "dependencies"
       - "javascript"
-    versioning-strategy: increase
+    versioning-strategy: patch
 
   # Member frontend npm package
   - package-ecosystem: "npm"
     directory: "/member/frontend"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     labels:
       - "dependencies"
       - "javascript"
       - "member"
-    versioning-strategy: increase
+    versioning-strategy: patch
