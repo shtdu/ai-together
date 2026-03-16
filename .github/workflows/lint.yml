@@ -91,6 +91,10 @@ jobs:
           go vet ./...
           echo "✓ Go vet passed"
 
+      - name: Run frontend ESLint
+        working-directory: member/frontend
+        run: npm run lint
+
   typescript-lint:
     name: TypeScript Lint
     runs-on: ubuntu-latest

@@ -59,6 +59,7 @@ member: ## Show member-specific commands
 	@echo "Member Client Commands:"
 	@echo "  make member-build       Build desktop app"
 	@echo "  make member-dev         Run with hot reload (wails3)"
+	@echo "  make member-lint        Lint frontend TypeScript/Vue code"
 	@echo "  make member-test        Run tests"
 	@echo "  make member-release     Build release package"
 	@echo "  make member-win         Build Windows package (cross-compile)"
@@ -151,7 +152,7 @@ server-linux:
 	@echo "✓ Server built: $(SERVER_BUILD_DIR)/$(SERVER_BINARY_NAME)-linux-amd64"
 
 # Member targets
-.PHONY: member-build member-dev member-test member-release member-win
+.PHONY: member-build member-dev member-test member-release member-win member-lint
 member-build:
 	@cd $(MEMBER_DIR) && $(MEMBER_TASK) build
 
@@ -166,6 +167,9 @@ member-release:
 
 member-win:
 	@cd $(MEMBER_DIR) && env ARCH=amd64 $(MEMBER_TASK) windows:package
+
+member-lint:
+	@cd $(MEMBER_DIR)/frontend && npm run lint
 
 # Manager targets
 .PHONY: manager-build manager-dev manager-lint
