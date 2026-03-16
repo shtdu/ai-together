@@ -13,7 +13,7 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import HistoryIcon from '@mui/icons-material/History'
 import GroupIcon from '@mui/icons-material/Group'
 import StorageIcon from '@mui/icons-material/Storage'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext.hooks'
 
 interface NavItem {
   label: string

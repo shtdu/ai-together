@@ -18,7 +18,7 @@ import {
 import { Visibility, VisibilityOff, ContentCopy } from '@mui/icons-material'
 import { setupApi } from '../api/setup'
 import { getErrorMessage } from '../api/client'
-import { useSetup } from '../contexts/SetupContext'
+import { useSetup } from '../contexts/SetupContext.hooks'
 
 const steps = ['Organization', 'Administrator Account', 'Complete']
 
