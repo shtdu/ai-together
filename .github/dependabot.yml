@@ -39,7 +39,7 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
-    versioning-strategy: patch
+    versioning-strategy: increase-if-necessary
 
   # Member frontend npm package
   - package-ecosystem: "npm"
@@ -50,4 +50,4 @@ updates:
       - "dependencies"
       - "javascript"
       - "member"
-    versioning-strategy: patch
+    versioning-strategy: increase-if-necessary
