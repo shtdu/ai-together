@@ -107,7 +107,7 @@ Fixes #<issue_number>
 - Understand the HTTP proxy architecture for member client issues
 
 **Solution Quality:**
-- Follow the project's design principles from `docs/epic_0/constitution.md`
+- Follow the project's design principles from `docs/design/constitution.md`
 - Implement pragmatic solutions that align with existing patterns
 - Ensure all changes are boring and obvious, not clever
 - Maintain backward compatibility unless explicitly required

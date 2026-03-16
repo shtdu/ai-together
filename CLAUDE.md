@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Design Constitution
 
-**IMPORTANT:** Before making any architectural or technical decisions, read **`docs/epic_0/constitution.md`**.
+**IMPORTANT:** Before making any architectural or technical decisions, read **`docs/design/constitution.md`**.
 
 The constitution captures the foundational principles that govern all technical decisions:
 
@@ -27,7 +27,7 @@ The constitution captures the foundational principles that govern all technical 
 
 **Violations** to core principles require explicit justification and team approval.
 
-**See also:** [`docs/epic_0/architecture.md`](docs/epic_0/architecture.md) for detailed system design, data flows, security architecture, and deployment patterns.
+**See also:** [`docs/design/architecture.md`](docs/design/architecture.md) for detailed system design, data flows, security architecture, and deployment patterns.
 
 ## Product Requirements (Single Source of Truth)
 
@@ -69,10 +69,10 @@ This project uses a three-tier documentation structure:
 | Tier | Location | Purpose | Audience |
 |------|----------|---------|----------|
 | **Product Requirements** | `vibe_doc/` | WHAT to build (features, user stories, acceptance criteria) | PMs, stakeholders, engineers |
-| **Technical Design** | `docs/epic_0/` | HOW to architect (principles, patterns, system design) | Engineers, architects |
+| **Technical Design** | `docs/design/` | HOW to architect (principles, patterns, system design) | Engineers, architects |
 | **Implementation Guides** | `*/CLAUDE.md` | HOW to code (module-specific patterns, workflows) | Engineers |
 
-**Workflow:** When implementing features, start with product requirements (`vibe_doc/`), reference technical design (`docs/epic_0/`) for architectural guidance, and consult module guides (`*/CLAUDE.md`) for implementation specifics.
+**Workflow:** When implementing features, start with product requirements (`vibe_doc/`), reference technical design (`docs/design/`) for architectural guidance, and consult module guides (`*/CLAUDE.md`) for implementation specifics.
 
 ## Project Overview
 
@@ -322,8 +322,8 @@ cd manager && pnpm lint  # Lint TypeScript
 ### Technical Design (Architecture & Constitution)
 
 **Start Here:**
-- `docs/epic_0/constitution.md` - **Design principles, technology stack, patterns, anti-patterns (READ FIRST)**
-- `docs/epic_0/architecture.md` - **System architecture, data flows, security, deployment, scalability**
+- `docs/design/constitution.md` - **Design principles, technology stack, patterns, anti-patterns (READ FIRST)**
+- `docs/design/architecture.md` - **System architecture, data flows, security, deployment, scalability**
 
 **Implementation Guides:**
 - `docs/phase_*/` - Implementation phase documentation
