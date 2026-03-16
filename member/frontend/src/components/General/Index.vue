@@ -6,7 +6,6 @@ import { Dialogs } from '@wailsio/runtime'
 import ListItem from '../Setting/ListRow.vue'
 import LanguageSwitcher from '../Setting/LanguageSwitcher.vue'
 import ThemeSetting from '../Setting/ThemeSetting.vue'
-import BaseModal from '../common/BaseModal.vue'
 import { fetchAppSettings, saveAppSettings, type AppSettings } from '../../services/appSettings'
 import {
   fetchConfigImportStatus,
@@ -18,7 +17,6 @@ import {
 } from '../../services/configImport'
 import { showToast } from '../../utils/toast'
 import BaseButton from '../common/BaseButton.vue'
-import BaseInput from '../common/BaseInput.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -127,7 +125,7 @@ const canImportActive = computed(() =>
   hasCustomSelection.value ? canImportCustom.value : canImportDefault.value,
 )
 // TODO: Intended to hide it by Gene
-const showImportRow = computed(() => false && Boolean(importStatus.value) || hasCustomSelection.value)
+const showImportRow = computed(() => hasCustomSelection.value)
 const importPathLabel = computed(() => {
   if (!configPath.value) return ''
   return t('components.general.import.path', { path: configPath.value })

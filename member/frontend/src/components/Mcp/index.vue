@@ -422,7 +422,7 @@ const persistServers = async () => {
   }
 }
 
-const iconStyle = (name: string) => ({
+const iconStyle = (_name: string) => ({
   backgroundColor: 'rgba(255,255,255,0.08)',
   color: 'var(--text-primary)',
 })

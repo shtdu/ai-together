@@ -556,10 +556,6 @@ const applyFilters = async () => {
   resetTimer()
 }
 
-const refreshLogs = () => {
-  void loadDashboard()
-}
-
 const manualRefresh = () => {
   resetTimer()
   void loadDashboard()
@@ -620,11 +616,6 @@ const durationColor = (value?: number) => {
   if (value < 2) return 'fast'
   if (value < 5) return 'medium'
   return 'slow'
-}
-
-const formatNumber = (value?: number) => {
-  if (value === undefined || value === null) return '—'
-  return value.toLocaleString()
 }
 
 const formatCurrency = (value?: number) => {
