@@ -3,18 +3,20 @@ FROM node:alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Install pnpm globally and cache it
+RUN npm install -g pnpm
+
+# Copy dependency files first for better caching
 COPY package.json pnpm-lock.yaml ./
 
-# Install pnpm and dependencies
-RUN npm install -g pnpm && \
-    pnpm install --frozen-lockfile
+# Install dependencies with frozen lockfile (this layer will be cached unless package.json changes)
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN pnpm build
+# Build the application with cache enabled
+RUN pnpm build --mode production
 
 # Runtime stage
 FROM nginx:alpine

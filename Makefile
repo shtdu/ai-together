@@ -27,6 +27,7 @@ help: ## Display this help message
 	@echo ""
 	@echo "Docker:"
 	@echo "  make docker             Build all Docker images (current arch)"
+	@echo "  make docker-parallel    Build all Docker images in parallel (faster)"
 	@echo "  make docker-multi       Build and push multi-arch Docker images"
 	@echo "  make docker-server      Build server Docker image"
 	@echo "  make docker-manager     Build manager Docker image"
@@ -207,11 +208,23 @@ DOCKER_REGISTRY ?= genewoo
 SERVER_IMAGE = $(DOCKER_REGISTRY)/ai-together-server
 MANAGER_IMAGE = $(DOCKER_REGISTRY)/ai-together-manager
 
+# Docker build optimization
+DOCKER_BUILDKIT = 1
+export DOCKER_BUILDKIT
+
 docker: docker-server docker-manager ## Build all Docker images
+
+docker-parallel: ## Build all Docker images in parallel (faster)
+	@echo "Building all Docker images in parallel..."
+	@$(MAKE) docker-server & $(MAKE) docker-manager && wait
 
 docker-server: ## Build server Docker image for current architecture
 	@echo "Building server image (tag: $(DOCKER_TAG))..."
-	docker build -f server/Dockerfile -t $(SERVER_IMAGE):$(DOCKER_TAG) .
+	docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+		-f server/Dockerfile \
+		-t $(SERVER_IMAGE):$(DOCKER_TAG) \
+		--cache-from $(SERVER_IMAGE):latest \
+		.
 	@echo "✓ Server image built: $(SERVER_IMAGE):$(DOCKER_TAG)"
 
 docker-server-multi: ## Build server Docker image for multiple architectures (amd64, arm64)
@@ -224,7 +237,11 @@ docker-server-multi: ## Build server Docker image for multiple architectures (am
 
 docker-manager: ## Build manager Docker image for current architecture
 	@echo "Building manager image (tag: $(DOCKER_TAG))..."
-	docker build -f manager/Dockerfile -t $(MANAGER_IMAGE):$(DOCKER_TAG) manager/
+	docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+		-f manager/Dockerfile \
+		-t $(MANAGER_IMAGE):$(DOCKER_TAG) \
+		--cache-from $(MANAGER_IMAGE):latest \
+		manager/
 	@echo "✓ Manager image built: $(MANAGER_IMAGE):$(DOCKER_TAG)"
 
 docker-manager-multi: ## Build manager Docker image for multiple architectures (amd64, arm64)
