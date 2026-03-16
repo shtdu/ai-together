@@ -107,16 +107,20 @@ jobs:
         working-directory: member
         run: go mod tidy
 
-      - name: Run tests with coverage
+      - name: Run tests without coverage
         working-directory: member
-        run: go test -v -coverprofile=coverage.out -covermode=atomic ./... || echo "Coverage generation had warnings"
-        continue-on-error: true
+        run: go test -v  ./...
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./member/coverage.out
-          flags: member
-          name: member-coverage
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Run tests with coverage
+      #   working-directory: member
+      #   run: go test -v -coverprofile=coverage.out -covermode=atomic ./... || echo "Coverage generation had warnings"
+      #   continue-on-error: true
+
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     files: ./member/coverage.out
+      #     flags: member
+      #     name: member-coverage
+      #     fail_ci_if_error: false
+      #     token: ${{ secrets.CODECOV_TOKEN }}
