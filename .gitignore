@@ -80,4 +80,5 @@ shared/tools/hook-browser/hook-browser
 # Test coverage
 *.out
 *.html
+!manager/index.html
 coverage/
