@@ -19,9 +19,6 @@
 */dist/
 # */build/
 node_modules/
-frontend/node_modules
-frontend/bindings
-frontend/dist
 
 # macOS
 .DS_Store
@@ -61,8 +58,6 @@ server/private.key
 member/frontend/node_modules/*
 member/frontend/dist/*
 member/frontend/bindings/*
-! member/build/
-! member/frontend/index.html
 member/tmp
 member/codeswitch
 member/bin
@@ -81,4 +76,5 @@ shared/tools/hook-browser/hook-browser
 # Test coverage
 *.out
 *.html
+!member/frontend/index.html
 coverage/
