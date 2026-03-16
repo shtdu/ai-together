@@ -47,19 +47,6 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'manager/pnpm-lock.yaml'
 
-      - name: Install System Dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
-
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.60
-
-      - name: Install frontend dependencies
-        working-directory: ./member/frontend
-        run: npm install
-
       - name: Create test environment file
         working-directory: ./integration
         run: |

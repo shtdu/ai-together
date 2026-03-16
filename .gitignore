@@ -60,7 +60,8 @@ server/private.key
 # Member
 member/frontend/node_modules/*
 member/frontend/dist/*
-member/frontend/bindings/*
+# member/frontend/bindings/*
+!member/frontend/index.html
 member/build/
 member/tmp
 member/codeswitch
