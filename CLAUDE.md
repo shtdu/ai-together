@@ -277,6 +277,23 @@ make manager-dev                   # Run manager UI in dev mode (port 3000)
 
 See module-specific CLAUDE.md files for detailed development workflows and patterns.
 
+## Git Operations & PR Validation
+
+**Before pushing changes**, follow the validation checklist in **[`GITOPS.md`](GITOPS.md)**.
+
+The GITOPS.md guide covers:
+- Pre-commit validation checks (formatting, vetting, testing)
+- PR template checklist
+- Semantic commit conventions
+- Module-specific validation requirements
+- CI/CD requirements
+
+**Quick validation:**
+```bash
+make test              # Run all tests
+cd manager && pnpm lint  # Lint TypeScript
+```
+
 ## Common Issues
 
 - **".app cannot be opened"**: See `member/CLAUDE.md` for Wails build asset fixes

@@ -10,6 +10,18 @@ Guidance for Claude Code when working with the integration test module.
 
 **Status:** 141/141 tests passing (100%)
 
+## Pre-Push Validation
+
+**Before pushing changes**, follow the validation checklist in **[../GITOPS.md](../GITOPS.md)**.
+
+Integration-specific checks:
+```bash
+cd integration
+go fmt ./...
+go vet ./...
+go test ./... -v
+```
+
 ### Architecture
 
 - **Separate `go.mod`** (module: `github.com/code-together/integration`)

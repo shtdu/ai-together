@@ -9,6 +9,18 @@ The server is a Go backend that provides centralized management, authentication,
 **Module name:** `switch-server`
 **Module path:** `server/`
 
+## Pre-Push Validation
+
+**Before pushing changes**, follow the validation checklist in **[../../GITOPS.md](../../GITOPS.md)**.
+
+Server-specific checks:
+```bash
+cd server
+go fmt ./...
+go vet ./...
+go test ./...
+```
+
 ## Server-Specific Architecture
 
 ### Dependency Wiring in server.go

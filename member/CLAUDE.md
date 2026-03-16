@@ -4,6 +4,18 @@ Wails 3 desktop app running HTTP proxy on port 18100. Routes AI tool requests (C
 
 **Module:** `codeswitch` | **Path:** `member/`
 
+## Pre-Push Validation
+
+**Before pushing changes**, follow the validation checklist in **[../../GITOPS.md](../../GITOPS.md)**.
+
+Member-specific checks:
+```bash
+cd member
+go fmt ./...
+go vet ./...
+go test ./...
+```
+
 ## Build First
 
 **Always verify compilation after changes:**

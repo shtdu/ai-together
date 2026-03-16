@@ -16,6 +16,18 @@ This is a **React 18 + TypeScript** single-page application (SPA) built with:
 
 The application communicates with the backend server (`/server`) via REST API and includes authentication, role-based access control (RBAC), and real-time data refresh capabilities.
 
+## Pre-Push Validation
+
+**Before pushing changes**, follow the validation checklist in **[../GITOPS.md](../GITOPS.md)**.
+
+Manager-specific checks:
+```bash
+cd manager
+pnpm lint                # Lint TypeScript code
+pnpm build               # Verify production build
+pnpm test                # Run tests (when configured)
+```
+
 ## Development Workflow
 
 ### Prerequisites
