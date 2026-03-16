@@ -12,6 +12,7 @@ integration_test.go
 # Development files
 .env
 .env.local
+.env.*
 .air.toml
 tmp/
 
@@ -29,6 +30,7 @@ Thumbs.db
 # Documentation
 *.md
 !README.md
+docs/
 
 # Node modules (if any)
 node_modules/
@@ -36,3 +38,23 @@ ui/
 
 # Scripts
 scripts/
+
+# Additional cache and build artifacts
+coverage.out
+coverage.html
+*.test
+vendor/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker files (not needed in image)
+Dockerfile*
+.dockerignore

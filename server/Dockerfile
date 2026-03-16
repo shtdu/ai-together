@@ -3,10 +3,23 @@ FROM golang:1.25-bookworm AS builder
 
 WORKDIR /build
 
-# Copy Makefile and project structure
-COPY Makefile ./
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files first for better caching
+COPY shared/go.mod shared/go.sum ./shared/
+COPY server/go.mod server/go.sum ./server/
+
+# Download dependencies (this layer will be cached unless go.mod changes)
+RUN cd shared && go mod download && \
+    cd ../server && go mod download
+
+# Copy source code
 COPY shared/ ./shared/
 COPY server/ ./server/
+COPY Makefile ./
 
 # Build production binary optimized with -ldflags
 RUN make server-production

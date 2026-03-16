@@ -4,9 +4,35 @@ dist
 .gitignore
 *.md
 .env
+.env.*
 .env.local
 .vscode
 .idea
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Test and coverage
+coverage
+*.test.ts
+*.test.tsx
+__tests__/
+
+# Build artifacts
+.cache
+.vite
+tsconfig.tsbuildinfo
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker files (not needed in image)
+Dockerfile*
+.dockerignore
+
+# Additional development files
+.prettierrc*
+.eslintrc*
+.editorconfig
