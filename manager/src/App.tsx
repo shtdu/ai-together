@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './contexts/AuthContext'
-import { useSetup } from './contexts/SetupContext'
+import { useAuth } from './contexts/AuthContext.hooks'
+import { useSetup } from './contexts/SetupContext.hooks'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/layout/AppLayout'
 import LoginPage from './pages/LoginPage'

@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
   type ReactNode,
@@ -17,7 +16,8 @@ interface SetupContextValue extends SetupState {
   checkSetupStatus: () => Promise<void>
 }
 
-const SetupContext = createContext<SetupContextValue | undefined>(undefined)
+// eslint-disable-next-line react-refresh/only-export-components
+export const SetupContext = createContext<SetupContextValue | undefined>(undefined)
 
 interface SetupProviderProps {
   children: ReactNode
@@ -62,12 +62,4 @@ export function SetupProvider({ children }: SetupProviderProps) {
       {children}
     </SetupContext.Provider>
   )
-}
-
-export function useSetup(): SetupContextValue {
-  const context = useContext(SetupContext)
-  if (context === undefined) {
-    throw new Error('useSetup must be used within a SetupProvider')
-  }
-  return context
 }

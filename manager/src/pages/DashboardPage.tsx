@@ -14,7 +14,7 @@ import {
 import Grid from '@mui/material/Grid2'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import { dashboardApi } from '../api/dashboard'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/AuthContext.hooks'
 import ActivityChart from '../components/charts/ActivityChart'
 import ProviderRankingChart from '../components/charts/ProviderRankingChart'
 import MemberStatsTable from '../components/MemberStatsTable'

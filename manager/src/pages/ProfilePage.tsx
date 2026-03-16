@@ -9,7 +9,7 @@ import {
   Divider,
 } from '@mui/material'
 import Grid from '@mui/material/Grid2'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/AuthContext.hooks'
 
 export default function ProfilePage() {
   const { user } = useAuth()
