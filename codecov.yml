@@ -29,12 +29,17 @@ flag_management:
       - type: patch
         target: 50%
 
-# Ignore generated files and test utilities
+# Ignore generated files, test utilities, and non-Go modules
 ignore:
+  # Generated code
   - "server/internal/db/*.go"
   - "shared/integration/generated.go"
   - "shared/integration_manager/generated.go"
+
+  # Member client (Wails desktop app with Vue.js frontend - not Go server code)
   - "member/**"
+
+  # Test files and utilities
   - "**/*_test.go"
   - "**/testutil/**"
   - "**/scripts/**"
