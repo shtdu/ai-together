@@ -121,8 +121,8 @@ func TestParseGitRemoteOutputFields(t *testing.T) {
 	if remotes[0].Name != "origin" {
 		t.Errorf("Expected Name 'origin', got '%s'", remotes[0].Name)
 	}
-	if remotes[0].URL != "git@github.com:shtdu/code-together.git" {
-		t.Errorf("Expected URL 'git@github.com:shtdu/code-together.git', got '%s'", remotes[0].URL)
+	if remotes[0].URL != "git@github.com:username/repository.git" {
+		t.Errorf("Expected URL 'git@github.com:username/repository.git', got '%s'", remotes[0].URL)
 	}
 	if remotes[0].Type != "fetch" {
 		t.Errorf("Expected Type 'fetch', got '%s'", remotes[0].Type)
@@ -257,14 +257,14 @@ func TestGetGitMetaFast(t *testing.T) {
 	}
 }
 
-// TestGetGitMetaFast_NonGitDirectory verifies GetGitMetaFast returns nil,nil for non-git directories.
+// TestGetGitMetaFast_NonGitDirectory verifies GetGitMetaFast returns nil,ErrNotGitRepo for non-git directories.
 func TestGetGitMetaFast_NonGitDirectory(t *testing.T) {
 	// Create a temporary directory (not a git repo)
 	tmpDir := t.TempDir()
 
 	meta, err := GetGitMetaFast(tmpDir)
-	if err != nil {
-		t.Fatalf("Expected nil error for non-git directory, got: %v", err)
+	if err != ErrNotGitRepo {
+		t.Fatalf("Expected ErrNotGitRepo for non-git directory, got: %v", err)
 	}
 	if meta != nil {
 		t.Fatalf("Expected nil GitMeta for non-git directory, got: %+v", meta)
