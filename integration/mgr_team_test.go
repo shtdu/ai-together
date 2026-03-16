@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
 	"context"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	integration_manager "github.com/code-together/integration_manager"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // ============================================================================

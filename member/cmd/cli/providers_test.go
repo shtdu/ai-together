@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package main
 
 import (
@@ -61,35 +60,35 @@ func TestInMemoryProviderService_LoadProviders_Success(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		kind           string
-		wantCount      int
-		wantFirstName  string
-		wantFirstTint  string
+		name            string
+		kind            string
+		wantCount       int
+		wantFirstName   string
+		wantFirstTint   string
 		wantFirstAccent string
 	}{
 		{
-			name:           "claude providers",
-			kind:           "claude",
-			wantCount:      1,
-			wantFirstName:  "test-claude",
-			wantFirstTint:  "rgba(15, 23, 42, 0.12)",
+			name:            "claude providers",
+			kind:            "claude",
+			wantCount:       1,
+			wantFirstName:   "test-claude",
+			wantFirstTint:   "rgba(15, 23, 42, 0.12)",
 			wantFirstAccent: "#0a84ff",
 		},
 		{
-			name:           "codex providers",
-			kind:           "codex",
-			wantCount:      1,
-			wantFirstName:  "test-codex",
-			wantFirstTint:  "rgba(236, 72, 153, 0.16)",
+			name:            "codex providers",
+			kind:            "codex",
+			wantCount:       1,
+			wantFirstName:   "test-codex",
+			wantFirstTint:   "rgba(236, 72, 153, 0.16)",
 			wantFirstAccent: "#ec4899",
 		},
 		{
-			name:           "opencode providers",
-			kind:           "opencode",
-			wantCount:      1,
-			wantFirstName:  "test-opencode",
-			wantFirstTint:  "rgba(139, 92, 246, 0.16)",
+			name:            "opencode providers",
+			kind:            "opencode",
+			wantCount:       1,
+			wantFirstName:   "test-opencode",
+			wantFirstTint:   "rgba(139, 92, 246, 0.16)",
 			wantFirstAccent: "#8b5cf6",
 		},
 	}

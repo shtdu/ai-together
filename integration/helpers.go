@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
@@ -38,11 +37,11 @@ const (
 	LicenseFixturesDir = "testdata/licenses"
 
 	// License fixture names
-	LicenseOpenSource      = "opensource.pem"
-	LicenseCommercial      = "commercial.pem"
-	LicenseExpired         = "expired.pem"
-	LicenseZeroSeats       = "zero_seats.pem"
-	LicenseImmediateExpiry = "immediate_expiry.pem"
+	LicenseOpenSource       = "opensource.pem"
+	LicenseCommercial       = "commercial.pem"
+	LicenseExpired          = "expired.pem"
+	LicenseZeroSeats        = "zero_seats.pem"
+	LicenseImmediateExpiry  = "immediate_expiry.pem"
 	LicenseInvalidSignature = "invalid_signature.pem"
 )
 

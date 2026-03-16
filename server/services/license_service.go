@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -181,12 +180,12 @@ func (s *LicenseService) GetLicenseUsage(ctx context.Context, tenantID int64) (*
 	}
 
 	return &models.LicenseUsage{
-		License:          *license,
-		CurrentUsers:     currentUsers,
-		SeatsRemaining:   seatsRemaining, // Deprecated but kept for backward compatibility
-		CurrentTeams:     currentTeams,
-		TeamsRemaining:   teamsRemaining,
-		ProviderCounts:   providerCounts,
+		License:        *license,
+		CurrentUsers:   currentUsers,
+		SeatsRemaining: seatsRemaining, // Deprecated but kept for backward compatibility
+		CurrentTeams:   currentTeams,
+		TeamsRemaining: teamsRemaining,
+		ProviderCounts: providerCounts,
 	}, nil
 }
 
@@ -270,15 +269,15 @@ func (s *LicenseService) ActivateLicense(ctx context.Context, tenantID int64, li
 
 	// Create license object
 	license := &models.License{
-		TenantID:           tenantID,
-		LicenseID:          decoded.ID,
-		LicenseType:        licenseData.LicenseType,
-		MaxSeats:           licenseData.MaxSeats,
-		MaxTeams:           licenseData.MaxTeams,
-		DataRetentionDays:  licenseData.DataRetentionDays,
-		LicenseKey:         licenseKeyPEM,
-		IssuedAt:           time.Unix(decoded.IssuedAt, 0),
-		ExpiresAt:          time.Unix(decoded.ExpiredAt, 0),
+		TenantID:          tenantID,
+		LicenseID:         decoded.ID,
+		LicenseType:       licenseData.LicenseType,
+		MaxSeats:          licenseData.MaxSeats,
+		MaxTeams:          licenseData.MaxTeams,
+		DataRetentionDays: licenseData.DataRetentionDays,
+		LicenseKey:        licenseKeyPEM,
+		IssuedAt:          time.Unix(decoded.IssuedAt, 0),
+		ExpiresAt:         time.Unix(decoded.ExpiredAt, 0),
 	}
 
 	// Store decoded values in database
@@ -309,11 +308,11 @@ func (s *LicenseService) GetEffectiveLicense(ctx context.Context, tenantID int64
 
 	// Return default license (no DB query needed)
 	return &models.License{
-		TenantID:           tenantID,
-		LicenseType:        DefaultLicenseType,
-		MaxSeats:           DefaultMaxSeats,
-		MaxTeams:           DefaultMaxTeams,
-		DataRetentionDays:  DefaultDataRetentionDays,
+		TenantID:          tenantID,
+		LicenseType:       DefaultLicenseType,
+		MaxSeats:          DefaultMaxSeats,
+		MaxTeams:          DefaultMaxTeams,
+		DataRetentionDays: DefaultDataRetentionDays,
 	}
 }
 
@@ -330,22 +329,22 @@ func (s *LicenseService) GetTiers() map[string]interface{} {
 	return map[string]interface{}{
 		"license_types": []map[string]interface{}{
 			{
-				"type":                 "opensource",
-				"name":                 "Open Source",
-				"max_seats":            -1, // unlimited (soft limit)
-				"max_providers":        -1, // unlimited
-				"max_teams":            1,  // hard limit
-				"data_retention_days":  7,
-				"features":             []string{"Basic provider management", "Personal usage tracking", "Unlimited team members"},
+				"type":                "opensource",
+				"name":                "Open Source",
+				"max_seats":           -1, // unlimited (soft limit)
+				"max_providers":       -1, // unlimited
+				"max_teams":           1,  // hard limit
+				"data_retention_days": 7,
+				"features":            []string{"Basic provider management", "Personal usage tracking", "Unlimited team members"},
 			},
 			{
-				"type":                 "commercial",
-				"name":                 "Commercial",
-				"max_seats":            100, // soft limit (informational)
-				"max_providers":        -1,  // unlimited
-				"max_teams":            -1,  // unlimited (hard limit)
-				"data_retention_days":  90,
-				"features":             []string{"All Open Source features", "Team analytics dashboard", "Usage data export", "Multi-team support", "90-day data retention"},
+				"type":                "commercial",
+				"name":                "Commercial",
+				"max_seats":           100, // soft limit (informational)
+				"max_providers":       -1,  // unlimited
+				"max_teams":           -1,  // unlimited (hard limit)
+				"data_retention_days": 90,
+				"features":            []string{"All Open Source features", "Team analytics dashboard", "Usage data export", "Multi-team support", "90-day data retention"},
 			},
 		},
 	}
@@ -426,15 +425,15 @@ func (s *LicenseService) VerifyLicenseIntegrity(ctx context.Context, tenantID in
 	if len(mismatches) > 0 {
 		// Create corrected license object with values from the decoded license key
 		correctedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          decoded.ID,
-			LicenseType:        licenseData.LicenseType,
-			MaxSeats:           licenseData.MaxSeats,
-			MaxTeams:           licenseData.MaxTeams,
-			DataRetentionDays:  licenseData.DataRetentionDays,
-			LicenseKey:         storedLicense.LicenseKey,
-			IssuedAt:           time.Unix(decoded.IssuedAt, 0),
-			ExpiresAt:          time.Unix(decoded.ExpiredAt, 0),
+			TenantID:          tenantID,
+			LicenseID:         decoded.ID,
+			LicenseType:       licenseData.LicenseType,
+			MaxSeats:          licenseData.MaxSeats,
+			MaxTeams:          licenseData.MaxTeams,
+			DataRetentionDays: licenseData.DataRetentionDays,
+			LicenseKey:        storedLicense.LicenseKey,
+			IssuedAt:          time.Unix(decoded.IssuedAt, 0),
+			ExpiresAt:         time.Unix(decoded.ExpiredAt, 0),
 		}
 
 		// Update database with corrected values

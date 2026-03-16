@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -65,13 +64,13 @@ type providerAdapter struct {
 	p *Provider
 }
 
-func (a *providerAdapter) GetID() int64           { return int64(a.p.ID) }
-func (a *providerAdapter) GetName() string        { return a.p.Name }
-func (a *providerAdapter) GetAPIURL() string       { return a.p.APIURL }
-func (a *providerAdapter) GetAPIKey() string       { return a.p.APIKey }
-func (a *providerAdapter) GetKind() string         { return a.p.Tint } // Tint maps to Kind
-func (a *providerAdapter) IsEnabled() bool         { return a.p.Enabled }
-func (a *providerAdapter) GetLevel() int           { return a.p.Level }
+func (a *providerAdapter) GetID() int64      { return int64(a.p.ID) }
+func (a *providerAdapter) GetName() string   { return a.p.Name }
+func (a *providerAdapter) GetAPIURL() string { return a.p.APIURL }
+func (a *providerAdapter) GetAPIKey() string { return a.p.APIKey }
+func (a *providerAdapter) GetKind() string   { return a.p.Tint } // Tint maps to Kind
+func (a *providerAdapter) IsEnabled() bool   { return a.p.Enabled }
+func (a *providerAdapter) GetLevel() int     { return a.p.Level }
 
 func (a *providerAdapter) GetModelMapping() map[string]string {
 	if a.p.ModelMapping == nil {

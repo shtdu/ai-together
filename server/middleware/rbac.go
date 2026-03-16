@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package middleware
 
 import (
@@ -21,8 +20,8 @@ import (
 	"net/http"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/gin-gonic/gin"
 	"github.com/casbin/casbin/v2/model"
+	"github.com/gin-gonic/gin"
 )
 
 //go:embed rbac_model.conf

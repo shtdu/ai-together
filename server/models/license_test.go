@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package models
 
 import (
@@ -25,9 +24,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	licenseLib "github.com/vitalvas/go-license/license"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	licenseLib "github.com/vitalvas/go-license/license"
 )
 
 // GenerateTestKeyPair generates a test Ed25519 key pair for license testing
@@ -74,15 +73,15 @@ func GetTestPublicKey(publicKey ed25519.PublicKey) string {
 // SetupTestLicense creates a test license object for testing
 func SetupTestLicense(tenantID int64, licenseType string, maxSeats int, maxTeams int, dataRetentionDays int, daysValid int) *License {
 	return &License{
-		TenantID:           tenantID,
-		LicenseID:          fmt.Sprintf("test-license-%d", tenantID),
-		LicenseType:        licenseType,
-		MaxSeats:           maxSeats,
-		MaxTeams:           maxTeams,
-		DataRetentionDays:  dataRetentionDays,
-		LicenseKey:         "test-license-key",
-		IssuedAt:           time.Now(),
-		ExpiresAt:          time.Now().Add(time.Duration(daysValid) * 24 * time.Hour),
+		TenantID:          tenantID,
+		LicenseID:         fmt.Sprintf("test-license-%d", tenantID),
+		LicenseType:       licenseType,
+		MaxSeats:          maxSeats,
+		MaxTeams:          maxTeams,
+		DataRetentionDays: dataRetentionDays,
+		LicenseKey:        "test-license-key",
+		IssuedAt:          time.Now(),
+		ExpiresAt:         time.Now().Add(time.Duration(daysValid) * 24 * time.Hour),
 	}
 }
 
@@ -129,9 +128,9 @@ func TestLicenseIsValid(t *testing.T) {
 		{
 			name: "valid license",
 			license: &License{
-				LicenseID:    "test-license-id",
-				LicenseType:  "commercial",
-				ExpiresAt:    time.Now().Add(24 * time.Hour),
+				LicenseID:   "test-license-id",
+				LicenseType: "commercial",
+				ExpiresAt:   time.Now().Add(24 * time.Hour),
 			},
 			expected: true,
 		},
@@ -216,10 +215,10 @@ func TestLicenseIsExpired(t *testing.T) {
 
 func TestLicenseGetLicenseType(t *testing.T) {
 	tests := []struct {
-		name          string
-		licenseType   string
-		oldTier       string // for backward compatibility testing
-		expected      string
+		name        string
+		licenseType string
+		oldTier     string // for backward compatibility testing
+		expected    string
 	}{
 		{"opensource type", "opensource", "", "opensource"},
 		{"commercial type", "commercial", "", "commercial"},
@@ -266,10 +265,10 @@ func TestLicenseMaxProvidersPerKind(t *testing.T) {
 
 func TestLicenseLicenseTypeName(t *testing.T) {
 	tests := []struct {
-		name          string
-		licenseType   string
-		oldTier       string
-		expected      string
+		name        string
+		licenseType string
+		oldTier     string
+		expected    string
 	}{
 		{"Open Source", "opensource", "", "Open Source"},
 		{"Commercial", "commercial", "", "Commercial"},
@@ -294,11 +293,11 @@ func TestLicenseLicenseTypeName(t *testing.T) {
 
 func TestLicenseGetMaxTeams(t *testing.T) {
 	tests := []struct {
-		name          string
-		licenseType   string
-		maxTeams      int
-		oldTier       string
-		expected      int
+		name        string
+		licenseType string
+		maxTeams    int
+		oldTier     string
+		expected    int
 	}{
 		{"opensource explicit", "opensource", 1, "", 1},
 		{"commercial unlimited", "commercial", -1, "", -1},
@@ -321,11 +320,11 @@ func TestLicenseGetMaxTeams(t *testing.T) {
 
 func TestLicenseGetDataRetentionDays(t *testing.T) {
 	tests := []struct {
-		name                string
-		licenseType         string
-		dataRetentionDays   int
-		oldTier             string
-		expected            int
+		name              string
+		licenseType       string
+		dataRetentionDays int
+		oldTier           string
+		expected          int
 	}{
 		{"opensource explicit", "opensource", 7, "", 7},
 		{"commercial explicit", "commercial", 90, "", 90},
@@ -348,10 +347,10 @@ func TestLicenseGetDataRetentionDays(t *testing.T) {
 
 func TestLicenseUsageSeatsRemaining(t *testing.T) {
 	tests := []struct {
-		name              string
-		maxSeats          int
-		currentUsers      int
-		seatsRemaining    int
+		name           string
+		maxSeats       int
+		currentUsers   int
+		seatsRemaining int
 	}{
 		{"under limit", 10, 5, 5},
 		{"at limit", 10, 10, 0},
@@ -496,7 +495,7 @@ func TestLicenseComprehensive(t *testing.T) {
 		assert.Equal(t, "commercial", license.GetLicenseType())
 		assert.Equal(t, "Commercial", license.LicenseTypeName())
 		assert.Equal(t, -1, license.MaxProvidersPerKind()) // unlimited
-		assert.Equal(t, -1, license.GetMaxTeams()) // unlimited for commercial
+		assert.Equal(t, -1, license.GetMaxTeams())         // unlimited for commercial
 		assert.Equal(t, 90, license.GetDataRetentionDays())
 	})
 

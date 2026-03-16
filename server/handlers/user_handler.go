@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -97,8 +96,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error:  "Invalid request",
-			Code:   models.ErrCodeValidation,
+			Error:   "Invalid request",
+			Code:    models.ErrCodeValidation,
 			Details: err.Error(),
 		})
 		return
@@ -160,8 +159,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error:  "Invalid request",
-			Code:   models.ErrCodeValidation,
+			Error:   "Invalid request",
+			Code:    models.ErrCodeValidation,
 			Details: err.Error(),
 		})
 		return

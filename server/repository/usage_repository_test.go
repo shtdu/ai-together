@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 //go:build integration
 
 package repository
@@ -46,14 +45,14 @@ func TestUsageRepository_CreateUsageRecord_Success(t *testing.T) {
 	usage := models.UsageRecord{
 		TenantID:     tenantID,
 		UserID:       userID,
-		Platform:      "claude-code",
-		Model:         "claude-3-5-sonnet",
-		Provider:      "claude",
-		HttpCode:      200,
-		InputTokens:   1000,
-		OutputTokens:  500,
-		IsStream:      false,
-		DurationSec:   1.5,
+		Platform:     "claude-code",
+		Model:        "claude-3-5-sonnet",
+		Provider:     "claude",
+		HttpCode:     200,
+		InputTokens:  1000,
+		OutputTokens: 500,
+		IsStream:     false,
+		DurationSec:  1.5,
 	}
 
 	err := repo.CreateUsageRecord(ctx, usage)

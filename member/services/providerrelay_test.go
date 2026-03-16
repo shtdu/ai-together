@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -21,8 +20,8 @@ import (
 
 	"codeswitch/internal/models"
 
-	"github.com/tidwall/gjson"
 	"github.com/code-together/shared/streaming"
+	"github.com/tidwall/gjson"
 )
 
 // Test helper functions to convert between RequestLog and TokenUsage
@@ -125,11 +124,11 @@ func TestReplaceModelInRequestBody(t *testing.T) {
 			expectedModel: "any-model",
 		},
 		{
-			name:           "Empty JSON - no error (sjson sets it)",
-			inputJSON:      `{}`,
-			newModel:       "any-model",
-			expectError:    false, // sjson will set the field
-			expectedModel:  "any-model",
+			name:          "Empty JSON - no error (sjson sets it)",
+			inputJSON:     `{}`,
+			newModel:      "any-model",
+			expectError:   false, // sjson will set the field
+			expectedModel: "any-model",
 		},
 	}
 

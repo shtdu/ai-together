@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -433,7 +432,7 @@ func TestLoginHandler_ValidationError(t *testing.T) {
 	router := setupTestRouter(handler)
 
 	tests := []struct {
-		name       string
+		name        string
 		requestBody map[string]interface{}
 	}{
 		{

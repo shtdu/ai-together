@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -59,25 +58,25 @@ func TestProviderService_CreateProvider_ModelMappingConversion(t *testing.T) {
 	service := NewProviderService(mockRepo)
 
 	testProvider := &models.Provider{
-		ID:       1,
-		Name:     "Test Provider",
-		APIURL:   "https://api.example.com",
-		APIKey:   "key123",
-		Kind:     "claude",
-		TeamID:   1,
-		Enabled:  true,
-		Level:    0,
+		ID:      1,
+		Name:    "Test Provider",
+		APIURL:  "https://api.example.com",
+		APIKey:  "key123",
+		Kind:    "claude",
+		TeamID:  1,
+		Enabled: true,
+		Level:   0,
 	}
 
 	var capturedMapping map[string]string
 	mockRepo.On("CreateProvider", mock.Anything, "Test Provider", "https://api.example.com", "key123", "claude", int64(1), true, mock.AnythingOfType("map[string]string"), []string(nil), 0).
 		Run(func(args mock.Arguments) {
-		capturedMapping = args.Get(7).(map[string]string)
-	}).Return(testProvider, nil)
+			capturedMapping = args.Get(7).(map[string]string)
+		}).Return(testProvider, nil)
 
 	// Test with map[string]interface{}
 	modelMapping := map[string]interface{}{
-		"gpt-4":        "claude-3-opus",
+		"gpt-4":         "claude-3-opus",
 		"gpt-3.5-turbo": 123, // Non-string value
 	}
 	_, err := service.CreateProvider("Test Provider", "https://api.example.com", "key123", "claude", 1, true, modelMapping, nil, 0)
@@ -196,8 +195,8 @@ func TestProviderService_UpdateProvider_ModelMappingConversion(t *testing.T) {
 	var capturedMapping map[string]string
 	mockRepo.On("UpdateProvider", mock.Anything, int64(1), "Updated Name", "https://new.example.com", "newkey", "claude", true, mock.AnythingOfType("map[string]string"), []string(nil), 0).
 		Run(func(args mock.Arguments) {
-		capturedMapping = args.Get(7).(map[string]string)
-	}).Return(nil)
+			capturedMapping = args.Get(7).(map[string]string)
+		}).Return(nil)
 
 	modelMapping := map[string]interface{}{
 		"gpt-4": "claude-3-opus",

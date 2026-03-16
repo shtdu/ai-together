@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -34,7 +33,6 @@ import (
 func TestProviderHandler_ListProviders_Manager(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	providers := []models.Provider{
 		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true},
@@ -65,7 +63,6 @@ func TestProviderHandler_ListProviders_Manager(t *testing.T) {
 func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	providers := []models.Provider{
 		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true},
@@ -97,7 +94,6 @@ func TestProviderHandler_ListProviders_Member(t *testing.T) {
 func TestProviderHandler_CreateProvider_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	testProvider := &models.Provider{ID: 1, Name: "New Provider", APIURL: "https://api.example.com", TeamID: 1}
 
@@ -136,7 +132,6 @@ func TestProviderHandler_CreateProvider_Success(t *testing.T) {
 func TestProviderHandler_CreateProvider_ValidationError(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	handler := NewProviderHandler(mockProviderService, mockUsageService)
 	router := setupProviderRouter(handler)
@@ -160,7 +155,6 @@ func TestProviderHandler_CreateProvider_ValidationError(t *testing.T) {
 func TestProviderHandler_UpdateProvider_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	existingProvider := &models.Provider{ID: 1, Name: "Old Name", APIURL: "https://old.example.com", APIKey: "oldkey", Kind: "claude", Enabled: true, TeamID: 1, Level: 0, ModelMapping: map[string]string{}, SupportedModels: []string{}}
 	updatedProvider := &models.Provider{ID: 1, Name: "New Name", APIURL: "https://new.example.com", APIKey: "newkey", Kind: "claude", Enabled: true, TeamID: 1, Level: 0, ModelMapping: map[string]string{}, SupportedModels: []string{}}
@@ -200,7 +194,6 @@ func TestProviderHandler_UpdateProvider_Success(t *testing.T) {
 func TestProviderHandler_UpdateProvider_AccessDenied(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	existingProvider := &models.Provider{ID: 1, TeamID: 999} // Different team
 
@@ -233,7 +226,6 @@ func TestProviderHandler_UpdateProvider_AccessDenied(t *testing.T) {
 func TestProviderHandler_DeleteProvider_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	existingProvider := &models.Provider{ID: 1, TeamID: 1}
 
@@ -261,7 +253,6 @@ func TestProviderHandler_DeleteProvider_Success(t *testing.T) {
 func TestProviderHandler_DeleteProvider_AccessDenied(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	existingProvider := &models.Provider{ID: 1, TeamID: 999} // Different team
 
@@ -285,7 +276,6 @@ func TestProviderHandler_DeleteProvider_AccessDenied(t *testing.T) {
 func TestProviderHandler_EnableProvider_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, TeamID: 1, Enabled: false}
 
@@ -314,7 +304,6 @@ func TestProviderHandler_EnableProvider_Success(t *testing.T) {
 func TestProviderHandler_EnableProvider_AccessDenied(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, TeamID: 999} // Different team
 
@@ -337,7 +326,6 @@ func TestProviderHandler_EnableProvider_AccessDenied(t *testing.T) {
 func TestProviderHandler_DisableProvider_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, TeamID: 1, Enabled: true}
 
@@ -366,7 +354,6 @@ func TestProviderHandler_DisableProvider_Success(t *testing.T) {
 func TestProviderHandler_TestProvider_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, Name: "Test Provider", TeamID: 1, APIURL: "https://api.example.com"}
 
@@ -394,7 +381,6 @@ func TestProviderHandler_TestProvider_Success(t *testing.T) {
 func TestProviderHandler_TestProvider_AccessDenied(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, TeamID: 999} // Different team
 
@@ -417,7 +403,6 @@ func TestProviderHandler_TestProvider_AccessDenied(t *testing.T) {
 func TestProviderHandler_GetProviderStats_Success(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, Name: "Test Provider", TeamID: 1}
 	stats := map[string]interface{}{
@@ -452,7 +437,6 @@ func TestProviderHandler_GetProviderStats_Success(t *testing.T) {
 func TestProviderHandler_GetProviderStats_AccessDenied(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	provider := &models.Provider{ID: 1, TeamID: 999} // Different team
 
@@ -475,7 +459,6 @@ func TestProviderHandler_GetProviderStats_AccessDenied(t *testing.T) {
 func TestProviderHandler_UpdateProvider_InvalidID(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	handler := NewProviderHandler(mockProviderService, mockUsageService)
 	router := setupProviderRouter(handler)
@@ -502,7 +485,6 @@ func TestProviderHandler_UpdateProvider_InvalidID(t *testing.T) {
 func TestProviderHandler_DeleteProvider_InvalidID(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	
 
 	handler := NewProviderHandler(mockProviderService, mockUsageService)
 	router := setupProviderRouter(handler)

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -26,44 +25,44 @@ import (
 
 func TestEnsureProviderStructure(t *testing.T) {
 	tests := []struct {
-		name     string
-		settings opencodeSettingsFile
-		wantSchema string
+		name         string
+		settings     opencodeSettingsFile
+		wantSchema   string
 		wantProvider bool
 	}{
 		{
-			name:     "Empty settings",
-			settings: make(opencodeSettingsFile),
-			wantSchema: opencodeSchemaURL,
+			name:         "Empty settings",
+			settings:     make(opencodeSettingsFile),
+			wantSchema:   opencodeSchemaURL,
 			wantProvider: true,
 		},
 		{
-			name:     "Settings with existing schema",
+			name: "Settings with existing schema",
 			settings: opencodeSettingsFile{
 				"$schema": "existing-schema",
 			},
-			wantSchema: "existing-schema",
+			wantSchema:   "existing-schema",
 			wantProvider: true,
 		},
 		{
-			name:     "Settings with existing provider",
+			name: "Settings with existing provider",
 			settings: opencodeSettingsFile{
 				"provider": map[string]interface{}{
 					"other": "value",
 				},
 			},
-			wantSchema: opencodeSchemaURL,
+			wantSchema:   opencodeSchemaURL,
 			wantProvider: true,
 		},
 		{
-			name:     "Settings with both schema and provider",
+			name: "Settings with both schema and provider",
 			settings: opencodeSettingsFile{
 				"$schema": "existing-schema",
 				"provider": map[string]interface{}{
 					"other": "value",
 				},
 			},
-			wantSchema: "existing-schema",
+			wantSchema:   "existing-schema",
 			wantProvider: true,
 		},
 	}
@@ -237,7 +236,7 @@ func TestProxyStatusOldFormat(t *testing.T) {
 
 	settingsPath := filepath.Join(configDir, opencodeSettingsFileName)
 	oldSettings := opencodeSettingsFile{
-		"apiKey": "code-together",
+		"apiKey":  "code-together",
 		"baseURL": "http://127.0.0.1:18100",
 	}
 	data, _ := json.MarshalIndent(oldSettings, "", "  ")
@@ -323,7 +322,7 @@ func TestEnableProxyMigratesOldFormat(t *testing.T) {
 
 	settingsPath := filepath.Join(configDir, opencodeSettingsFileName)
 	oldSettings := opencodeSettingsFile{
-		"apiKey": "code-together",
+		"apiKey":  "code-together",
 		"baseURL": "http://127.0.0.1:18100",
 		"mcp": map[string]interface{}{
 			"enabled": true,
@@ -600,34 +599,34 @@ func TestDisableProxyRemovesEmptyProvider(t *testing.T) {
 
 func TestBaseURL(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		relayAddr string
-		want    string
+		want      string
 	}{
 		{
-			name:     "Empty address",
+			name:      "Empty address",
 			relayAddr: "",
-			want:    "http://127.0.0.1:18100",
+			want:      "http://127.0.0.1:18100",
 		},
 		{
-			name:     "Port only",
+			name:      "Port only",
 			relayAddr: ":18100",
-			want:    "http://127.0.0.1:18100",
+			want:      "http://127.0.0.1:18100",
 		},
 		{
-			name:     "Host only",
+			name:      "Host only",
 			relayAddr: "localhost:18100",
-			want:    "http://localhost:18100",
+			want:      "http://localhost:18100",
 		},
 		{
-			name:     "Full URL with http",
+			name:      "Full URL with http",
 			relayAddr: "http://example.com:18100",
-			want:    "http://example.com:18100",
+			want:      "http://example.com:18100",
 		},
 		{
-			name:     "Full URL with https",
+			name:      "Full URL with https",
 			relayAddr: "https://example.com:18100",
-			want:    "https://example.com:18100",
+			want:      "https://example.com:18100",
 		},
 	}
 

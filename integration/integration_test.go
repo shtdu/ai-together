@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
@@ -22,12 +21,12 @@ import (
 	"strings"
 	"testing"
 
+	integration_manager "github.com/code-together/integration_manager"
+	integrationclient "github.com/code-together/shared/integration"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	integrationclient "github.com/code-together/shared/integration"
-	integration_manager "github.com/code-together/integration_manager"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // IntegrationTestSuite is the main test suite for integration tests.
@@ -36,17 +35,17 @@ import (
 type IntegrationTestSuite struct {
 	suite.Suite
 
-	ServerURL         string
-	TestDBURL         string
-	Logger            *slog.Logger
-	AnonymousClient   *integrationclient.ClientWithResponses
-	Client            *integrationclient.ClientWithResponses
-	AdminToken        string
-	MemberToken       string
-	TestContext       *TestContext
-	skipBootstrap     bool // Flag to skip bootstrapStandardFixture() for tests needing clean state
+	ServerURL       string
+	TestDBURL       string
+	Logger          *slog.Logger
+	AnonymousClient *integrationclient.ClientWithResponses
+	Client          *integrationclient.ClientWithResponses
+	AdminToken      string
+	MemberToken     string
+	TestContext     *TestContext
+	skipBootstrap   bool // Flag to skip bootstrapStandardFixture() for tests needing clean state
 	// Manager client for testing manager endpoints
-	ManagerClient     *integration_manager.ClientWithResponses
+	ManagerClient *integration_manager.ClientWithResponses
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -317,19 +316,19 @@ func (s *IntegrationTestSuite) bootstrapStandardFixture() *TestFixture {
 	s.MemberToken = memberToken
 
 	return &TestFixture{
-		License:           license,
+		License:            license,
 		ClaudeProviderID:   claudeProviderID,
 		OpenCodeProviderID: opencodeProviderID,
-		MemberToken:       memberToken,
+		MemberToken:        memberToken,
 	}
 }
 
 // TestFixture holds pre-created test entities for convenience.
 type TestFixture struct {
-	License           *integrationclient.LicenseStatus
+	License            *integrationclient.LicenseStatus
 	ClaudeProviderID   int64
 	OpenCodeProviderID int64
-	MemberToken       string
+	MemberToken        string
 }
 
 // TestIntegrationSuite runs the integration test suite.

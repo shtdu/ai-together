@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
@@ -20,10 +19,10 @@ import (
 	"net/http"
 	"time"
 
+	integrationclient "github.com/code-together/shared/integration"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	openapi_types "github.com/oapi-codegen/runtime/types"
-	integrationclient "github.com/code-together/shared/integration"
 )
 
 // TestAuthLoginAdminSuccess tests admin login with valid credentials.

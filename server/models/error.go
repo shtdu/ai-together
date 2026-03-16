@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package models
 
 import "net/http"
@@ -33,8 +32,8 @@ type ValidationError struct {
 
 // ValidationErrorResponse is the error response format for validation errors
 type ValidationErrorResponse struct {
-	Error  string            `json:"error"` // User-friendly error message
-	Code   string            `json:"code"`  // Machine-readable error code = "VALIDATION_ERROR"
+	Error  string            `json:"error"`  // User-friendly error message
+	Code   string            `json:"code"`   // Machine-readable error code = "VALIDATION_ERROR"
 	Errors []ValidationError `json:"errors"` // List of validation errors
 }
 
@@ -62,14 +61,14 @@ func HTTPStatus(code string) int {
 
 // Error codes constants
 const (
-	ErrCodeValidation          = "VALIDATION_ERROR"
-	ErrCodeUnauthorized        = "UNAUTHORIZED"
-	ErrCodeForbidden           = "FORBIDDEN"
-	ErrCodeNotFound            = "NOT_FOUND"
-	ErrCodeConflict            = "CONFLICT"
-	ErrCodeBusinessRule        = "BUSINESS_RULE_VIOLATION"
-	ErrCodeInternal            = "INTERNAL_ERROR"
-	ErrCodeServiceUnavailable  = "SERVICE_UNAVAILABLE"
+	ErrCodeValidation         = "VALIDATION_ERROR"
+	ErrCodeUnauthorized       = "UNAUTHORIZED"
+	ErrCodeForbidden          = "FORBIDDEN"
+	ErrCodeNotFound           = "NOT_FOUND"
+	ErrCodeConflict           = "CONFLICT"
+	ErrCodeBusinessRule       = "BUSINESS_RULE_VIOLATION"
+	ErrCodeInternal           = "INTERNAL_ERROR"
+	ErrCodeServiceUnavailable = "SERVICE_UNAVAILABLE"
 )
 
 // Common error responses

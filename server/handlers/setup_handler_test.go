@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -133,15 +132,15 @@ func TestSetupAdminRequest_Validation(t *testing.T) {
 				"organization_name": "Test Org",
 				"admin_email":       "admin@example.com",
 				"admin_name":        "Admin",
-				"admin_password":     "password123",
+				"admin_password":    "password123",
 			},
 			expectValid: true,
 		},
 		{
 			name: "missing organization_name",
 			requestBody: map[string]interface{}{
-				"admin_email":   "admin@example.com",
-				"admin_name":    "Admin",
+				"admin_email":    "admin@example.com",
+				"admin_name":     "Admin",
 				"admin_password": "password123",
 			},
 			expectValid: false,
@@ -151,7 +150,7 @@ func TestSetupAdminRequest_Validation(t *testing.T) {
 			requestBody: map[string]interface{}{
 				"organization_name": "Test Org",
 				"admin_name":        "Admin",
-				"admin_password":     "password123",
+				"admin_password":    "password123",
 			},
 			expectValid: false,
 		},
@@ -160,7 +159,7 @@ func TestSetupAdminRequest_Validation(t *testing.T) {
 			requestBody: map[string]interface{}{
 				"organization_name": "Test Org",
 				"admin_email":       "admin@example.com",
-				"admin_password":     "password123",
+				"admin_password":    "password123",
 			},
 			expectValid: false,
 		},
@@ -179,7 +178,7 @@ func TestSetupAdminRequest_Validation(t *testing.T) {
 				"organization_name": "Test Org",
 				"admin_email":       "not-an-email",
 				"admin_name":        "Admin",
-				"admin_password":     "password123",
+				"admin_password":    "password123",
 			},
 			expectValid: false,
 		},
@@ -189,7 +188,7 @@ func TestSetupAdminRequest_Validation(t *testing.T) {
 				"organization_name": "Test Org",
 				"admin_email":       "admin@example.com",
 				"admin_name":        "Admin",
-				"admin_password":     "short",
+				"admin_password":    "short",
 			},
 			expectValid: false,
 		},

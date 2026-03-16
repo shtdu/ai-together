@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
 	"context"
 
+	integration_manager "github.com/code-together/integration_manager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	integration_manager "github.com/code-together/integration_manager"
 )
 
 // ============================================================================

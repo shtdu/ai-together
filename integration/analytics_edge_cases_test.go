@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
@@ -22,9 +21,9 @@ import (
 	"net/http"
 	"time"
 
+	integrationclient "github.com/code-together/shared/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	integrationclient "github.com/code-together/shared/integration"
 )
 
 // ============================================================================
@@ -267,7 +266,7 @@ func (s *IntegrationTestSuite) TestZeroTokenHandling() {
 			Model:        "claude-3-opus",
 			Provider:     uniqueName,
 			HttpCode:     200,
-			InputTokens:  intPointer(0),   // Zero input tokens
+			InputTokens:  intPointer(0), // Zero input tokens
 			OutputTokens: intPointer(500),
 			TenantId:     int64Pointer(1),
 			UserId:       int64Pointer(1),
@@ -279,7 +278,7 @@ func (s *IntegrationTestSuite) TestZeroTokenHandling() {
 			Provider:     uniqueName,
 			HttpCode:     200,
 			InputTokens:  intPointer(1000),
-			OutputTokens: intPointer(0),   // Zero output tokens
+			OutputTokens: intPointer(0), // Zero output tokens
 			TenantId:     int64Pointer(1),
 			UserId:       int64Pointer(1),
 			CreatedAt:    now.Add(-10 * time.Minute),
@@ -289,7 +288,7 @@ func (s *IntegrationTestSuite) TestZeroTokenHandling() {
 			Model:        "claude-3-opus",
 			Provider:     uniqueName,
 			HttpCode:     200,
-			InputTokens:  intPointer(0),   // Both zero
+			InputTokens:  intPointer(0), // Both zero
 			OutputTokens: intPointer(0),
 			TenantId:     int64Pointer(1),
 			UserId:       int64Pointer(1),
@@ -428,7 +427,7 @@ func (s *IntegrationTestSuite) TestMixedTokenValues() {
 			Model:        "claude-3-opus",
 			Provider:     uniqueName,
 			HttpCode:     200,
-			InputTokens:  intPointer(0),      // Zero
+			InputTokens:  intPointer(0), // Zero
 			OutputTokens: intPointer(500),
 			TenantId:     int64Pointer(1),
 			UserId:       int64Pointer(1),
@@ -439,7 +438,7 @@ func (s *IntegrationTestSuite) TestMixedTokenValues() {
 			Model:        "claude-3-opus",
 			Provider:     uniqueName,
 			HttpCode:     200,
-			InputTokens:  intPointer(1),      // Minimum positive
+			InputTokens:  intPointer(1), // Minimum positive
 			OutputTokens: intPointer(1),
 			TenantId:     int64Pointer(1),
 			UserId:       int64Pointer(1),

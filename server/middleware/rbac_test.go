@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package middleware
 
 import (
@@ -38,11 +37,11 @@ func TestNewEnforcer_Enforce(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name      string
-		subject   string
-		object    string
-		action    string
-		allowed   bool
+		name    string
+		subject string
+		object  string
+		action  string
+		allowed bool
 	}{
 		{
 			name:    "member can read providers",
@@ -629,7 +628,7 @@ func TestRequirePermission_WriteRequiresManager(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name   string
+		name    string
 		role    string
 		object  string
 		action  string
@@ -668,4 +667,3 @@ func TestRequirePermission_WriteRequiresManager(t *testing.T) {
 		})
 	}
 }
-

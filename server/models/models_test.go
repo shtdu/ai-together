@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package models
 
 import (
@@ -26,12 +25,12 @@ import (
 
 func TestUser_JSONSerialization(t *testing.T) {
 	user := User{
-		ID:       1,
-		Email:    "test@example.com",
-		Name:     "Test User",
-		Password: "hashed_password",
-		Role:     "manager",
-		TenantID: 1,
+		ID:        1,
+		Email:     "test@example.com",
+		Name:      "Test User",
+		Password:  "hashed_password",
+		Role:      "manager",
+		TenantID:  1,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -229,18 +228,18 @@ func TestUsageRecord_Fields(t *testing.T) {
 
 func TestUsageRecord_JSONSerialization(t *testing.T) {
 	record := UsageRecord{
-		ID:               1,
-		Platform:         "anthropic",
-		Model:            "claude-3",
-		Provider:         "provider1",
-		HttpCode:         200,
-		InputTokens:      100,
-		OutputTokens:     50,
-		IsStream:         true,
-		DurationSec:      1.5,
-		TenantID:         1,
-		UserID:           1,
-		CreatedAt:        time.Now(),
+		ID:           1,
+		Platform:     "anthropic",
+		Model:        "claude-3",
+		Provider:     "provider1",
+		HttpCode:     200,
+		InputTokens:  100,
+		OutputTokens: 50,
+		IsStream:     true,
+		DurationSec:  1.5,
+		TenantID:     1,
+		UserID:       1,
+		CreatedAt:    time.Now(),
 	}
 
 	data, err := json.Marshal(record)

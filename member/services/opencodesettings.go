@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -45,6 +44,7 @@ func NewOpenCodeSettingsService(relayAddr string) *OpenCodeSettingsService {
 }
 
 // SetProviderService sets the provider service (called during initialization)
+//
 //wails:ignore
 func (ocs *OpenCodeSettingsService) SetProviderService(providerService *ProviderService) {
 	ocs.providerService = providerService

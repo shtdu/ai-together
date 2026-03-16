@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
 	"context"
 	"encoding/json"
 
+	integrationclient "github.com/code-together/shared/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	integrationclient "github.com/code-together/shared/integration"
 )
 
 // ============================================================================

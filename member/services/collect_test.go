@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -63,10 +62,10 @@ func TestCollectHandler_ValidEvent(t *testing.T) {
 	router.POST("/collect/:tool_name", hs.CollectEvent)
 
 	event := map[string]interface{}{
-		"session_id":       "test-session-001",
-		"hook_event_name":  "UserPromptSubmit",
-		"cwd":              "/path/to/workspace",
-		"data": map[string]string{"key": "value"},
+		"session_id":      "test-session-001",
+		"hook_event_name": "UserPromptSubmit",
+		"cwd":             "/path/to/workspace",
+		"data":            map[string]string{"key": "value"},
 	}
 	eventJSON, _ := json.Marshal(event)
 
@@ -183,8 +182,8 @@ func TestCollectHandler_DatabaseNotInitialized(t *testing.T) {
 	router.POST("/collect/:tool_name", hs.CollectEvent)
 
 	event := map[string]interface{}{
-		"session_id":       "test-session-003",
-		"hook_event_name":  "UserPromptSubmit",
+		"session_id":      "test-session-003",
+		"hook_event_name": "UserPromptSubmit",
 	}
 	eventJSON, _ := json.Marshal(event)
 

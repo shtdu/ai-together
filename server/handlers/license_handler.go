@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -77,28 +76,28 @@ func (h *LicenseHandler) GetLicense(c *gin.Context) {
 
 	response := gin.H{
 		"license": gin.H{
-			"customer_name":        license.CustomerName,
-			"license_id":           nilOrString(license.LicenseID),
-			"type":                 license.GetLicenseType(),
-			"type_name":            license.LicenseTypeName(),
-			"max_seats":            license.GetMaxSeats(),
-			"max_teams":            license.GetMaxTeams(),
-			"data_retention_days":  license.GetDataRetentionDays(),
-			"issued_at":            nilOrTime(license.IssuedAt),
-			"expires_at":           nilOrTime(license.ExpiresAt),
+			"customer_name":       license.CustomerName,
+			"license_id":          nilOrString(license.LicenseID),
+			"type":                license.GetLicenseType(),
+			"type_name":           license.LicenseTypeName(),
+			"max_seats":           license.GetMaxSeats(),
+			"max_teams":           license.GetMaxTeams(),
+			"data_retention_days": license.GetDataRetentionDays(),
+			"issued_at":           nilOrTime(license.IssuedAt),
+			"expires_at":          nilOrTime(license.ExpiresAt),
 		},
 		"usage": gin.H{
-			"current_users":    usage.CurrentUsers,
-			"current_teams":    usage.CurrentTeams,
-			"teams_remaining":  usage.TeamsRemaining,
-			"provider_counts":  usage.ProviderCounts,
+			"current_users":   usage.CurrentUsers,
+			"current_teams":   usage.CurrentTeams,
+			"teams_remaining": usage.TeamsRemaining,
+			"provider_counts": usage.ProviderCounts,
 		},
 		"status": gin.H{
-			"has_active_license":  hasActiveLicense,
-			"days_remaining":      daysRemaining,
-			"can_add_user":        canAddUser,
-			"can_add_provider":    canAddProvider,
-			"can_create_team":     canCreateTeam,
+			"has_active_license": hasActiveLicense,
+			"days_remaining":     daysRemaining,
+			"can_add_user":       canAddUser,
+			"can_add_provider":   canAddProvider,
+			"can_create_team":    canCreateTeam,
 		},
 	}
 

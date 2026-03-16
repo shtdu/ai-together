@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
@@ -22,9 +21,9 @@ import (
 	"net/http"
 	"time"
 
+	integrationclient "github.com/code-together/shared/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	integrationclient "github.com/code-together/shared/integration"
 )
 
 // ============================================================================
@@ -68,15 +67,15 @@ func (s *IntegrationTestSuite) TestDateRangeFiltering() {
 	for day := 0; day < 3; day++ {
 		for i := 0; i < 5; i++ {
 			records[recordIdx] = integrationclient.UsageRecord{
-				Platform:    "claude",
-				Model:       "claude-3-opus",
-				Provider:    uniqueName,
-				HttpCode:    200,
-				InputTokens: intPointer(1000),
+				Platform:     "claude",
+				Model:        "claude-3-opus",
+				Provider:     uniqueName,
+				HttpCode:     200,
+				InputTokens:  intPointer(1000),
 				OutputTokens: intPointer(500),
-				TenantId:    int64Pointer(1),
-				UserId:      int64Pointer(1),
-				CreatedAt:   now.Add(-time.Duration(day)*24*time.Hour - time.Duration(i)*time.Hour),
+				TenantId:     int64Pointer(1),
+				UserId:       int64Pointer(1),
+				CreatedAt:    now.Add(-time.Duration(day)*24*time.Hour - time.Duration(i)*time.Hour),
 			}
 			recordIdx++
 		}
@@ -86,15 +85,15 @@ func (s *IntegrationTestSuite) TestDateRangeFiltering() {
 	for day := 3; day < 5; day++ {
 		for i := 0; i < 5; i++ {
 			records[recordIdx] = integrationclient.UsageRecord{
-				Platform:    "claude",
-				Model:       "claude-3-opus",
-				Provider:    uniqueName,
-				HttpCode:    200,
-				InputTokens: intPointer(1000),
+				Platform:     "claude",
+				Model:        "claude-3-opus",
+				Provider:     uniqueName,
+				HttpCode:     200,
+				InputTokens:  intPointer(1000),
 				OutputTokens: intPointer(500),
-				TenantId:    int64Pointer(1),
-				UserId:      int64Pointer(1),
-				CreatedAt:   now.Add(-time.Duration(day)*24*time.Hour - time.Duration(i)*time.Hour),
+				TenantId:     int64Pointer(1),
+				UserId:       int64Pointer(1),
+				CreatedAt:    now.Add(-time.Duration(day)*24*time.Hour - time.Duration(i)*time.Hour),
 			}
 			recordIdx++
 		}
@@ -104,15 +103,15 @@ func (s *IntegrationTestSuite) TestDateRangeFiltering() {
 	for day := 5; day < 7; day++ {
 		for i := 0; i < 6; i++ {
 			records[recordIdx] = integrationclient.UsageRecord{
-				Platform:    "claude",
-				Model:       "claude-3-opus",
-				Provider:    uniqueName,
-				HttpCode:    200,
-				InputTokens: intPointer(1000),
+				Platform:     "claude",
+				Model:        "claude-3-opus",
+				Provider:     uniqueName,
+				HttpCode:     200,
+				InputTokens:  intPointer(1000),
 				OutputTokens: intPointer(500),
-				TenantId:    int64Pointer(1),
-				UserId:      int64Pointer(1),
-				CreatedAt:   now.Add(-time.Duration(day)*24*time.Hour - time.Duration(i)*time.Hour),
+				TenantId:     int64Pointer(1),
+				UserId:       int64Pointer(1),
+				CreatedAt:    now.Add(-time.Duration(day)*24*time.Hour - time.Duration(i)*time.Hour),
 			}
 			recordIdx++
 		}
@@ -127,37 +126,37 @@ func (s *IntegrationTestSuite) TestDateRangeFiltering() {
 
 	// Query with different date ranges and verify counts
 	testCases := []struct {
-		name         string
-		daysAgo      int
-		duration     int
-		expectedMin  int
-		expectedMax  int
+		name        string
+		daysAgo     int
+		duration    int
+		expectedMin int
+		expectedMax int
 	}{
 		{
-			name:     "Days 1-3",
-			daysAgo:  2,
-			duration: 3,
+			name:        "Days 1-3",
+			daysAgo:     2,
+			duration:    3,
 			expectedMin: 15,
 			expectedMax: 15,
 		},
 		{
-			name:     "Days 4-5",
-			daysAgo:  4,
-			duration: 2,
+			name:        "Days 4-5",
+			daysAgo:     4,
+			duration:    2,
 			expectedMin: 10,
 			expectedMax: 10,
 		},
 		{
-			name:     "Days 1-7 (all)",
-			daysAgo:  6,
-			duration: 7,
+			name:        "Days 1-7 (all)",
+			daysAgo:     6,
+			duration:    7,
 			expectedMin: 37,
 			expectedMax: 37,
 		},
 	}
 
 	for _, tc := range testCases {
-		startDate := time.Now().Add(-time.Duration(tc.daysAgo+tc.duration-1)*24*time.Hour).Format("2006-01-02")
+		startDate := time.Now().Add(-time.Duration(tc.daysAgo+tc.duration-1) * 24 * time.Hour).Format("2006-01-02")
 		endDate := time.Now().Format("2006-01-02")
 
 		url := fmt.Sprintf("%s/api/v1/analytics/history?start_date=%s&end_date=%s&providers=%s&limit=100",
@@ -215,15 +214,15 @@ func (s *IntegrationTestSuite) TestHourlyGranularity() {
 
 	for i := 0; i < 24; i++ {
 		records[i] = integrationclient.UsageRecord{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-time.Duration(i) * time.Hour),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-time.Duration(i) * time.Hour),
 		}
 	}
 
@@ -298,60 +297,60 @@ func (s *IntegrationTestSuite) TestWeeklyAggregation() {
 	// Week 1: 100 records
 	for i := 0; i < 100; i++ {
 		records = append(records, integrationclient.UsageRecord{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-24*time.Hour - time.Duration(i)*time.Minute),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-24*time.Hour - time.Duration(i)*time.Minute),
 		})
 	}
 
 	// Week 2: 150 records
 	for i := 0; i < 150; i++ {
 		records = append(records, integrationclient.UsageRecord{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-7*24*time.Hour - time.Duration(i)*time.Minute),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-7*24*time.Hour - time.Duration(i)*time.Minute),
 		})
 	}
 
 	// Week 3: 120 records
 	for i := 0; i < 120; i++ {
 		records = append(records, integrationclient.UsageRecord{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-14*24*time.Hour - time.Duration(i)*time.Minute),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-14*24*time.Hour - time.Duration(i)*time.Minute),
 		})
 	}
 
 	// Week 4: 180 records
 	for i := 0; i < 180; i++ {
 		records = append(records, integrationclient.UsageRecord{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-21*24*time.Hour - time.Duration(i)*time.Minute),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-21*24*time.Hour - time.Duration(i)*time.Minute),
 		})
 	}
 
@@ -429,26 +428,26 @@ func (s *IntegrationTestSuite) TestMonthBoundaryHandling() {
 
 	records := []integrationclient.UsageRecord{
 		{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   endOfMonth,
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    endOfMonth,
 		},
 		{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1200),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1200),
 			OutputTokens: intPointer(600),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   startOfNextMonth,
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    startOfNextMonth,
 		},
 	}
 
@@ -517,37 +516,37 @@ func (s *IntegrationTestSuite) TestTimeZoneHandling() {
 	now := time.Now().UTC()
 	records := []integrationclient.UsageRecord{
 		{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1000),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
 			OutputTokens: intPointer(500),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now,
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now,
 		},
 		{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(1200),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1200),
 			OutputTokens: intPointer(600),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-12 * time.Hour),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-12 * time.Hour),
 		},
 		{
-			Platform:    "claude",
-			Model:       "claude-3-opus",
-			Provider:    uniqueName,
-			HttpCode:    200,
-			InputTokens: intPointer(900),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(900),
 			OutputTokens: intPointer(450),
-			TenantId:    int64Pointer(1),
-			UserId:      int64Pointer(1),
-			CreatedAt:   now.Add(-24 * time.Hour),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(-24 * time.Hour),
 		},
 	}
 

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package db
 
 import (
@@ -26,10 +25,10 @@ import (
 )
 
 var (
-	DB        *sqlx.DB
-	roDB      *sqlx.DB // Read-only connection for report queries
-	mu        sync.Mutex
-	roDBOnce  sync.Once
+	DB       *sqlx.DB
+	roDB     *sqlx.DB // Read-only connection for report queries
+	mu       sync.Mutex
+	roDBOnce sync.Once
 )
 
 func Init() error {

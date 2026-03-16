@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package main
 
 import (
@@ -32,10 +31,10 @@ import (
 
 // LicenseData is the custom data embedded in go-license's Data field
 type LicenseData struct {
-	LicenseType        string `json:"license_type"`
-	MaxSeats           int    `json:"max_seats"`
-	MaxTeams           int    `json:"max_teams"`
-	DataRetentionDays  int    `json:"data_retention_days"`
+	LicenseType       string `json:"license_type"`
+	MaxSeats          int    `json:"max_seats"`
+	MaxTeams          int    `json:"max_teams"`
+	DataRetentionDays int    `json:"data_retention_days"`
 }
 
 func main() {

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package middleware
 
 import (
@@ -170,13 +169,13 @@ func TestTenantMiddleware_MissingTenantID(t *testing.T) {
 func TestTenantMiddleware_WithTenantID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	
+
 	// Middleware that sets tenant_id before TenantMiddleware runs
 	router.Use(func(c *gin.Context) {
 		c.Set("tenant_id", int64(123))
 		c.Next()
 	})
-	
+
 	router.Use(TenantMiddleware())
 	router.GET("/test", func(c *gin.Context) {
 		tenantID, _ := c.Get("tenant_id")
@@ -216,10 +215,10 @@ func TestAuthMiddleware_WrongSigningAlgorithm(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   int64(1),
-		"email":      "test@example.com",
-		"role":       "member",
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"email":     "test@example.com",
+		"role":      "member",
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
@@ -288,9 +287,9 @@ func TestAuthMiddleware_MissingEmailClaim(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   int64(1),
-		"role":       "member",
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"role":      "member",
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -326,9 +325,9 @@ func TestAuthMiddleware_MissingRoleClaim(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   int64(1),
-		"email":      "test@example.com",
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"email":     "test@example.com",
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -402,10 +401,10 @@ func TestAuthMiddleware_InvalidUserIDType(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   "not_an_int64", // Wrong type - should be int64
-		"email":      "test@example.com",
-		"role":       "member",
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"email":     "test@example.com",
+		"role":      "member",
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -441,10 +440,10 @@ func TestAuthMiddleware_InvalidEmailType(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   int64(1),
-		"email":      123456, // Wrong type - should be string
-		"role":       "member",
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"email":     123456, // Wrong type - should be string
+		"role":      "member",
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -480,10 +479,10 @@ func TestAuthMiddleware_InvalidRoleType(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   int64(1),
-		"email":      "test@example.com",
-		"role":       123, // Wrong type - should be string
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"email":     "test@example.com",
+		"role":      123, // Wrong type - should be string
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -519,10 +518,10 @@ func TestAuthMiddleware_InvalidTenantIDType(t *testing.T) {
 	expirationTime := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"user_id":   int64(1),
-		"email":      "test@example.com",
-		"role":       "member",
-		"tenant_id":  "not_an_int64", // Wrong type - should be int64
-		"exp":        expirationTime.Unix(),
+		"email":     "test@example.com",
+		"role":      "member",
+		"tenant_id": "not_an_int64", // Wrong type - should be int64
+		"exp":       expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -595,10 +594,10 @@ func TestAuthMiddleware_MalformedClaimsStructure(t *testing.T) {
 	// Create a token string manually (not using standard JWT lib to simulate malformed structure)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":   int64(1),
-		"email":      "test@example.com",
-		"role":       "member",
-		"tenant_id":  int64(1),
-		"exp":        expirationTime.Unix(),
+		"email":     "test@example.com",
+		"role":      "member",
+		"tenant_id": int64(1),
+		"exp":       expirationTime.Unix(),
 	})
 
 	// Sign it correctly but then we'll test that the middleware handles edge cases
@@ -619,4 +618,3 @@ func TestAuthMiddleware_MalformedClaimsStructure(t *testing.T) {
 	// Token should be valid
 	assert.Equal(t, http.StatusOK, w.Code)
 }
-

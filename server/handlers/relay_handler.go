@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -294,18 +293,18 @@ func (h *RelayHandler) forwardRequest(
 		duration := time.Since(start)
 
 		usageRecord := models.UsageRecord{
-			Platform:         kind,
-			Model:            model,
-			Provider:         provider.Name,
-			HttpCode:         0, // Will be set if we get a response
-			InputTokens:      usage.InputTokens,
-			OutputTokens:     usage.OutputTokens,
+			Platform:          kind,
+			Model:             model,
+			Provider:          provider.Name,
+			HttpCode:          0, // Will be set if we get a response
+			InputTokens:       usage.InputTokens,
+			OutputTokens:      usage.OutputTokens,
 			CacheCreateTokens: usage.CacheCreateTokens,
-			CacheReadTokens:  usage.CacheReadTokens,
-			ReasoningTokens:  usage.ReasoningTokens,
-			TenantID:         provider.TeamID,
-			UserID:           0, // Will be set from context if available
-			DurationSec:      duration.Seconds(),
+			CacheReadTokens:   usage.CacheReadTokens,
+			ReasoningTokens:   usage.ReasoningTokens,
+			TenantID:          provider.TeamID,
+			UserID:            0, // Will be set from context if available
+			DurationSec:       duration.Seconds(),
 		}
 
 		// Get user ID from context

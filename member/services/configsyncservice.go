@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -308,7 +307,6 @@ func (cs *ConfigSyncService) buildUpdateProviderRequest(p Provider, kind string)
 }
 
 // pushSingleProvider is no longer needed, removed
-
 
 // updateProvider updates an existing provider on the server
 func (cs *ConfigSyncService) updateProvider(ctx context.Context, serverID int64, req integration.UpdateProviderRequest) error {

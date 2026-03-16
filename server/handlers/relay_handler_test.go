@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -42,9 +41,9 @@ func TestRelayHandler_RelayMessages_InvalidTool(t *testing.T) {
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
 
 	reqBody := map[string]interface{}{
-		"model":       "claude-sonnet-4",
-		"max_tokens":  100,
-		"messages":    []interface{}{map[string]string{"role": "user", "content": "hello"}},
+		"model":      "claude-sonnet-4",
+		"max_tokens": 100,
+		"messages":   []interface{}{map[string]string{"role": "user", "content": "hello"}},
 	}
 	body, _ := json.Marshal(reqBody)
 	req, _ := http.NewRequest("POST", "/relay/invalid-tool/v1/messages", bytes.NewReader(body))
@@ -74,9 +73,9 @@ func TestRelayHandler_RelayMessages_NoProvidersFound(t *testing.T) {
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
 
 	reqBody := map[string]interface{}{
-		"model":       "claude-sonnet-4",
-		"max_tokens":  100,
-		"messages":    []interface{}{map[string]string{"role": "user", "content": "hello"}},
+		"model":      "claude-sonnet-4",
+		"max_tokens": 100,
+		"messages":   []interface{}{map[string]string{"role": "user", "content": "hello"}},
 	}
 	body, _ := json.Marshal(reqBody)
 	req, _ := http.NewRequest("POST", "/relay/claude/v1/messages", bytes.NewReader(body))
@@ -141,9 +140,9 @@ func TestRelayHandler_RelayMessages_ProviderLoadError(t *testing.T) {
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
 
 	reqBody := map[string]interface{}{
-		"model":       "claude-sonnet-4",
-		"max_tokens":  100,
-		"messages":    []interface{}{map[string]string{"role": "user", "content": "hello"}},
+		"model":      "claude-sonnet-4",
+		"max_tokens": 100,
+		"messages":   []interface{}{map[string]string{"role": "user", "content": "hello"}},
 	}
 	body, _ := json.Marshal(reqBody)
 	req, _ := http.NewRequest("POST", "/relay/claude/v1/messages", bytes.NewReader(body))
@@ -170,9 +169,9 @@ func TestRelayHandler_RelayMessages_UserNotInContext(t *testing.T) {
 	router := setupRelayRouter(handler)
 
 	reqBody := map[string]interface{}{
-		"model":       "claude-sonnet-4",
-		"max_tokens":  100,
-		"messages":    []interface{}{map[string]string{"role": "user", "content": "hello"}},
+		"model":      "claude-sonnet-4",
+		"max_tokens": 100,
+		"messages":   []interface{}{map[string]string{"role": "user", "content": "hello"}},
 	}
 	body, _ := json.Marshal(reqBody)
 	req, _ := http.NewRequest("POST", "/relay/claude/v1/messages", bytes.NewReader(body))

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -51,6 +50,7 @@ func NewServerConfigService(configService *ConfigService, logger *slog.Logger) *
 }
 
 // SetAPIClient sets the API client for server communication
+//
 //wails:ignore
 func (s *ServerConfigService) SetAPIClient(client integration.ClientWithResponsesInterface) {
 	s.mu.Lock()

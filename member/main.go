@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package main
 
 import (
@@ -236,7 +235,7 @@ func main() {
 	// Set minimal menu to show only app name (Code Together) on macOS
 	menu := application.NewMenu()
 	if runtime.GOOS == "darwin" {
-		menu.AddRole(application.AppMenu) // Adds "Code Together" menu with About, Preferences, Quit
+		menu.AddRole(application.AppMenu)  // Adds "Code Together" menu with About, Preferences, Quit
 		menu.AddRole(application.EditMenu) // Adds Edit menu with Undo, Redo, Cut, Copy, Paste, Select All
 	}
 	app.Menu.Set(menu)

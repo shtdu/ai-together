@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -357,8 +356,8 @@ func TestUserService_CreateUser_PasswordHashing(t *testing.T) {
 	var capturedPassword string
 	mockRepo.On("CreateUser", mock.Anything, "test@example.com", mock.AnythingOfType("string"), "Test User", "member", int64(1)).
 		Run(func(args mock.Arguments) {
-		capturedPassword = args.String(2) // Get the hashedPassword argument
-	}).Return(testUser, nil)
+			capturedPassword = args.String(2) // Get the hashedPassword argument
+		}).Return(testUser, nil)
 
 	_, err := service.CreateUser("test@example.com", "password123", "Test User", "member", 1)
 

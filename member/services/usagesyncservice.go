@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -24,9 +23,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/code-together/shared/integration"
 	"codeswitch/internal/db"
 	"codeswitch/internal/models"
+	"github.com/code-together/shared/integration"
 )
 
 const (

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -69,10 +68,10 @@ type AuthResponse struct {
 
 // AuthService handles authentication with the server
 type AuthService struct {
-	configPath           string
-	mu                   sync.Mutex
-	apiClient            integration.ClientWithResponsesInterface // Anonymous client for login/register/refresh
-	serverConfigService  *ServerConfigService
+	configPath          string
+	mu                  sync.Mutex
+	apiClient           integration.ClientWithResponsesInterface // Anonymous client for login/register/refresh
+	serverConfigService *ServerConfigService
 }
 
 // wrapAPIError converts an HTTP response into an error, parsing the response body
@@ -107,9 +106,9 @@ func NewAuthService(apiClient integration.ClientWithResponsesInterface, serverCo
 	configPath := filepath.Join(home, authConfigDir, authConfigFile)
 
 	return &AuthService{
-		configPath:           configPath,
-		apiClient:            apiClient,
-		serverConfigService:  serverConfigService,
+		configPath:          configPath,
+		apiClient:           apiClient,
+		serverConfigService: serverConfigService,
 	}
 }
 
@@ -264,7 +263,7 @@ func (a *AuthService) RefreshIfNeeded() bool {
 	}
 
 	// Refresh if token will expire in the next hour
-	if time.Now().Add(1*time.Hour).After(config.Tokens.ExpiresAt) {
+	if time.Now().Add(1 * time.Hour).After(config.Tokens.ExpiresAt) {
 		slog.Info("token expiring soon, refreshing now", "expires_at", config.Tokens.ExpiresAt)
 		if err := a.refreshToken(); err != nil {
 			slog.Error("token refresh failed", "error", err)

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -802,24 +801,24 @@ func findSubstring(s, substr string) bool {
 
 func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 	tests := []struct {
-		name            string
+		name              string
 		existingProviders map[string][]Provider // kind -> providers
-		checkName       string
-		excludeID       int
+		checkName         string
+		excludeID         int
 		expectedAvailable bool
-		expectedErr     bool
+		expectedErr       bool
 	}{
 		{
 			name: "Name available - no existing providers",
 			existingProviders: map[string][]Provider{
-				"claude": {},
-				"codex":  {},
+				"claude":   {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "NewProvider",
-			excludeID:       0,
+			checkName:         "NewProvider",
+			excludeID:         0,
 			expectedAvailable: true,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Name taken - duplicate in same kind",
@@ -827,13 +826,13 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "TestProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "TestProvider",
-			excludeID:       0,
+			checkName:         "TestProvider",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Name taken - duplicate across kinds (claude -> codex)",
@@ -841,13 +840,13 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "MyProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "MyProvider",
-			excludeID:       0,
+			checkName:         "MyProvider",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Name taken - duplicate across kinds (codex -> opencode)",
@@ -858,10 +857,10 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				},
 				"opencode": {},
 			},
-			checkName:       "SharedProvider",
-			excludeID:       0,
+			checkName:         "SharedProvider",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Name available - editing same provider (excludeID works)",
@@ -869,13 +868,13 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "TestProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "TestProvider",
-			excludeID:       1,
+			checkName:         "TestProvider",
+			excludeID:         1,
 			expectedAvailable: true,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Case insensitive - exact match",
@@ -883,13 +882,13 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "MyProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "myprovider",
-			excludeID:       0,
+			checkName:         "myprovider",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Case insensitive - mixed case",
@@ -897,13 +896,13 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "MyProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "MYPROVIDER",
-			excludeID:       0,
+			checkName:         "MYPROVIDER",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Whitespace trimmed - leading/trailing spaces",
@@ -911,37 +910,37 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "MyProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "  MyProvider  ",
-			excludeID:       0,
+			checkName:         "  MyProvider  ",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Empty name - should error",
 			existingProviders: map[string][]Provider{
-				"claude": {},
-				"codex":  {},
+				"claude":   {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "",
-			excludeID:       0,
+			checkName:         "",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     true,
+			expectedErr:       true,
 		},
 		{
 			name: "Whitespace only name - should error",
 			existingProviders: map[string][]Provider{
-				"claude": {},
-				"codex":  {},
+				"claude":   {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:       "   ",
-			excludeID:       0,
+			checkName:         "   ",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     true,
+			expectedErr:       true,
 		},
 		{
 			name: "Name available - different provider exists",
@@ -955,10 +954,10 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 				},
 				"opencode": {},
 			},
-			checkName:       "ProviderD",
-			excludeID:       0,
+			checkName:         "ProviderD",
+			excludeID:         0,
 			expectedAvailable: true,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 		{
 			name: "Name taken - check all three kinds",
@@ -973,10 +972,10 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 					{ID: 3, Name: "OpenCodeProvider"},
 				},
 			},
-			checkName:       "ClaudeProvider",
-			excludeID:       0,
+			checkName:         "ClaudeProvider",
+			excludeID:         0,
 			expectedAvailable: false,
-			expectedErr:     false,
+			expectedErr:       false,
 		},
 	}
 
@@ -1027,12 +1026,12 @@ func TestProviderService_IsProviderNameAvailable(t *testing.T) {
 
 func TestProviderService_findProviderNameConflict(t *testing.T) {
 	tests := []struct {
-		name            string
+		name              string
 		existingProviders map[string][]Provider
-		checkName       string
-		excludeID       int
-		expectedKind    string
-		expectedName    string
+		checkName         string
+		excludeID         int
+		expectedKind      string
+		expectedName      string
 	}{
 		{
 			name: "Conflict found in claude kind",
@@ -1040,13 +1039,13 @@ func TestProviderService_findProviderNameConflict(t *testing.T) {
 				"claude": {
 					{ID: 1, Name: "TestProvider"},
 				},
-				"codex":  {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:     "TestProvider",
-			excludeID:     0,
-			expectedKind:  "claude",
-			expectedName:  "TestProvider",
+			checkName:    "TestProvider",
+			excludeID:    0,
+			expectedKind: "claude",
+			expectedName: "TestProvider",
 		},
 		{
 			name: "Conflict found in codex kind",
@@ -1057,10 +1056,10 @@ func TestProviderService_findProviderNameConflict(t *testing.T) {
 				},
 				"opencode": {},
 			},
-			checkName:     "MyProvider",
-			excludeID:     0,
-			expectedKind:  "codex",
-			expectedName:  "MyProvider",
+			checkName:    "MyProvider",
+			excludeID:    0,
+			expectedKind: "codex",
+			expectedName: "MyProvider",
 		},
 		{
 			name: "Conflict found in opencode kind",
@@ -1071,22 +1070,22 @@ func TestProviderService_findProviderNameConflict(t *testing.T) {
 					{ID: 1, Name: "SharedProvider"},
 				},
 			},
-			checkName:     "SharedProvider",
-			excludeID:     0,
-			expectedKind:  "opencode",
-			expectedName:  "SharedProvider",
+			checkName:    "SharedProvider",
+			excludeID:    0,
+			expectedKind: "opencode",
+			expectedName: "SharedProvider",
 		},
 		{
 			name: "No conflict - unknown kind",
 			existingProviders: map[string][]Provider{
-				"claude": {},
-				"codex":  {},
+				"claude":   {},
+				"codex":    {},
 				"opencode": {},
 			},
-			checkName:     "NonExistentProvider",
-			excludeID:     0,
-			expectedKind:  "unknown",
-			expectedName:  "NonExistentProvider",
+			checkName:    "NonExistentProvider",
+			excludeID:    0,
+			expectedKind: "unknown",
+			expectedName: "NonExistentProvider",
 		},
 	}
 
@@ -1129,12 +1128,12 @@ func TestProviderService_findProviderNameConflict(t *testing.T) {
 
 func TestProviderService_SaveProviders_DuplicateNameValidation(t *testing.T) {
 	tests := []struct {
-		name            string
+		name              string
 		existingProviders map[string][]Provider
-		newProviders    []Provider
-		saveKind        string
-		expectedErr     bool
-		errorContains   string
+		newProviders      []Provider
+		saveKind          string
+		expectedErr       bool
+		errorContains     string
 	}{
 		{
 			name: "Save successful - no duplicates",
@@ -1147,8 +1146,8 @@ func TestProviderService_SaveProviders_DuplicateNameValidation(t *testing.T) {
 				{ID: 1, Name: "ProviderA"},
 				{ID: 2, Name: "ProviderB"},
 			},
-			saveKind:      "claude",
-			expectedErr:   false,
+			saveKind:    "claude",
+			expectedErr: false,
 		},
 		{
 			name: "Save fails - duplicate within same kind",
@@ -1193,8 +1192,8 @@ func TestProviderService_SaveProviders_DuplicateNameValidation(t *testing.T) {
 			newProviders: []Provider{
 				{ID: 1, Name: "MyProvider"}, // Same name, same ID - allowed
 			},
-			saveKind:      "claude",
-			expectedErr:   false,
+			saveKind:    "claude",
+			expectedErr: false,
 		},
 	}
 
@@ -1236,4 +1235,3 @@ func TestProviderService_SaveProviders_DuplicateNameValidation(t *testing.T) {
 		})
 	}
 }
-

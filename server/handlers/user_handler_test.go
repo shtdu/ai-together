@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -62,7 +61,7 @@ func TestUserHandler_ListUsers_Success(t *testing.T) {
 
 func TestUserHandler_ListUsers_AccessDenied_Member(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	// Should not be called due to access denial
 
 	handler := NewUserHandler(mockService)
@@ -83,7 +82,7 @@ func TestUserHandler_ListUsers_AccessDenied_Member(t *testing.T) {
 
 func TestUserHandler_CreateUser_Success(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	testUser := createTestUser(2, "newuser@example.com", "New User", "member", 1)
 
 	mockService.On("CreateUser", "newuser@example.com", "password123", "New User", "member", int64(1)).
@@ -119,7 +118,7 @@ func TestUserHandler_CreateUser_Success(t *testing.T) {
 
 func TestUserHandler_CreateUser_ValidationError(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -198,7 +197,7 @@ func TestUserHandler_CreateUser_ValidationError(t *testing.T) {
 
 func TestUserHandler_UpdateUser_Success(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	testUser := createTestUser(2, "user@example.com", "Updated Name", "member", 1)
 
 	mockService.On("GetUserByID", int64(2)).Return(testUser, nil)
@@ -227,7 +226,7 @@ func TestUserHandler_UpdateUser_Success(t *testing.T) {
 
 func TestUserHandler_UpdateUser_AccessDenied_Member(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -248,7 +247,7 @@ func TestUserHandler_UpdateUser_AccessDenied_Member(t *testing.T) {
 
 func TestUserHandler_DeleteUser_Success(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	testUser := createTestUser(2, "user@example.com", "User", "member", 1)
 
 	mockService.On("GetUserByID", int64(2)).Return(testUser, nil)
@@ -274,7 +273,7 @@ func TestUserHandler_DeleteUser_Success(t *testing.T) {
 
 func TestUserHandler_DeleteUser_PreventSelfDeletion(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -293,7 +292,7 @@ func TestUserHandler_DeleteUser_PreventSelfDeletion(t *testing.T) {
 
 func TestUserHandler_DeleteUser_AccessDenied_Member(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -308,7 +307,7 @@ func TestUserHandler_DeleteUser_AccessDenied_Member(t *testing.T) {
 
 func TestUserHandler_DeleteUser_UserNotFound(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	mockService.On("GetUserByID", int64(999)).Return(nil, assert.AnError)
 
 	handler := NewUserHandler(mockService)
@@ -385,7 +384,7 @@ func testHandlerWithUser(handler gin.HandlerFunc, user *models.User) gin.Handler
 // TestUserHandler_MissingUserContext tests handler behavior when user is not in context
 func TestUserHandler_MissingUserContext(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 
 	gin.SetMode(gin.TestMode)
@@ -441,7 +440,7 @@ func TestUpdateUserRequest_Structure(t *testing.T) {
 // TestUserHandler_CreateUser_InvalidRole tests user creation with invalid role
 func TestUserHandler_CreateUser_InvalidRole(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -466,7 +465,7 @@ func TestUserHandler_CreateUser_InvalidRole(t *testing.T) {
 // TestUserHandler_CreateUser_InvalidEmail tests user creation with invalid email
 func TestUserHandler_CreateUser_InvalidEmail(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -491,7 +490,6 @@ func TestUserHandler_CreateUser_InvalidEmail(t *testing.T) {
 // TestUserHandler_UpdateUser_UserNotFound tests updating a non-existent user
 func TestUserHandler_UpdateUser_UserNotFound(t *testing.T) {
 	mockService := new(MockUserService)
-	
 
 	// User not found
 	mockService.On("GetUserByID", int64(999)).Return((*models.User)(nil), assert.AnError)
@@ -519,7 +517,7 @@ func TestUserHandler_UpdateUser_UserNotFound(t *testing.T) {
 // TestUserHandler_UpdateUser_DifferentTenant tests updating user from different tenant
 func TestUserHandler_UpdateUser_DifferentTenant(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	targetUser := createTestUser(2, "other@example.com", "Other", "member", 999) // Different tenant
 
 	mockService.On("GetUserByID", int64(2)).Return(targetUser, nil)
@@ -551,7 +549,7 @@ func TestUserHandler_UpdateUser_DifferentTenant(t *testing.T) {
 // TestUserHandler_DeleteUser_SelfDeletion tests that users cannot delete themselves
 func TestUserHandler_DeleteUser_SelfDeletion(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -571,7 +569,7 @@ func TestUserHandler_DeleteUser_SelfDeletion(t *testing.T) {
 // TestUserHandler_DeleteUser_DifferentTenant tests deleting user from different tenant
 func TestUserHandler_DeleteUser_DifferentTenant(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	targetUser := createTestUser(2, "other@example.com", "Other", "member", 999) // Different tenant
 
 	mockService.On("GetUserByID", int64(2)).Return(targetUser, nil)
@@ -597,7 +595,7 @@ func TestUserHandler_DeleteUser_DifferentTenant(t *testing.T) {
 // TestUserHandler_ListUsers_MissingUserContext tests listing users without authentication
 func TestUserHandler_ListUsers_MissingUserContext(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 
 	gin.SetMode(gin.TestMode)
@@ -618,7 +616,7 @@ func TestUserHandler_ListUsers_MissingUserContext(t *testing.T) {
 // TestUserHandler_UpdateUser_InvalidUserID tests updating with invalid user ID
 func TestUserHandler_UpdateUser_InvalidUserID(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 
@@ -644,7 +642,7 @@ func TestUserHandler_UpdateUser_InvalidUserID(t *testing.T) {
 // TestUserHandler_DeleteUser_InvalidUserID tests deleting with invalid user ID
 func TestUserHandler_DeleteUser_InvalidUserID(t *testing.T) {
 	mockService := new(MockUserService)
-	
+
 	handler := NewUserHandler(mockService)
 	router := setupUserRouter(handler)
 

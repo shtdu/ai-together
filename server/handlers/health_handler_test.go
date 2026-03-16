@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -167,7 +166,7 @@ func TestDatabaseStatus_Scenarios(t *testing.T) {
 		{
 			name: "database down with timeout error",
 			status: DatabaseStatus{
-				Status:  "down",
+				Status: "down",
 				Error:  "context deadline exceeded",
 			},
 		},
@@ -190,8 +189,8 @@ func TestDatabaseStatus_Scenarios(t *testing.T) {
 // TestHealthHandler_ResponseCodes verifies the expected response codes
 func TestHealthHandler_ResponseCodes(t *testing.T) {
 	expectedCodes := map[string]int{
-		"healthy":   http.StatusOK,
-		"degraded":  http.StatusServiceUnavailable,
+		"healthy":  http.StatusOK,
+		"degraded": http.StatusServiceUnavailable,
 	}
 
 	for status, expectedCode := range expectedCodes {

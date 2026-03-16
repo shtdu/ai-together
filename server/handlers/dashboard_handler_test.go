@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -43,9 +42,9 @@ func TestDashboardHandler_GetMetrics_Success(t *testing.T) {
 		"interval": "hour",
 		"data_points": []interface{}{
 			map[string]interface{}{
-				"timestamp":            time.Now(),
-				"total_tokens":         1000,
-				"request_count":        10,
+				"timestamp":     time.Now(),
+				"total_tokens":  1000,
+				"request_count": 10,
 			},
 		},
 	}
@@ -77,8 +76,8 @@ func TestDashboardHandler_GetMetrics_DefaultRange(t *testing.T) {
 	mockUserService := new(MockUserService)
 
 	testData := map[string]interface{}{
-		"period":   map[string]interface{}{},
-		"interval": "hour", // Default interval is "hour"
+		"period":      map[string]interface{}{},
+		"interval":    "hour", // Default interval is "hour"
 		"data_points": []interface{}{},
 	}
 
@@ -208,8 +207,8 @@ func TestDashboardHandler_GetRankings_MemberAccess(t *testing.T) {
 	mockUserService := new(MockUserService)
 
 	testData := map[string]interface{}{
-		"period":    "24h",
-		"rankings":  []interface{}{},
+		"period":   "24h",
+		"rankings": []interface{}{},
 	}
 
 	mockUsageService.On("GetProviderRankings",
@@ -340,12 +339,12 @@ func setupDashboardRouter(handler *DashboardHandler) *gin.Engine {
 func TestMetricDataPoint_Structure(t *testing.T) {
 	now := time.Now()
 	point := MetricDataPoint{
-		Timestamp:          now,
-		ActiveTimeSeconds:  3600.0,
-		TotalTokens:        1000,
-		InputTokens:        600,
-		OutputTokens:       400,
-		RequestCount:       10,
+		Timestamp:         now,
+		ActiveTimeSeconds: 3600.0,
+		TotalTokens:       1000,
+		InputTokens:       600,
+		OutputTokens:      400,
+		RequestCount:      10,
 	}
 
 	data, err := json.Marshal(point)
@@ -405,7 +404,7 @@ func TestDashboardHandler_GetMetrics_InvalidRange(t *testing.T) {
 	mockUserService := new(MockUserService)
 
 	testData := map[string]interface{}{
-		"interval": "hour",
+		"interval":    "hour",
 		"data_points": []interface{}{},
 	}
 

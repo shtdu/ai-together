@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package repository
 
 import (
@@ -968,13 +967,13 @@ func (r *UsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, 
 		}
 
 		details = append(details, map[string]interface{}{
-			"user_id":       userID,
-			"user_name":     userName,
-			"date":          date.Format("2006-01-02"),
-			"provider":      providerStr,
-			"model":         modelStr,
-			"total_tokens":  totalTokens,
-			"total_cost":    (float64(totalTokens) * 0.0015) / 1000,
+			"user_id":        userID,
+			"user_name":      userName,
+			"date":           date.Format("2006-01-02"),
+			"provider":       providerStr,
+			"model":          modelStr,
+			"total_tokens":   totalTokens,
+			"total_cost":     (float64(totalTokens) * 0.0015) / 1000,
 			"avg_latency_ms": avgLatency,
 		})
 	}
@@ -1082,18 +1081,18 @@ func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startD
 		}
 
 		record := map[string]interface{}{
-			"id":           id,
-			"timestamp":    createdAt,
-			"user_id":      userID,
-			"user_name":    userName,
-			"provider":     stringOrEmpty(provider),
-			"model":        stringOrEmpty(model),
-			"platform":     stringOrEmpty(platform),
+			"id":            id,
+			"timestamp":     createdAt,
+			"user_id":       userID,
+			"user_name":     userName,
+			"provider":      stringOrEmpty(provider),
+			"model":         stringOrEmpty(model),
+			"platform":      stringOrEmpty(platform),
 			"input_tokens":  intOrZero(inputTokens),
 			"output_tokens": intOrZero(outputTokens),
-			"http_code":    intOrZero(httpCode),
-			"duration_sec": floatOrZero(durationSec),
-			"is_stream":    boolOrFalse(isStream),
+			"http_code":     intOrZero(httpCode),
+			"duration_sec":  floatOrZero(durationSec),
+			"is_stream":     boolOrFalse(isStream),
 		}
 		records = append(records, record)
 	}

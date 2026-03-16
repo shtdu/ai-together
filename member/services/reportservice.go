@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -49,28 +48,28 @@ type ToolReport struct {
 
 // DayDetails contains all statistics for a single natural day
 type DayDetails struct {
-	SessionStats    SessionStats       `json:"session_stats"`
-	EventTypeCounts map[string]int     `json:"event_type_counts"`
-	ToolUsageStats  []ToolUsageItem    `json:"tool_usage_stats"`
-	PromptStats     PromptStats        `json:"prompt_stats"`
+	SessionStats    SessionStats    `json:"session_stats"`
+	EventTypeCounts map[string]int  `json:"event_type_counts"`
+	ToolUsageStats  []ToolUsageItem `json:"tool_usage_stats"`
+	PromptStats     PromptStats     `json:"prompt_stats"`
 }
 
 // SessionStats contains session-related statistics
 type SessionStats struct {
-	SessionCount    int           `json:"session_count"`
-	EventCount      int           `json:"event_count"`
-	UniqueSessions []SessionInfo  `json:"unique_sessions"`
+	SessionCount   int           `json:"session_count"`
+	EventCount     int           `json:"event_count"`
+	UniqueSessions []SessionInfo `json:"unique_sessions"`
 }
 
 // SessionInfo represents a single session's duration information
 type SessionInfo struct {
-	SessionID      string         `json:"session_id"`
-	BeginTime      string         `json:"begin_time"`       // ISO timestamp
-	DurationMs     int64          `json:"duration_ms"`      // Duration in milliseconds
+	SessionID       string         `json:"session_id"`
+	BeginTime       string         `json:"begin_time"`        // ISO timestamp
+	DurationMs      int64          `json:"duration_ms"`       // Duration in milliseconds
 	EventTypeCounts map[string]int `json:"event_type_counts"` // Count of each event type in this session
-	RepositoryName string         `json:"repository_name"`  // Git repository name (e.g., "owner/repo")
-	Branch         string         `json:"branch"`           // Git branch name
-	CommitHash     string         `json:"commit_hash"`      // Git commit hash
+	RepositoryName  string         `json:"repository_name"`   // Git repository name (e.g., "owner/repo")
+	Branch          string         `json:"branch"`            // Git branch name
+	CommitHash      string         `json:"commit_hash"`       // Git commit hash
 }
 
 // extractRepositoryName extracts the "owner/repo" short name from the first remote URL.
@@ -232,13 +231,13 @@ func (s *ReportService) GenerateDailyReport(dateStr, toolName string) (*DailyRep
 			repoName := extractRepositoryName(sess.RemoteURLs)
 
 			sessions[j] = SessionInfo{
-				SessionID:      sess.SessionID,
-				BeginTime:      sess.BeginTime.Format("2006-01-02T15:04:05-07:00"),
-				DurationMs:     sess.Duration,
+				SessionID:       sess.SessionID,
+				BeginTime:       sess.BeginTime.Format("2006-01-02T15:04:05-07:00"),
+				DurationMs:      sess.Duration,
 				EventTypeCounts: sess.EventTypeCounts,
-				RepositoryName: repoName,
-				Branch:         sess.Branch,
-				CommitHash:     sess.CommitHash,
+				RepositoryName:  repoName,
+				Branch:          sess.Branch,
+				CommitHash:      sess.CommitHash,
 			}
 		}
 
@@ -255,8 +254,8 @@ func (s *ReportService) GenerateDailyReport(dateStr, toolName string) (*DailyRep
 			ToolName: tool.ToolName,
 			Details: DayDetails{
 				SessionStats: SessionStats{
-					SessionCount:    tool.Details.SessionStats.SessionCount,
-					EventCount:      tool.Details.SessionStats.EventCount,
+					SessionCount:   tool.Details.SessionStats.SessionCount,
+					EventCount:     tool.Details.SessionStats.EventCount,
 					UniqueSessions: sessions,
 				},
 				EventTypeCounts: tool.Details.EventTypeCounts,

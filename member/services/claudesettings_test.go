@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -178,49 +177,49 @@ func assertFileExists(t *testing.T, path string, shouldExist bool) {
 
 func TestClaudeBaseURL(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		relayAddr string
-		want     string
+		want      string
 	}{
 		{
-			name:     "Empty address",
+			name:      "Empty address",
 			relayAddr: "",
-			want:     "http://127.0.0.1:18100",
+			want:      "http://127.0.0.1:18100",
 		},
 		{
-			name:     "Port only",
+			name:      "Port only",
 			relayAddr: ":18100",
-			want:     "http://127.0.0.1:18100",
+			want:      "http://127.0.0.1:18100",
 		},
 		{
-			name:     "Host only",
+			name:      "Host only",
 			relayAddr: "localhost:18100",
-			want:     "http://localhost:18100",
+			want:      "http://localhost:18100",
 		},
 		{
-			name:     "Full URL with http",
+			name:      "Full URL with http",
 			relayAddr: "http://example.com:18100",
-			want:     "http://example.com:18100",
+			want:      "http://example.com:18100",
 		},
 		{
-			name:     "Full URL with https",
+			name:      "Full URL with https",
 			relayAddr: "https://example.com:18100",
-			want:     "https://example.com:18100",
+			want:      "https://example.com:18100",
 		},
 		{
-			name:     "IP address",
+			name:      "IP address",
 			relayAddr: "192.168.1.1:18100",
-			want:     "http://192.168.1.1:18100",
+			want:      "http://192.168.1.1:18100",
 		},
 		{
-			name:     "IP address with port only",
+			name:      "IP address with port only",
 			relayAddr: ":9080",
-			want:     "http://127.0.0.1:9080",
+			want:      "http://127.0.0.1:9080",
 		},
 		{
-			name:     "Whitespace trimmed",
+			name:      "Whitespace trimmed",
 			relayAddr: "  localhost:18100  ",
-			want:     "http://localhost:18100",
+			want:      "http://localhost:18100",
 		},
 	}
 
@@ -320,10 +319,10 @@ func TestProxyStatus_InvalidJSON(t *testing.T) {
 
 func TestProxyStatus_BaseURLFormats(t *testing.T) {
 	tests := []struct {
-		name         string
-		relayAddr    string
-		settingsURL  string
-		expectedURL  string
+		name        string
+		relayAddr   string
+		settingsURL string
+		expectedURL string
 	}{
 		{
 			name:        "Default relay address",
@@ -394,7 +393,7 @@ func TestEnableProxy_NoExistingSettings(t *testing.T) {
 func TestEnableProxy_WithExistingSettings(t *testing.T) {
 	tmpDir := setupTestEnv(t)
 	createSettingsFileWithEnv(t, tmpDir, map[string]string{
-		"OTHER_VAR": "other_value",
+		"OTHER_VAR":  "other_value",
 		"CUSTOM_VAR": "custom_value",
 	})
 
@@ -439,8 +438,8 @@ func TestEnableProxy_PreservesExistingEnvVars(t *testing.T) {
 	createSettingsFileWithEnv(t, tmpDir, map[string]string{
 		"ANTHROPIC_AUTH_TOKEN": "old-token",
 		"ANTHROPIC_BASE_URL":   "http://old-url:8080",
-		"API_TIMEOUT_MS":        "3000000",
-		"CUSTOM_VAR":            "custom_value",
+		"API_TIMEOUT_MS":       "3000000",
+		"CUSTOM_VAR":           "custom_value",
 	})
 
 	service := NewClaudeSettingsService(":18100")
@@ -880,28 +879,28 @@ func TestConcurrentOperations(t *testing.T) {
 
 func TestProxyStatus_CaseInsensitiveToken(t *testing.T) {
 	tests := []struct {
-		name          string
-		authToken     string
+		name            string
+		authToken       string
 		shouldBeEnabled bool
 	}{
 		{
-			name:          "Exact match",
-			authToken:     "code-together",
+			name:            "Exact match",
+			authToken:       "code-together",
 			shouldBeEnabled: true,
 		},
 		{
-			name:          "Uppercase",
-			authToken:     "CODE-TOGETHER",
+			name:            "Uppercase",
+			authToken:       "CODE-TOGETHER",
 			shouldBeEnabled: true,
 		},
 		{
-			name:          "Mixed case",
-			authToken:     "Code-Together",
+			name:            "Mixed case",
+			authToken:       "Code-Together",
 			shouldBeEnabled: true,
 		},
 		{
-			name:          "Different token",
-			authToken:     "different-token",
+			name:            "Different token",
+			authToken:       "different-token",
 			shouldBeEnabled: false,
 		},
 	}
@@ -928,23 +927,23 @@ func TestProxyStatus_CaseInsensitiveToken(t *testing.T) {
 
 func TestProxyStatus_CaseInsensitiveBaseURL(t *testing.T) {
 	tests := []struct {
-		name          string
-		baseURL       string
+		name            string
+		baseURL         string
 		shouldBeEnabled bool
 	}{
 		{
-			name:          "Exact match",
-			baseURL:       "http://127.0.0.1:18100",
+			name:            "Exact match",
+			baseURL:         "http://127.0.0.1:18100",
 			shouldBeEnabled: true,
 		},
 		{
-			name:          "Uppercase HTTP",
-			baseURL:       "HTTP://127.0.0.1:18100",
+			name:            "Uppercase HTTP",
+			baseURL:         "HTTP://127.0.0.1:18100",
 			shouldBeEnabled: true,
 		},
 		{
-			name:          "Different URL",
-			baseURL:       "http://different.com:18100",
+			name:            "Different URL",
+			baseURL:         "http://different.com:18100",
 			shouldBeEnabled: false,
 		},
 	}
@@ -1302,7 +1301,7 @@ func TestMergeCTHooks_WithExistingCTHooks(t *testing.T) {
 
 	// Pre-populate some CT hooks
 	settings["hooks"] = map[string]any{
-		"SessionStart": []any{ctHookConfig},
+		"SessionStart":     []any{ctHookConfig},
 		"UserPromptSubmit": []any{ctHookConfig},
 	}
 
@@ -1405,9 +1404,9 @@ func TestMergeCTHooks_MixedScenario(t *testing.T) {
 	userHook2 := map[string]any{"command": "custom2", "type": "command"}
 
 	settings["hooks"] = map[string]any{
-		"SessionStart": []any{ctHookConfig},           // CT hook already exists
-		"UserPromptSubmit": []any{userHook1},           // User hook
-		"PostToolUse": []any{userHook1, userHook2},    // Multiple user hooks
+		"SessionStart":     []any{ctHookConfig},         // CT hook already exists
+		"UserPromptSubmit": []any{userHook1},            // User hook
+		"PostToolUse":      []any{userHook1, userHook2}, // Multiple user hooks
 	}
 
 	settings["env"] = map[string]any{
@@ -1452,7 +1451,7 @@ func TestEnableProxy_WithHookMerge(t *testing.T) {
 	// Create settings without hooks
 	createSettingsFileWithEnv(t, tmpDir, map[string]string{
 		"ANTHROPIC_AUTH_TOKEN": "old-token",
-		"API_TIMEOUT_MS":        "3000000",
+		"API_TIMEOUT_MS":       "3000000",
 	})
 
 	service := NewClaudeSettingsService(":18100")
@@ -1651,4 +1650,3 @@ func TestEnableProxy_HooksWithExistingUserHooks(t *testing.T) {
 		t.Error("permissions field lost")
 	}
 }
-

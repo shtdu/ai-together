@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package integration
 
 import (
@@ -23,9 +22,9 @@ import (
 	"net/http"
 	"time"
 
+	integrationclient "github.com/code-together/shared/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	integrationclient "github.com/code-together/shared/integration"
 )
 
 // ============================================================================
@@ -57,26 +56,26 @@ func (s *IntegrationTestSuite) TestAnalyticsProviderGetSuccess() {
 	// Upload some usage records for this provider
 	records := []integrationclient.UsageRecord{
 		{
-			Platform:      "claude",
-			Model:         "claude-3-opus",
-			Provider:      uniqueName,
-			HttpCode:      200,
-			InputTokens:   intPointer(1000),
-			OutputTokens:  intPointer(500),
-			TenantId:      int64Pointer(1),
-			UserId:        int64Pointer(1),
-			CreatedAt:     time.Now(),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
+			OutputTokens: intPointer(500),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    time.Now(),
 		},
 		{
-			Platform:      "claude",
-			Model:         "claude-3-sonnet",
-			Provider:      uniqueName,
-			HttpCode:      200,
-			InputTokens:   intPointer(500),
-			OutputTokens:  intPointer(300),
-			TenantId:      int64Pointer(1),
-			UserId:        int64Pointer(1),
-			CreatedAt:     time.Now().Add(-1 * time.Hour),
+			Platform:     "claude",
+			Model:        "claude-3-sonnet",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(500),
+			OutputTokens: intPointer(300),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    time.Now().Add(-1 * time.Hour),
 		},
 	}
 
@@ -185,15 +184,15 @@ func (s *IntegrationTestSuite) TestAnalyticsUserGetSuccess() {
 	// Upload usage records for the member
 	records := []integrationclient.UsageRecord{
 		{
-			Platform:      "claude",
-			Model:         "claude-3-opus",
-			Provider:      uniqueName,
-			HttpCode:      200,
-			InputTokens:   intPointer(2000),
-			OutputTokens:  intPointer(1000),
-			TenantId:      int64Pointer(1),
-			UserId:        &memberUserID,
-			CreatedAt:     time.Now().Add(-2 * time.Hour),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(2000),
+			OutputTokens: intPointer(1000),
+			TenantId:     int64Pointer(1),
+			UserId:       &memberUserID,
+			CreatedAt:    time.Now().Add(-2 * time.Hour),
 		},
 	}
 
@@ -257,26 +256,26 @@ func (s *IntegrationTestSuite) TestAnalyticsHistoryGetSuccess() {
 	// Upload historical usage records
 	records := []integrationclient.UsageRecord{
 		{
-			Platform:      "claude",
-			Model:         "claude-3-opus",
-			Provider:      uniqueName,
-			HttpCode:      200,
-			InputTokens:   intPointer(500),
-			OutputTokens:  intPointer(200),
-			TenantId:      int64Pointer(1),
-			UserId:        int64Pointer(1),
-			CreatedAt:     time.Now().Add(-24 * time.Hour),
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(500),
+			OutputTokens: intPointer(200),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    time.Now().Add(-24 * time.Hour),
 		},
 		{
-			Platform:      "claude",
-			Model:         "claude-3-sonnet",
-			Provider:      uniqueName,
-			HttpCode:      200,
-			InputTokens:   intPointer(300),
-			OutputTokens:  intPointer(150),
-			TenantId:      int64Pointer(1),
-			UserId:        int64Pointer(1),
-			CreatedAt:     time.Now().Add(-12 * time.Hour),
+			Platform:     "claude",
+			Model:        "claude-3-sonnet",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(300),
+			OutputTokens: intPointer(150),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    time.Now().Add(-12 * time.Hour),
 		},
 	}
 

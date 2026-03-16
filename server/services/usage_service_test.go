@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -31,8 +30,8 @@ func TestUsageService_GetCurrentUsage_Success(t *testing.T) {
 	service := NewUsageService(mockRepo)
 
 	usageData := map[string]interface{}{
-		"total_tokens":  1000,
-		"total_cost":    0.50,
+		"total_tokens":   1000,
+		"total_cost":     0.50,
 		"total_requests": 10,
 	}
 
@@ -66,8 +65,8 @@ func TestUsageService_GetUsageStats_Success(t *testing.T) {
 	service := NewUsageService(mockRepo)
 
 	statsData := map[string]interface{}{
-		"total_tokens":  50000,
-		"total_cost":    25.00,
+		"total_tokens":   50000,
+		"total_cost":     25.00,
 		"total_requests": 500,
 	}
 
@@ -326,7 +325,7 @@ func TestUsageService_GetProviderAnalytics_Success(t *testing.T) {
 	service := NewUsageService(mockRepo)
 
 	result := map[string]interface{}{
-		"providers": []string{"claude", "openai"},
+		"providers":      []string{"claude", "openai"},
 		"total_requests": float64(150),
 	}
 
@@ -346,7 +345,7 @@ func TestUsageService_GetUserAnalytics_Success(t *testing.T) {
 	service := NewUsageService(mockRepo)
 
 	result := map[string]interface{}{
-		"users": []int64{1, 2},
+		"users":          []int64{1, 2},
 		"total_requests": float64(200),
 	}
 

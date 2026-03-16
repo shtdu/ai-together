@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -26,10 +25,10 @@ import (
 	"testing"
 	"time"
 
-	licenseLib "github.com/vitalvas/go-license/license"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	licenseLib "github.com/vitalvas/go-license/license"
 	"switch-server/models"
 )
 
@@ -110,15 +109,15 @@ func newMockServiceWithLicenses(t *testing.T, privateKey ed25519.PrivateKey, pub
 
 	// Create the license object with decoded values
 	license := &models.License{
-		TenantID:           tenantID,
-		LicenseID:          decoded.ID,
-		LicenseType:        licenseData.LicenseType,
-		MaxSeats:           licenseData.MaxSeats,
-		MaxTeams:           licenseData.MaxTeams,
-		DataRetentionDays:  licenseData.DataRetentionDays,
-		LicenseKey:         licensePEM,
-		IssuedAt:           time.Unix(decoded.IssuedAt, 0),
-		ExpiresAt:          time.Unix(decoded.ExpiredAt, 0),
+		TenantID:          tenantID,
+		LicenseID:         decoded.ID,
+		LicenseType:       licenseData.LicenseType,
+		MaxSeats:          licenseData.MaxSeats,
+		MaxTeams:          licenseData.MaxTeams,
+		DataRetentionDays: licenseData.DataRetentionDays,
+		LicenseKey:        licensePEM,
+		IssuedAt:          time.Unix(decoded.IssuedAt, 0),
+		ExpiresAt:         time.Unix(decoded.ExpiredAt, 0),
 	}
 
 	// Mock license list with our properly encoded license
@@ -432,15 +431,15 @@ func TestLicenseService_IsLicenseValid(t *testing.T) {
 		require.NoError(t, json.Unmarshal(decoded.Data, &storedLicenseData))
 
 		license := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          decoded.ID,
-			LicenseType:        storedLicenseData.LicenseType,
-			MaxSeats:           storedLicenseData.MaxSeats,
-			MaxTeams:           storedLicenseData.MaxTeams,
-			DataRetentionDays:  storedLicenseData.DataRetentionDays,
-			LicenseKey:         string(encoded),
-			IssuedAt:           time.Unix(decoded.IssuedAt, 0),
-			ExpiresAt:          time.Unix(decoded.ExpiredAt, 0),
+			TenantID:          tenantID,
+			LicenseID:         decoded.ID,
+			LicenseType:       storedLicenseData.LicenseType,
+			MaxSeats:          storedLicenseData.MaxSeats,
+			MaxTeams:          storedLicenseData.MaxTeams,
+			DataRetentionDays: storedLicenseData.DataRetentionDays,
+			LicenseKey:        string(encoded),
+			IssuedAt:          time.Unix(decoded.IssuedAt, 0),
+			ExpiresAt:         time.Unix(decoded.ExpiredAt, 0),
 		}
 
 		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{license}, nil)
@@ -467,8 +466,8 @@ func TestLicenseService_ActivateLicense(t *testing.T) {
 
 	t.Run("success - valid license", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 
@@ -482,8 +481,8 @@ func TestLicenseService_ActivateLicense(t *testing.T) {
 
 	t.Run("error - invalid PEM format", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		err := service.ActivateLicense(ctx, tenantID, "not-a-valid-pem")
 
@@ -493,8 +492,8 @@ func TestLicenseService_ActivateLicense(t *testing.T) {
 
 	t.Run("error - expired license", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		// Create an expired license by issuing it in the past
 		licenseData := models.LicenseData{
@@ -543,8 +542,8 @@ func TestLicenseService_ActivateLicense(t *testing.T) {
 
 	t.Run("error - repository update failure", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 
@@ -625,15 +624,15 @@ func TestLicenseService_GetEffectiveLicense(t *testing.T) {
 		require.NoError(t, json.Unmarshal(decoded.Data, &storedLicenseData))
 
 		license := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          decoded.ID,
-			LicenseType:        storedLicenseData.LicenseType,
-			MaxSeats:           storedLicenseData.MaxSeats,
-			MaxTeams:           storedLicenseData.MaxTeams,
-			DataRetentionDays:  storedLicenseData.DataRetentionDays,
-			LicenseKey:         string(encoded),
-			IssuedAt:   time.Unix(decoded.IssuedAt, 0),
-			ExpiresAt:  time.Unix(decoded.ExpiredAt, 0),
+			TenantID:          tenantID,
+			LicenseID:         decoded.ID,
+			LicenseType:       storedLicenseData.LicenseType,
+			MaxSeats:          storedLicenseData.MaxSeats,
+			MaxTeams:          storedLicenseData.MaxTeams,
+			DataRetentionDays: storedLicenseData.DataRetentionDays,
+			LicenseKey:        string(encoded),
+			IssuedAt:          time.Unix(decoded.IssuedAt, 0),
+			ExpiresAt:         time.Unix(decoded.ExpiredAt, 0),
 		}
 
 		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{license}, nil)
@@ -720,15 +719,15 @@ func TestLicenseService_HasActiveLicense(t *testing.T) {
 		require.NoError(t, json.Unmarshal(decoded.Data, &storedLicenseData))
 
 		license := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          decoded.ID,
-			LicenseType:        storedLicenseData.LicenseType,
-			MaxSeats:           storedLicenseData.MaxSeats,
-			MaxTeams:           storedLicenseData.MaxTeams,
-			DataRetentionDays:  storedLicenseData.DataRetentionDays,
-			LicenseKey:         string(encoded),
-			IssuedAt:           time.Unix(decoded.IssuedAt, 0),
-			ExpiresAt:          time.Unix(decoded.ExpiredAt, 0),
+			TenantID:          tenantID,
+			LicenseID:         decoded.ID,
+			LicenseType:       storedLicenseData.LicenseType,
+			MaxSeats:          storedLicenseData.MaxSeats,
+			MaxTeams:          storedLicenseData.MaxTeams,
+			DataRetentionDays: storedLicenseData.DataRetentionDays,
+			LicenseKey:        string(encoded),
+			IssuedAt:          time.Unix(decoded.IssuedAt, 0),
+			ExpiresAt:         time.Unix(decoded.ExpiredAt, 0),
 		}
 
 		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{license}, nil)
@@ -767,7 +766,7 @@ func TestLicenseService_GetTiers(t *testing.T) {
 	assert.Equal(t, "commercial", tiersList[1]["type"])
 	assert.Equal(t, "Commercial", tiersList[1]["name"])
 	assert.Equal(t, 100, tiersList[1]["max_seats"])
-	assert.Equal(t, -1, tiersList[1]["max_teams"]) // unlimited
+	assert.Equal(t, -1, tiersList[1]["max_teams"])     // unlimited
 	assert.Equal(t, -1, tiersList[1]["max_providers"]) // unlimited
 }
 
@@ -779,19 +778,19 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("valid integrity - stored values match decoded license key", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		// Generate a valid commercial license
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "commercial",
-			MaxSeats:           100,
-			MaxTeams:           -1,
-			DataRetentionDays:  90,
-			LicenseKey:         licensePEM,
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "commercial",
+			MaxSeats:          100,
+			MaxTeams:          -1,
+			DataRetentionDays: 90,
+			LicenseKey:        licensePEM,
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)
@@ -812,13 +811,13 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 		// Generate a commercial license
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "opensource", // Tampered: stored as opensource instead of commercial
-			MaxSeats:           100,
-			MaxTeams:           -1,
-			DataRetentionDays:  90,
-			LicenseKey:         licensePEM,
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "opensource", // Tampered: stored as opensource instead of commercial
+			MaxSeats:          100,
+			MaxTeams:          -1,
+			DataRetentionDays: 90,
+			LicenseKey:        licensePEM,
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)
@@ -844,13 +843,13 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 		// Generate a commercial license with 100 seats
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "commercial",
-			MaxSeats:           50, // Tampered: stored as 50 instead of 100
-			MaxTeams:           -1,
-			DataRetentionDays:  90,
-			LicenseKey:         licensePEM,
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "commercial",
+			MaxSeats:          50, // Tampered: stored as 50 instead of 100
+			MaxTeams:          -1,
+			DataRetentionDays: 90,
+			LicenseKey:        licensePEM,
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)
@@ -877,13 +876,13 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 		// Generate a commercial license
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "opensource", // Tampered
-			MaxSeats:           50,            // Tampered
-			MaxTeams:           1,             // Tampered
-			DataRetentionDays:  7,             // Tampered
-			LicenseKey:         licensePEM,
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "opensource", // Tampered
+			MaxSeats:          50,           // Tampered
+			MaxTeams:          1,            // Tampered
+			DataRetentionDays: 7,            // Tampered
+			LicenseKey:        licensePEM,
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)
@@ -904,8 +903,8 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("no license - tenant has no license (return valid, no mismatch)", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		// Simulate "no rows in result set" error
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(nil, errors.New("sql: no rows in result set"))
@@ -920,8 +919,8 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("no license key - empty license key field", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		storedLicense := &models.License{
 			TenantID:   tenantID,
@@ -943,8 +942,8 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("invalid license key - corrupted PEM format (return error)", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		storedLicense := &models.License{
 			TenantID:   tenantID,
@@ -967,8 +966,8 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("expired license - still verify integrity even if expired", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		// Generate an expired license
 		licenseData := models.LicenseData{
@@ -993,13 +992,13 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 		require.NoError(t, err)
 
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "commercial",
-			MaxSeats:           100,
-			MaxTeams:           -1,
-			DataRetentionDays:  90,
-			LicenseKey:         string(encoded),
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "commercial",
+			MaxSeats:          100,
+			MaxTeams:          -1,
+			DataRetentionDays: 90,
+			LicenseKey:        string(encoded),
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)
@@ -1015,8 +1014,8 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("repository error - database connection fails", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		expectedError := errors.New("database connection failed")
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(nil, expectedError)
@@ -1038,13 +1037,13 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 		// Generate a commercial license
 		licensePEM := GenerateTestLicense(t, privateKey, "tenant-123", "commercial", 100, -1, 90, 365)
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "opensource", // Tampered
-			MaxSeats:           100,
-			MaxTeams:           -1,
-			DataRetentionDays:  90,
-			LicenseKey:         licensePEM,
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "opensource", // Tampered
+			MaxSeats:          100,
+			MaxTeams:          -1,
+			DataRetentionDays: 90,
+			LicenseKey:        licensePEM,
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)
@@ -1063,8 +1062,8 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 
 	t.Run("expired license with tampering - auto-corrects even if expired", func(t *testing.T) {
 		mockRepo := new(MockLicenseRepository)
-	mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
-	service, _ := NewLicenseService(mockRepo, pubKeyBase64)
+		mockRepo.On("GetAllLicenses", mock.Anything).Return([]*models.License{}, nil)
+		service, _ := NewLicenseService(mockRepo, pubKeyBase64)
 
 		// Generate an expired commercial license
 		licenseData := models.LicenseData{
@@ -1089,13 +1088,13 @@ func TestLicenseService_VerifyLicenseIntegrity(t *testing.T) {
 		require.NoError(t, err)
 
 		storedLicense := &models.License{
-			TenantID:           tenantID,
-			LicenseID:          "tenant-123",
-			LicenseType:        "opensource", // Tampered - should be commercial
-			MaxSeats:           10,            // Tampered
-			MaxTeams:           1,             // Tampered
-			DataRetentionDays:  7,             // Tampered
-			LicenseKey:         string(encoded),
+			TenantID:          tenantID,
+			LicenseID:         "tenant-123",
+			LicenseType:       "opensource", // Tampered - should be commercial
+			MaxSeats:          10,           // Tampered
+			MaxTeams:          1,            // Tampered
+			DataRetentionDays: 7,            // Tampered
+			LicenseKey:        string(encoded),
 		}
 
 		mockRepo.On("GetTenantLicense", ctx, tenantID).Return(storedLicense, nil)

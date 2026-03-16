@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -274,19 +273,19 @@ func (h *ProviderHandler) UpdateProvider(c *gin.Context) {
 		count, err := h.providerService.CountProvidersByNameAndTeamExcludingID(c.Request.Context(), req.Name, currentUser.TenantID, providerID)
 		if err != nil {
 			requestID := c.GetString("request_id")
-		log.Printf("[ERROR] [%s] Failed to check for duplicate provider name - name=%s error=%v", requestID, req.Name, err)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Error:   "Failed to check for duplicate provider name",
-			Code:    models.ErrCodeInternal,
-			Request: requestID,
-		})
+			log.Printf("[ERROR] [%s] Failed to check for duplicate provider name - name=%s error=%v", requestID, req.Name, err)
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Failed to check for duplicate provider name",
+				Code:    models.ErrCodeInternal,
+				Request: requestID,
+			})
 			return
 		}
 		if count > 0 {
 			c.JSON(http.StatusConflict, models.ErrorResponse{
-			Error: fmt.Sprintf("Provider with name '%s' already exists", req.Name),
-			Code:  models.ErrCodeConflict,
-		})
+				Error: fmt.Sprintf("Provider with name '%s' already exists", req.Name),
+				Code:  models.ErrCodeConflict,
+			})
 			return
 		}
 	}

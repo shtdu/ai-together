@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package models
 
 import (
@@ -37,14 +36,14 @@ type User struct {
 // Team represents a team entity in the multi-tenant system
 // Teams contain members and have configurations specific to their tenant
 type Team struct {
-	ID          int64     `json:"id" db:"id"`                   // Unique identifier for the team
-	Name        string    `json:"name" db:"name"`               // Name of the team
-	Description string    `json:"description" db:"description"` // Optional description of the team
-	OwnerID     int64     `json:"owner_id" db:"owner_id"`       // ID of the user who owns/created the team
-	TenantID    int64     `json:"tenant_id" db:"tenant_id"`     // ID of the tenant this team belongs to
-	Settings    map[string]string `json:"settings" db:"settings"` // JSON object containing team-specific settings
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`   // Timestamp when the team was created
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`   // Timestamp when the team was last updated
+	ID          int64             `json:"id" db:"id"`                   // Unique identifier for the team
+	Name        string            `json:"name" db:"name"`               // Name of the team
+	Description string            `json:"description" db:"description"` // Optional description of the team
+	OwnerID     int64             `json:"owner_id" db:"owner_id"`       // ID of the user who owns/created the team
+	TenantID    int64             `json:"tenant_id" db:"tenant_id"`     // ID of the tenant this team belongs to
+	Settings    map[string]string `json:"settings" db:"settings"`       // JSON object containing team-specific settings
+	CreatedAt   time.Time         `json:"created_at" db:"created_at"`   // Timestamp when the team was created
+	UpdatedAt   time.Time         `json:"updated_at" db:"updated_at"`   // Timestamp when the team was last updated
 }
 
 // TeamMember represents the relationship between a user and a team
@@ -61,18 +60,18 @@ type TeamMember struct {
 // Provider represents an AI service provider configuration
 // Each provider is owned by a team and can be used by team members
 type Provider struct {
-	ID              int64     `json:"id" db:"id"`                             // Unique identifier for the provider
-	Name            string    `json:"name" db:"name"`                         // Display name for the provider
-	APIURL          string    `json:"api_url" db:"api_url"`                   // Base URL for the provider's API
-	APIKey          string    `json:"api_key" db:"api_key"`                   // Authentication key for the provider API
-	TeamID          int64     `json:"team_id" db:"team_id"`                   // ID of the team that owns this provider
-	Kind            string    `json:"kind" db:"kind"`                         // Provider kind: "claude", "codex", or "opencode"
-	Enabled         bool      `json:"enabled" db:"enabled"`                   // Whether this provider is currently enabled
+	ID              int64             `json:"id" db:"id"`                             // Unique identifier for the provider
+	Name            string            `json:"name" db:"name"`                         // Display name for the provider
+	APIURL          string            `json:"api_url" db:"api_url"`                   // Base URL for the provider's API
+	APIKey          string            `json:"api_key" db:"api_key"`                   // Authentication key for the provider API
+	TeamID          int64             `json:"team_id" db:"team_id"`                   // ID of the team that owns this provider
+	Kind            string            `json:"kind" db:"kind"`                         // Provider kind: "claude", "codex", or "opencode"
+	Enabled         bool              `json:"enabled" db:"enabled"`                   // Whether this provider is currently enabled
 	ModelMapping    map[string]string `json:"model_mapping" db:"model_mapping"`       // Mapping of local model names to provider model names
 	SupportedModels []string          `json:"supported_models" db:"supported_models"` // Models supported by this provider
-	Level           int       `json:"level" db:"level"`                       // Priority level for provider selection
-	CreatedAt       time.Time `json:"created_at" db:"created_at"`             // Timestamp when the provider was added
-	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`             // Timestamp when the provider was last updated
+	Level           int               `json:"level" db:"level"`                       // Priority level for provider selection
+	CreatedAt       time.Time         `json:"created_at" db:"created_at"`             // Timestamp when the provider was added
+	UpdatedAt       time.Time         `json:"updated_at" db:"updated_at"`             // Timestamp when the provider was last updated
 }
 
 // UsageRecord represents a single usage event for an AI service request
@@ -123,13 +122,13 @@ type providerAdapter struct {
 	p *Provider
 }
 
-func (a *providerAdapter) GetID() int64           { return a.p.ID }
-func (a *providerAdapter) GetName() string        { return a.p.Name }
-func (a *providerAdapter) GetAPIURL() string       { return a.p.APIURL }
-func (a *providerAdapter) GetAPIKey() string       { return a.p.APIKey }
-func (a *providerAdapter) GetKind() string         { return a.p.Kind }
-func (a *providerAdapter) IsEnabled() bool         { return a.p.Enabled }
-func (a *providerAdapter) GetLevel() int           { return a.p.Level }
+func (a *providerAdapter) GetID() int64      { return a.p.ID }
+func (a *providerAdapter) GetName() string   { return a.p.Name }
+func (a *providerAdapter) GetAPIURL() string { return a.p.APIURL }
+func (a *providerAdapter) GetAPIKey() string { return a.p.APIKey }
+func (a *providerAdapter) GetKind() string   { return a.p.Kind }
+func (a *providerAdapter) IsEnabled() bool   { return a.p.Enabled }
+func (a *providerAdapter) GetLevel() int     { return a.p.Level }
 
 func (a *providerAdapter) GetModelMapping() map[string]string {
 	if a.p.ModelMapping == nil {

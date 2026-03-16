@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package models
 
 import (
@@ -21,24 +20,24 @@ import (
 
 // LicenseData is the custom data embedded in go-license's Data field
 type LicenseData struct {
-	LicenseType        string `json:"license_type"` // "opensource" or "commercial"
-	MaxSeats           int    `json:"max_seats"`    // Soft limit for display/analytics, -1 for unlimited
-	MaxTeams           int    `json:"max_teams"`    // 1 for opensource, -1 for unlimited
-	DataRetentionDays  int    `json:"data_retention_days"` // 7 for opensource, 90 for commercial
+	LicenseType       string `json:"license_type"`        // "opensource" or "commercial"
+	MaxSeats          int    `json:"max_seats"`           // Soft limit for display/analytics, -1 for unlimited
+	MaxTeams          int    `json:"max_teams"`           // 1 for opensource, -1 for unlimited
+	DataRetentionDays int    `json:"data_retention_days"` // 7 for opensource, 90 for commercial
 }
 
 // License represents the decoded license stored in the database
 type License struct {
-	TenantID           int64     `json:"tenant_id"`
-	CustomerName       string    `json:"customer_name"` // Tenant/customer name
-	LicenseID          string    `json:"license_id"`    // From go-license ID field
-	LicenseType        string    `json:"license_type"`  // "opensource" or "commercial"
-	MaxSeats           int       `json:"max_seats"`     // Soft limit (informational), -1 for unlimited
-	MaxTeams           int       `json:"max_teams"`     // 1 for opensource, -1 for unlimited
-	DataRetentionDays  int       `json:"data_retention_days"` // 7 for opensource, 90 for commercial
-	LicenseKey         string    `json:"license_key,omitempty"` // Full PEM key
-	IssuedAt           time.Time `json:"issued_at"`     // From go-license IssuedAt
-	ExpiresAt          time.Time `json:"expires_at"`    // From go-license ExpiredAt
+	TenantID          int64     `json:"tenant_id"`
+	CustomerName      string    `json:"customer_name"`         // Tenant/customer name
+	LicenseID         string    `json:"license_id"`            // From go-license ID field
+	LicenseType       string    `json:"license_type"`          // "opensource" or "commercial"
+	MaxSeats          int       `json:"max_seats"`             // Soft limit (informational), -1 for unlimited
+	MaxTeams          int       `json:"max_teams"`             // 1 for opensource, -1 for unlimited
+	DataRetentionDays int       `json:"data_retention_days"`   // 7 for opensource, 90 for commercial
+	LicenseKey        string    `json:"license_key,omitempty"` // Full PEM key
+	IssuedAt          time.Time `json:"issued_at"`             // From go-license IssuedAt
+	ExpiresAt         time.Time `json:"expires_at"`            // From go-license ExpiredAt
 
 	// Deprecated: kept for backward compatibility during migration
 	Tier  string `json:"tier,omitempty"`
@@ -104,11 +103,11 @@ func (l *License) LicenseTypeName() string {
 
 // LicenseUsage represents current usage against license limits
 type LicenseUsage struct {
-	License          License            `json:"license"`
-	CurrentUsers     int                `json:"current_users"`
-	CurrentTeams     int                `json:"current_teams"`
-	TeamsRemaining   int                `json:"teams_remaining"`
-	ProviderCounts   map[string]int     `json:"provider_counts"` // count per kind: {"claude": 1, "codex": 2}
+	License        License        `json:"license"`
+	CurrentUsers   int            `json:"current_users"`
+	CurrentTeams   int            `json:"current_teams"`
+	TeamsRemaining int            `json:"teams_remaining"`
+	ProviderCounts map[string]int `json:"provider_counts"` // count per kind: {"claude": 1, "codex": 2}
 
 	// Deprecated: kept for backward compatibility
 	SeatsRemaining int `json:"seats_remaining,omitempty"`

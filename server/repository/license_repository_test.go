@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 //go:build integration
 
 package repository
@@ -122,7 +121,7 @@ func TestLicenseRepository_UpdateTenantLicense_AllFields(t *testing.T) {
 		LicenseID:    "LICENSE-456",
 		Tier:         "enterprise",
 		Seats:        500,
-		LicenseKey:    "test-key-456",
+		LicenseKey:   "test-key-456",
 		IssuedAt:     time.Now(),
 		ExpiresAt:    time.Now().AddDate(1, 0, 0),
 	}

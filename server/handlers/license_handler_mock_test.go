@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -134,14 +133,14 @@ func TestLicenseHandler_GetLicense_Success(t *testing.T) {
 	handler := NewLicenseHandler(mockService)
 
 	license := &models.License{
-		TenantID:           123,
-		LicenseID:          "lic-123",
-		LicenseType:        "commercial",
-		MaxSeats:           100,
-		MaxTeams:           -1,
-		DataRetentionDays:  90,
-		IssuedAt:           time.Now(),
-		ExpiresAt:          time.Now().Add(30 * 24 * time.Hour),
+		TenantID:          123,
+		LicenseID:         "lic-123",
+		LicenseType:       "commercial",
+		MaxSeats:          100,
+		MaxTeams:          -1,
+		DataRetentionDays: 90,
+		IssuedAt:          time.Now(),
+		ExpiresAt:         time.Now().Add(30 * 24 * time.Hour),
 	}
 
 	usage := &models.LicenseUsage{
@@ -420,16 +419,16 @@ func TestLicenseHandler_GetTiers_Success(t *testing.T) {
 	expectedTiers := map[string]interface{}{
 		"tiers": []interface{}{
 			map[string]interface{}{
-				"tier":                  "0.0",
-				"name":                  "Community",
+				"tier":                   "0.0",
+				"name":                   "Community",
 				"max_providers_per_kind": 2,
-				"features":              []string{"Basic provider management"},
+				"features":               []string{"Basic provider management"},
 			},
 			map[string]interface{}{
-				"tier":                  "1.0",
-				"name":                  "Standard",
+				"tier":                   "1.0",
+				"name":                   "Standard",
 				"max_providers_per_kind": -1,
-				"features":              []string{"Unlimited providers", "Basic analytics"},
+				"features":               []string{"Unlimited providers", "Basic analytics"},
 			},
 		},
 	}
@@ -476,10 +475,10 @@ func TestLicenseHandler_GetTiers_NoAuthRequired(t *testing.T) {
 	expectedTiers := map[string]interface{}{
 		"tiers": []interface{}{
 			map[string]interface{}{
-				"tier":                  "0.0",
-				"name":                  "Community",
+				"tier":                   "0.0",
+				"name":                   "Community",
 				"max_providers_per_kind": 2,
-				"features":              []string{"Basic provider management"},
+				"features":               []string{"Basic provider management"},
 			},
 		},
 	}
@@ -505,10 +504,10 @@ func TestLicenseHandler_DaysRemaining_Calculation(t *testing.T) {
 	handler := NewLicenseHandler(mockService)
 
 	tests := []struct {
-		name           string
-		expiresAt      time.Time
-		expectedMin    int64
-		expectedMax    int64
+		name        string
+		expiresAt   time.Time
+		expectedMin int64
+		expectedMax int64
 	}{
 		{
 			name:        "expires in 5 days",
@@ -546,7 +545,7 @@ func TestLicenseHandler_DaysRemaining_Calculation(t *testing.T) {
 			mockService.On("GetLicenseUsage", mock.Anything, int64(123)).Return(usage, nil).Once()
 			mockService.On("CanAddUser", mock.Anything, int64(123)).Return(true, nil).Once()
 			mockService.On("CanCreateTeam", mock.Anything, int64(123)).Return(true, nil)
-	mockService.On("HasActiveLicense", mock.Anything, int64(123)).Return(true).Once()
+			mockService.On("HasActiveLicense", mock.Anything, int64(123)).Return(true).Once()
 
 			router := setupLicenseTestRouter(handler)
 			req, _ := http.NewRequest("GET", "/api/v1/license", nil)
@@ -565,7 +564,6 @@ func TestLicenseHandler_DaysRemaining_Calculation(t *testing.T) {
 		})
 	}
 }
-
 
 func TestLicenseHandler_NilOrString_Helper(t *testing.T) {
 	tests := []struct {

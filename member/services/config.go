@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 // AppConfig combines app settings, server config, and sync state into a single config

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -99,8 +98,8 @@ func TestTeamService_GetTeamByID_Success(t *testing.T) {
 	service := NewTeamService(mockTeamRepo, mockUserRepo, nil)
 
 	testTeam := &models.Team{
-		ID:     1,
-		Name:   "Test Team",
+		ID:      1,
+		Name:    "Test Team",
 		OwnerID: 1,
 	}
 

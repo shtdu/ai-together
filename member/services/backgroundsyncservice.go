@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -25,17 +24,17 @@ import (
 
 // BackgroundSyncService manages background synchronization tasks
 type BackgroundSyncService struct {
-	configSyncService  *ConfigSyncService
-	usageSyncService   *UsageSyncService
-	authService        *AuthService
+	configSyncService   *ConfigSyncService
+	usageSyncService    *UsageSyncService
+	authService         *AuthService
 	serverConfigService *ServerConfigService
 	// Member is license-unaware; license is enforced on server/Manager only
 
-	ctx        context.Context
-	cancel     context.CancelFunc
-	wg         sync.WaitGroup
-	running    bool
-	mu         sync.Mutex
+	ctx     context.Context
+	cancel  context.CancelFunc
+	wg      sync.WaitGroup
+	running bool
+	mu      sync.Mutex
 
 	// Configurable intervals
 	configSyncInterval   time.Duration

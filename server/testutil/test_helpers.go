@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package testutil
 
 import (
@@ -63,7 +62,7 @@ func SetupTestDBWithPool(t *testing.T, pool *pgxpool.Pool) (cleanup func(), data
 
 	queries := db.New(pool)
 	database = &db.DB{
-		Queries:  queries,
+		Queries: queries,
 	}
 
 	cleanup = func() {

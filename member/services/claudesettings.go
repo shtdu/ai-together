@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package services
 
 import (
@@ -295,7 +294,7 @@ func mergeCTHooks(settings map[string]any) map[string]any {
 	ctHookEntry := []any{
 		map[string]any{
 			"matcher": "*",
-			"hooks":    []any{ctHookConfig},
+			"hooks":   []any{ctHookConfig},
 		},
 	}
 
@@ -316,7 +315,7 @@ func mergeCTHooks(settings map[string]any) map[string]any {
 					// Append CT hook to existing list in wrapped format
 					wrappedCTHook := map[string]any{
 						"matcher": "*",
-						"hooks":    []any{ctHookConfig},
+						"hooks":   []any{ctHookConfig},
 					}
 					newList := make([]any, len(existingList))
 					copy(newList, existingList)

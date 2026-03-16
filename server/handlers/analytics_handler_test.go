@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -38,7 +37,7 @@ func TestAnalyticsHandler_GetProviderAnalytics_Success(t *testing.T) {
 			{"name": "anthropic", "total_tokens": 5000, "request_count": 50},
 		},
 		"summary": map[string]interface{}{
-			"total_tokens": 5000,
+			"total_tokens":   5000,
 			"total_requests": 50,
 		},
 	}
@@ -308,7 +307,7 @@ func TestAnalyticsHandler_GetFilterOptions_Success(t *testing.T) {
 
 	testResult := map[string]interface{}{
 		"providers": []string{"anthropic", "openai"},
-		"models": []string{"claude-3-opus", "gpt-4"},
+		"models":    []string{"claude-3-opus", "gpt-4"},
 		"users": []map[string]interface{}{
 			{"id": int64(1), "name": "User 1", "email": "user1@example.com"},
 		},

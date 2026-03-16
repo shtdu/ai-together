@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package middleware
 
 import (
@@ -147,7 +146,7 @@ func TestLicenseMiddleware(t *testing.T) {
 			mockLicense: &models.License{
 				TenantID: 123,
 				Tier:     "0.0", // Default tier
-				Seats:    3,    // Default seats
+				Seats:    3,     // Default seats
 			},
 			mockHasActive: false,
 			verifyContext: func(t *testing.T, c *gin.Context) {
@@ -301,8 +300,8 @@ func TestLicenseMiddleware_NonBlocking(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name                string
-		setupContext        func(*gin.Context)
+		name                  string
+		setupContext          func(*gin.Context)
 		setupMockExpectations func(*MockLicenseServiceForMiddleware)
 	}{
 		{
@@ -393,12 +392,12 @@ func TestLicenseMiddleware_WithRealUser(t *testing.T) {
 	}
 
 	activeLicense := &models.License{
-		TenantID:   456,
-		LicenseID:  "lic-active-456",
-		Tier:       "2.0",
-		Seats:      50,
-		IssuedAt:   time.Now(),
-		ExpiresAt:  time.Now().Add(365 * 24 * time.Hour),
+		TenantID:  456,
+		LicenseID: "lic-active-456",
+		Tier:      "2.0",
+		Seats:     50,
+		IssuedAt:  time.Now(),
+		ExpiresAt: time.Now().Add(365 * 24 * time.Hour),
 	}
 
 	mockService.On("GetEffectiveLicense", mock.Anything, int64(456)).Return(activeLicense)
@@ -419,9 +418,9 @@ func TestLicenseMiddleware_WithRealUser(t *testing.T) {
 
 		lic := license.(*models.License)
 		c.JSON(http.StatusOK, gin.H{
-			"license_id":       lic.LicenseID,
-			"tier":             lic.Tier,
-			"seats":            lic.Seats,
+			"license_id":         lic.LicenseID,
+			"tier":               lic.Tier,
+			"seats":              lic.Seats,
 			"has_active_license": hasActive,
 		})
 	}

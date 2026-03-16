@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package handlers
 
 import (
@@ -34,8 +33,8 @@ func TestUsageHandler_GetCurrentUsage_Success(t *testing.T) {
 	mockUsageService := new(MockUsageService)
 
 	usageData := map[string]interface{}{
-		"total_tokens":  1000,
-		"total_cost":    0.50,
+		"total_tokens":   1000,
+		"total_cost":     0.50,
 		"total_requests": 10,
 	}
 
@@ -84,10 +83,10 @@ func TestUsageHandler_GetUsageStats_Success(t *testing.T) {
 	mockUsageService := new(MockUsageService)
 
 	statsData := map[string]interface{}{
-		"total_tokens":  50000,
-		"total_cost":    25.00,
+		"total_tokens":   50000,
+		"total_cost":     25.00,
 		"total_requests": 500,
-		"active_users":  10,
+		"active_users":   10,
 	}
 
 	mockUsageService.On("GetUsageStats", mock.Anything, int64(1)).Return(statsData, nil)

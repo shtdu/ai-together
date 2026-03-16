@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package main
 
 import (
@@ -21,8 +20,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/code-together/shared/integration"
 	"codeswitch/services"
+	"github.com/code-together/shared/integration"
 )
 
 // InMemoryProviderService loads providers from server instead of local files
