@@ -1,0 +1,42 @@
+# Codecov configuration for AI Together
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  status:
+    project:
+      default:
+        target: 60%
+        threshold: 5%
+        if_ci_failed: error
+    patch:
+      default:
+        target: 50%
+        threshold: 5%
+
+comment:
+  layout: "header, diff, files, footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: 60%
+      - type: patch
+        target: 50%
+
+# Ignore generated files and test utilities
+ignore:
+  - "server/internal/db/*.go"
+  - "shared/integration/generated.go"
+  - "shared/integration_manager/generated.go"
+  - "**/*_test.go"
+  - "**/testutil/**"
+  - "**/scripts/**"
+
+github_checks:
+  annotations: true

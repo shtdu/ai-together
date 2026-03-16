@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shtdu/ai-together)](https://goreportcard.com/report/github.com/shtdu/ai-together)
+[![codecov](https://codecov.io/gh/shtdu/ai-together/branch/main/graph/badge.svg?token=B8K5YM7W8C)](https://app.codecov.io/gh/shtdu/ai-together)
 
 集中管理 AI 编码工具（Claude Code、Codex、OpenCode）的服务商代理平台，提供透明的请求路由、智能故障转移和团队协作功能。
 
