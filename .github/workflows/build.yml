@@ -53,11 +53,11 @@ jobs:
           node-version: '24'
 
       - name: Install frontend dependencies
-        working-directory: ./frontend
+        working-directory: ../member/frontend
         run: npm install
 
       - name: Build frontend assets (production)
-        working-directory: ./frontend
+        working-directory: ../member/frontend
         run: npm run build
         env:
           PRODUCTION: 'true'
