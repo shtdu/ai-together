@@ -28,12 +28,22 @@ List the specific changes made in this PR:
 - Fixed bug in module A
 - Updated documentation for B
 
+## CI Status
+
+Before requesting review, ensure all CI checks pass:
+
+- [ ] **Lint** - Code formatting and style checks
+- [ ] **Build** - All modules build successfully
+- [ ] **Test** - Unit tests pass
+- [ ] **Integration Test** - Integration tests with PostgreSQL pass
+
 ## Testing
 
 Describe the testing performed for this changes:
 
 - [ ] Unit tests pass locally (`make test`)
 - [ ] Integration tests pass locally (`make integration-test`)
+- [ ] Manager lint passes locally (`cd manager && pnpm lint`)
 - [ ] Manual testing performed
 - [ ] Added new tests for the changes
 - [ ] All existing tests still pass

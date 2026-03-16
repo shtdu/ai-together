@@ -1,0 +1,70 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  go-lint:
+    name: Go Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [server, member, integration]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Check formatting
+        working-directory: ${{ matrix.module }}
+        run: |
+          fmt_output=$(go fmt ./...)
+          if [ -n "$fmt_output" ]; then
+            echo "The following files need formatting:"
+            echo "$fmt_output"
+            exit 1
+          fi
+          echo "✓ Go code is properly formatted"
+
+      - name: Run go vet
+        working-directory: ${{ matrix.module }}
+        run: |
+          go vet ./...
+          echo "✓ Go vet passed"
+
+  typescript-lint:
+    name: TypeScript Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'manager/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: ./manager
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        working-directory: ./manager
+        run: pnpm lint
+        env:
+          CI: true

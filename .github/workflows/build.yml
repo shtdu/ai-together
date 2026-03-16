@@ -1,0 +1,71 @@
+name: Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  go-build:
+    name: Go Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [server, member, integration]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Download dependencies
+        working-directory: ${{ matrix.module }}
+        run: go mod download
+
+      - name: Verify build
+        working-directory: ${{ matrix.module }}
+        run: |
+          go build -v ./...
+          echo "✓ ${{ matrix.module }} builds successfully"
+
+  manager-build:
+    name: Manager Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'manager/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: ./manager
+        run: pnpm install --frozen-lockfile
+
+      - name: Build manager UI
+        working-directory: ./manager
+        run: pnpm build
+        env:
+          CI: true
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "manager/dist" ]; then
+            echo "Build output directory not found"
+            exit 1
+          fi
+          echo "✓ Manager UI builds successfully"

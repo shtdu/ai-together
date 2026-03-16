@@ -1,0 +1,45 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  go-test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [server, member]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Run tests
+        working-directory: ${{ matrix.module }}
+        run: go test -v ./...
+
+      - name: Generate coverage report
+        if: matrix.module == 'server'
+        working-directory: ./server
+        run: |
+          go test $(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil') -coverprofile=coverage.out -covermode=atomic
+          go tool cover -func=coverage.out | tail -1
+
+      - name: Upload coverage to Codecov
+        if: matrix.module == 'server'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./server/coverage.out
+          flags: server
+          name: server-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
