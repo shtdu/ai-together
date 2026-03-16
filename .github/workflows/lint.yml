@@ -91,6 +91,26 @@ jobs:
           go vet ./...
           echo "✓ Go vet passed"
 
+  member-frontend-lint:
+    name: Member Frontend Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install frontend dependencies
+        working-directory: member/frontend
+        run: npm install
+
+      - name: Run ESLint
+        working-directory: member/frontend
+        run: npm run lint
+
   typescript-lint:
     name: TypeScript Lint
     runs-on: ubuntu-latest

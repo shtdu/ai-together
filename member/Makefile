@@ -17,6 +17,7 @@ help: ## Display this help message
 	@echo "  make frontend-dev       Run Vite dev server (port 9245)"
 	@echo "  make frontend-build     Build frontend for production"
 	@echo "  make frontend-install   Install frontend dependencies"
+	@echo "  make frontend-lint      Run ESLint on frontend code"
 	@echo ""
 	@echo "Code Generation:"
 	@echo "  make api-gen            Regenerate API client from OpenAPI spec"
@@ -65,7 +66,7 @@ win:
 	@env ARCH=amd64 $(WAILS_TASK) windows:package
 
 # Frontend
-.PHONY: frontend-dev frontend-build frontend-install
+.PHONY: frontend-dev frontend-build frontend-install frontend-lint
 frontend-dev:
 	@cd frontend && npm run dev
 
@@ -74,6 +75,9 @@ frontend-build:
 
 frontend-install:
 	@cd frontend && npm install
+
+frontend-lint:
+	@cd frontend && npm run lint
 
 # Code Generation
 .PHONY: api-gen update-assets
