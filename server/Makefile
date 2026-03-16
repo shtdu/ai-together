@@ -9,7 +9,7 @@ help: ## Display this help message
 	@echo "  make run                Run server (builds first)"
 	@echo "  make dev                Run with live reload (air)"
 	@echo "  make linux              Build for Linux x64"
-	@echo "  make production         Build production binary (obfuscated with garble)"
+	@echo "  make production         Build production binary (optimized with -ldflags)"
 	@echo ""
 	@echo "Test:"
 	@echo "  make test               Run tests"
@@ -53,8 +53,8 @@ linux:
 
 production:
 	@mkdir -p bin
-	@$(GOPATH)/bin/garble -literals -tiny build -o ./bin/switch-server .
-	@echo "✓ Built (obfuscated): bin/switch-server"
+	@go build -ldflags "-s -w" -o ./bin/switch-server .
+	@echo "✓ Built (optimized): bin/switch-server"
 
 # Test
 .PHONY: test itest cover cover-html cover-func

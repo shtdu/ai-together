@@ -3,15 +3,12 @@ FROM golang:1.25-bookworm AS builder
 
 WORKDIR /build
 
-# Install build tools (garble for obfuscation)
-RUN go install mvdan.cc/garble@latest
-
 # Copy Makefile and project structure
 COPY Makefile ./
 COPY shared/ ./shared/
 COPY server/ ./server/
 
-# Build production binary with garble obfuscation (run from /build where Makefile is)
+# Build production binary optimized with -ldflags
 RUN make server-production
 
 # Runtime stage
