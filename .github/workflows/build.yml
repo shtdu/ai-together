@@ -75,7 +75,7 @@ jobs:
       - name: Verify member build
         working-directory: member
         run: |
-          go build -v -o bin/CodeTogether ./...
+          go build -v ./...
           echo "✓ member builds successfully"
 
   manager-build:
