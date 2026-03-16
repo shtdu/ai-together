@@ -86,6 +86,56 @@ func TestResolveConfig_AuthServerPairing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock settings files for the "neither provided" test case
+			if tt.name == "neither provided - will load from settings" {
+				// Use t.TempDir() and set HOME to it for isolated test environment
+				tmpDir := t.TempDir()
+				oldHome := os.Getenv("HOME")
+				os.Setenv("HOME", tmpDir)
+				t.Cleanup(func() {
+					os.Setenv("HOME", oldHome)
+				})
+
+				// Create .code-together directory in temp directory
+				configDir := filepath.Join(tmpDir, ".code-together")
+				if err := os.MkdirAll(configDir, 0o755); err != nil {
+					t.Fatalf("failed to create config directory: %v", err)
+				}
+
+				// Create mock config.json
+				configContent := `{
+  "app": {
+    "show_heatmap": false,
+    "show_home_title": true,
+    "show_24h_stats": false,
+    "auto_start": false
+  },
+  "server": {
+    "server_url": "http://localhost:8080"
+  },
+  "sync": {
+    "last_sync_time": "2026-03-16T00:00:00Z"
+  }
+}`
+				configPath := filepath.Join(configDir, "config.json")
+				if err := os.WriteFile(configPath, []byte(configContent), 0o644); err != nil {
+					t.Fatalf("failed to create mock config.json: %v", err)
+				}
+
+				// Create mock auth.json
+				authContent := `{
+  "tokens": {
+    "access_token": "test_mock_token_for_cli_testing",
+    "refresh_token": "test_refresh_token",
+    "expires_at": "2026-12-31T23:59:59Z"
+  }
+}`
+				authPath := filepath.Join(configDir, "auth.json")
+				if err := os.WriteFile(authPath, []byte(authContent), 0o600); err != nil {
+					t.Fatalf("failed to create mock auth.json: %v", err)
+				}
+			}
+
 			_, err := resolveConfig("claude", tt.cliAuth, tt.cliServer, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("resolveConfig() error = %v, wantErr %v", err, tt.wantErr)
