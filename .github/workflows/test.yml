@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [server, member]
+        module: [server, integration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,3 +43,33 @@ jobs:
           name: server-coverage
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  member-test:
+    name: Member Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install frontend dependencies
+        working-directory: ./member/frontend
+        run: npm install
+
+      - name: Build frontend assets
+        working-directory: ./member/frontend
+        run: npm run build
+
+      - name: Run tests
+        working-directory: ./member
+        run: go test -v ./...
