@@ -44,7 +44,7 @@ help: ## Display this help message
 server: ## Show server-specific commands
 	@echo "Server Commands:"
 	@echo "  make server-build       Build server binary"
-	@echo "  make server-production  Build production server binary (obfuscated with garble)"
+	@echo "  make server-production  Build production server binary (optimized with -ldflags)"
 	@echo "  make server-dev         Run with live reload (air)"
 	@echo "  make server-test        Run tests"
 	@echo "  make server-cover       Generate coverage report"
@@ -121,8 +121,8 @@ server-build:
 
 server-production:
 	@mkdir -p $(SERVER_BUILD_DIR)
-	@cd $(SERVER_DIR) && $(shell go env GOPATH)/bin/garble -literals -tiny build -o ./bin/$(SERVER_BINARY_NAME) .
-	@echo "✓ Server built (obfuscated): $(SERVER_BUILD_DIR)/$(SERVER_BINARY_NAME)"
+	@cd $(SERVER_DIR) && go build -ldflags "-s -w" -o ./bin/$(SERVER_BINARY_NAME) .
+	@echo "✓ Server built (optimized): $(SERVER_BUILD_DIR)/$(SERVER_BINARY_NAME)"
 
 server-dev:
 	@cd $(SERVER_DIR) && air
