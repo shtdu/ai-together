@@ -1,0 +1,61 @@
+version: 2
+updates:
+  # Root Go module
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "go"
+
+  # Server Go module
+  - package-ecosystem: "gomod"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "go"
+      - "server"
+
+  # Member Go module
+  - package-ecosystem: "gomod"
+    directory: "/member"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "go"
+      - "member"
+
+  # Integration Go module
+  - package-ecosystem: "gomod"
+    directory: "/integration"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "go"
+      - "integration"
+
+  # Manager npm package
+  - package-ecosystem: "npm"
+    directory: "/manager"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "javascript"
+    versioning-strategy: increase
+
+  # Member frontend npm package
+  - package-ecosystem: "npm"
+    directory: "/member/frontend"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "member"
+    versioning-strategy: increase
