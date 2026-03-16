@@ -34,6 +34,7 @@ ignore:
   - "server/internal/db/*.go"
   - "shared/integration/generated.go"
   - "shared/integration_manager/generated.go"
+  - "member/**"
   - "**/*_test.go"
   - "**/testutil/**"
   - "**/scripts/**"
