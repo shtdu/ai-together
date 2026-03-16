@@ -23,7 +23,7 @@ export default defineConfig({
   // Explicitly configure Rollup options for better Docker compatibility
   rollupOptions: {
     input: {
-      main: './index.html',
+      main: 'index.html',
     },
   },
 })
