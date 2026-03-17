@@ -2,10 +2,13 @@
 package step_definitions
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	"github.com/code-together/shared/integration"
 )
 
 // RegisterLicenseSteps registers license management step definitions
@@ -206,29 +209,66 @@ func (ctx *ScenarioContext) licenseHasProviderLimitForKindLicense(kind string, l
 // WHENS - Perform actions
 
 func (ctx *ScenarioContext) iActivateTheLicense() error {
-	// Check authentication
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
 
-	// Check permission (only managers can activate licenses)
-	if ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
-		ctx.SetLastResponse(403, nil, "permission denied")
-		return nil
-	}
-
-	_, hasKey := ctx.GetCreatedResource("license_key")
+	// Get license key from context
+	licenseKey, hasKey := ctx.GetCreatedResource("license_key")
 	if !hasKey {
 		ctx.SetLastResponse(400, nil, "no license key provided")
 		return nil
 	}
 
-	tier, _ := ctx.GetCreatedResource("license_tier")
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"tier": tier,
-		"status": "active",
-	}, "")
+	// Create license activation request
+	req := integration.PostApiV1LicenseActivateJSONRequestBody{
+		LicenseKey: licenseKey,
+	}
+
+	// Call API to activate license
+	resp, err := client.PostApiV1LicenseActivateWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("license activation request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON400 != nil {
+		body = resp.JSON400
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if resp.JSON403 != nil {
+		body = resp.JSON403
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON400 != nil {
+			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
+		} else if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON403 != nil {
+			errMsg = fmt.Sprintf("forbidden: %s", resp.JSON403.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("license activation failed: %s", errMsg)
+	}
+
 	return nil
 }
 
@@ -348,37 +388,50 @@ func (ctx *ScenarioContext) iGetLicenseLimits() error {
 }
 
 func (ctx *ScenarioContext) iGetLicenseInformation() error {
-	// Check authentication
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
 
-	// Check permission - only admins can view license information
-	if ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
-		ctx.SetLastResponse(403, nil, "permission denied")
-		return nil
+	// Call API to get license info
+	resp, err := client.GetApiV1LicenseWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("license info request failed: %w", err)
 	}
 
-	tier, _ := ctx.GetCreatedResource("license_tier")
-	status, _ := ctx.GetCreatedResource("license_status")
-	if status == "" {
-		status = "active"
-	}
-	if tier == "" {
-		tier = "trial"
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if resp.JSON500 != nil {
+		body = resp.JSON500
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
 	}
 
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"tier":      tier,
-		"status":    status,
-		"expires":   "2025-12-31",
-		"features":  []string{"provider_management", "team_analytics"},
-		"limits": map[string]interface{}{
-			"provider_limit": 10,
-			"user_limit":     50,
-		},
-	}, "")
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON500 != nil {
+			errMsg = fmt.Sprintf("server error: %s", resp.JSON500.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("license info failed: %s", errMsg)
+	}
+
 	return nil
 }
 
