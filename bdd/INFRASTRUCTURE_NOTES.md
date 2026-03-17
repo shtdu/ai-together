@@ -83,6 +83,7 @@
   - Name extraction from email (user@example.com → User Example)
   - Resource tracking for cleanup (user ID conversion to string)
   - Comprehensive error handling (400, 401, 403, 409 responses)
+  - Handles 500 duplicate key errors as success (user already exists)
 
 ### Test Validation
 - [x] **Login scenarios now passing end-to-end**
@@ -91,46 +92,104 @@
   - Users created dynamically before login attempts
   - Admin user verification via login attempt
 
+## Completed (Phase 4)
+
+### Profile Operations
+- [x] **Converted profile retrieval to real API calls** (`step_definitions/auth_steps.go`)
+  - `iGetUserProfile()` - Uses `GET /api/v1/user/profile` endpoint
+  - Authenticated client with token injection
+  - Handles JSON200/JSON401 responses
+  - Error handling with descriptive messages
+
+### User Management Improvements
+- [x] **Ensure users exist before login** (`step_definitions/auth_steps.go`)
+  - `iAmLoggedInAsAManager()` calls `userExists()` first
+  - `iAmLoggedInAsAMember()` calls `userExists()` first
+  - Prevents 401 errors when users don't exist in database
+
 ### Test Results
 - **Overall:** 215 scenarios, 199 passed (92.5%), 16 failed
 - **Passing areas:**
   - ✅ Health checks
   - ✅ Authentication and login
   - ✅ User creation via manager API
+  - ✅ Profile retrieval
 - **Failing areas** (not yet converted to real API calls):
-  - ❌ Profile operations (401 errors)
   - ❌ Provider management (403 errors)
   - ❌ License activation (403 errors)
   - ❌ Dashboard operations (403 errors)
 
-## Next Steps (Phase 4+)
+## Completed (Phase 5)
 
-### Convert Additional Scenarios
-- [ ] Profile operations (`auth_steps.go`)
-  - Get current user profile
-  - Update user profile
-  - Change password
-- [ ] Provider management (`provider_steps.go`)
-  - Create provider
-  - List providers
-  - Update provider
-  - Delete provider
-  - Test provider connection
-- [ ] License management (`license_steps.go`)
-  - Activate license
-  - List licenses
-  - Update license
-  - Delete license
-- [ ] Usage analytics (`usage_steps.go`)
-  - Get usage statistics
-  - Get team usage
-  - Get personal usage
-- [ ] Dashboard operations (`dashboard_steps.go`)
-  - Get dashboard summary
-  - Get team statistics
-- [ ] Permissions (`permission_steps.go`)
-  - Check access permissions
-  - Test role-based access control
+### Provider Management - Core CRUD
+- [x] **Converted provider creation to real API calls** (`step_definitions/provider_steps.go`)
+  - `iCreateAProviderWithKindAndAPIKey()` - Uses `POST /api/v1/providers` endpoint
+  - Requires: name, kind, api_key, api_url (all required fields)
+  - Provider kinds: claude, codex, opencode
+  - API URLs mapped per kind:
+    - claude → https://api.anthropic.com
+    - codex → https://api.github.com
+    - opencode → https://api.opencode.com
+  - Handles JSON201/JSON400/JSON401/JSON403 responses
+  - Tracks created providers for cleanup
+
+- [x] **Converted provider listing to real API calls**
+  - `iListAllProvidersFromProvider()` - Uses `GET /api/v1/providers` endpoint
+  - Handles JSON200/JSON401 responses
+
+- [x] **Converted provider retrieval to real API calls**
+  - `iGetProviderByID()` - Uses `GET /api/v1/providers/{id}` endpoint
+  - Handles JSON200/JSON401/JSON404 responses
+
+- [x] **Converted provider deletion to real API calls**
+  - `iDeleteProvider()` - Uses `DELETE /api/v1/providers/{id}` endpoint
+  - Handles JSON200/JSON401/JSON404 responses
+
+- [x] **Converted provider update to real API calls**
+  - `iUpdateProviderName()` - Uses `PUT /api/v1/providers/{id}` endpoint
+  - Handles JSON200/JSON400/JSON401/JSON404 responses
+
+### Testing Improvements
+- [x] **Added @wip tags for focused testing**
+  - Tag work-in-progress scenarios with `@wip`
+  - Test only WIP scenarios: `./bdd-test.sh --tags "@wip"`
+  - Faster iteration during development
+
+### Test Validation
+- [x] **Provider creation scenarios passing**
+  - Create provider with valid data (claude) - ✅ Passing
+  - Create provider with valid data (codex) - ✅ Passing
+  - Create provider with valid data (opencode) - ✅ Passing
+  - All use real API calls to create providers
+
+### Test Results
+- **@wip scenarios:** 3/3 passing (provider creation)
+- **Overall:** 215 scenarios, 190 passed (88%), 25 failed
+- **Note:** Some scenarios now fail because they relied on mock behavior
+  - Need to decide: convert to real API or keep mocks for specific validation tests
+
+## Next Steps (Phase 6+)
+
+### Convert Additional Provider Operations
+- [ ] Provider enable/disable (still mock)
+- [ ] Provider connectivity testing (still mock)
+- [ ] Provider statistics (still mock)
+- [ ] Provider filtering by kind (still mock)
+
+### Convert License Management
+- [ ] License activation (`license_steps.go`)
+- [ ] License listing/updates
+- [ ] License tier management
+
+### Convert Usage Analytics
+- [ ] Usage statistics (`usage_steps.go`)
+- [ ] Team usage analytics
+- [ ] Personal usage tracking
+
+### Convert Dashboard Operations
+- [ ] Dashboard summaries (`dashboard_steps.go`)
+- [ ] Team statistics
+- [ ] Team management
 
 ## Known Issues
 
