@@ -86,6 +86,7 @@ Replace interface{} types with actual API client types.
 - `AnonymousClient interface{}` → `*integration.ClientWithResponses` (for unauthenticated requests)
 - `Client interface{}` → `*integration.ClientWithResponses` (authenticated with current user token)
 - `ManagerClient interface{}` → `*integration.ClientWithResponses` (authenticated with admin/manager token)
+- Add `Logger *slog.Logger` field for logging in client creation
 
 **Client Architecture:**
 The three client types correspond to different authentication contexts:
@@ -100,6 +101,9 @@ All three are the same underlying type (`*integration.ClientWithResponses`) but 
 // InitializeClients sets up all API clients
 // Called once during test suite initialization (not per scenario)
 func (ctx *BDDTestContext) InitializeClients(serverURL string, logger *slog.Logger) error {
+    // Store logger for client creation
+    ctx.Logger = logger
+
     // Create anonymous client (no authentication required)
     anonClient, err := NewAnonymousClient(serverURL, logger)
     if err != nil {
@@ -113,6 +117,11 @@ func (ctx *BDDTestContext) InitializeClients(serverURL string, logger *slog.Logg
     ctx.ManagerClient = nil // Will be set in scenario after admin login
 
     return nil
+}
+
+// GetAnonymousClient returns the anonymous client
+func (ctx *BDDTestContext) GetAnonymousClient() *integration.ClientWithResponses {
+    return ctx.AnonymousClient
 }
 
 // GetAuthToken returns the current authentication token for the scenario
@@ -135,25 +144,29 @@ func (ctx *BDDTestContext) GetAuthenticatedClient() (*integration.ClientWithResp
         return nil, fmt.Errorf("cannot create authenticated client without token: %w", err)
     }
 
-    // Create or reuse authenticated client
-    // Use AdminToken for admin operations, MemberToken for member operations
-    if ctx.AdminToken != "" && (ctx.Client == nil || ctx.ManagerClient == nil) {
+    // Create or reuse authenticated client based on user role
+    if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "manager" {
+        if ctx.ManagerClient == nil {
+            client, err := NewAuthenticatedClient(ctx.ServerURL, func() (string, error) {
+                return ctx.GetAuthToken()
+            }, ctx.Logger)
+            if err != nil {
+                return nil, err
+            }
+            ctx.ManagerClient = client
+        }
+        return ctx.ManagerClient, nil
+    }
+
+    // Use Client for non-manager users
+    if ctx.Client == nil {
         client, err := NewAuthenticatedClient(ctx.ServerURL, func() (string, error) {
             return ctx.GetAuthToken()
-        }, logger)
+        }, ctx.Logger)
         if err != nil {
             return nil, err
         }
-        if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "manager" {
-            ctx.ManagerClient = client
-        } else {
-            ctx.Client = client
-        }
-    }
-
-    // Return appropriate client based on current user role
-    if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "manager" {
-        return ctx.ManagerClient, nil
+        ctx.Client = client
     }
     return ctx.Client, nil
 }
@@ -163,7 +176,7 @@ func (ctx *BDDTestContext) GetAuthenticatedClient() (*integration.ClientWithResp
 func (ctx *BDDTestContext) UpdateAuthenticatedClients(token string) error {
     client, err := NewAuthenticatedClient(ctx.ServerURL, func() (string, error) {
         return token, nil
-    }, logger)
+    }, ctx.Logger)
     if err != nil {
         return err
     }
@@ -222,7 +235,7 @@ func (ctx *ScenarioContext) iLoginWithCredentials(email, password string) error 
 **After (Real API):**
 ```go
 func (ctx *ScenarioContext) iLoginWithCredentials(email, password string) error {
-    client := ctx.GetAnonymousClient()
+    client := ctx.BDDTestContext.GetAnonymousClient()
 
     req := integration.PostAuthLoginJSONRequestBody{
         Email:    email,
@@ -531,8 +544,9 @@ func CreateTestDataFromFixtures(ctx *BDDTestContext, fixtures *FixtureData) erro
             return fmt.Errorf("failed to create user %s: %w", user.Email, err)
         }
 
-        // Handle 409 (already exists) - try to login instead
+        // Handle 409 (already exists) - track that user exists but don't fail
         if resp.StatusCode() == 409 {
+            // User already exists, try to get ID via login
             loginReq := integration.PostAuthLoginJSONRequestBody{
                 Email:    user.Email,
                 Password: user.Password,
@@ -541,9 +555,10 @@ func CreateTestDataFromFixtures(ctx *BDDTestContext, fixtures *FixtureData) erro
             if err != nil {
                 return fmt.Errorf("failed to login existing user %s: %w", user.Email, err)
             }
-            if loginResp.StatusCode() == 200 && loginResp.JSON200 != nil {
-                resp = loginResp.HTTPResponse // Reuse login response
+            if loginResp.StatusCode() == 200 && loginResp.JSON200 != nil && loginResp.JSON200.ID != nil {
+                ctx.TrackUser(*loginResp.JSON200.ID)
             }
+            continue
         }
 
         // Track user ID from response
@@ -590,7 +605,7 @@ func CreateTestDataFromFixtures(ctx *BDDTestContext, fixtures *FixtureData) erro
     // Step 3: Create authenticated client
     authenticatedClient, err := NewAuthenticatedClient(ctx.ServerURL, func() (string, error) {
         return authToken, nil
-    }, logger)
+    }, ctx.Logger)
     if err != nil {
         return fmt.Errorf("failed to create authenticated client: %w", err)
     }
@@ -704,46 +719,8 @@ The `BDDTestContext` tracks created resources using slices:
 - `createdUsers []string` - User IDs (UUID strings)
 - `createdTeams []int64` - Team IDs
 
-```go
-// CleanupScenarioResources deletes all tracked resources via API
-func (ctx *ScenarioContext) CleanupScenarioResources() error {
-    client := ctx.GetAuthenticatedClient()
-
-    // Clean up providers (returns []int64)
-    for _, providerID := range ctx.GetCreatedProviders() {
-        _, err := client.DeleteApiV1ProvidersProviderIdWithResponse(
-            context.Background(), providerID)
-        if err != nil {
-            log.Printf("WARNING: Failed to delete provider %d: %v", providerID, err)
-        }
-    }
-
-    // Clean up users (returns []string - UUIDs)
-    for _, userID := range ctx.GetCreatedUsers() {
-        // Note: User deletion may require admin privileges
-        _, err := client.DeleteApiV1UsersUserIdWithResponse(
-            context.Background(), userID)
-        if err != nil {
-            log.Printf("WARNING: Failed to delete user %s: %v", userID, err)
-        }
-    }
-
-    // Clean up teams (returns []int64, skip default team ID 1)
-    for _, teamID := range ctx.GetCreatedTeams() {
-        if teamID == 1 {
-            continue
-        }
-        _, err := client.DeleteApiV1TeamsTeamIdWithResponse(
-            context.Background(), teamID)
-        if err != nil {
-            log.Printf("WARNING: Failed to delete team %d: %v", teamID, err)
-        }
-    }
-
-    ctx.ClearCreatedResources()
-    return nil
-}
-```
+**CleanupScenarioResources implementation:**
+See "Cleanup Error Handling" section above for the full implementation with retry logic. The method should be added to `step_definitions/context.go` as a method on `ScenarioContext`.
 
 ### Implementation Phases
 
@@ -848,12 +825,7 @@ grep -r "@smoke" bdd/features/
 **Response Handler:**
 ```go
 // handleAPIResponse processes API response and returns error if unsuccessful
-func handleAPIResponse(statusCode int, body []byte, apiError *integration.APIError) error {
-    if apiError != nil {
-        return fmt.Errorf("API call failed: %s (code: %s, status: %d)",
-            apiError.Message, apiError.ErrorCode, apiError.StatusCode)
-    }
-
+func handleAPIResponse(statusCode int, body []byte) error {
     if statusCode >= 400 {
         errMsg := string(body)
         if errMsg == "" {
@@ -861,7 +833,6 @@ func handleAPIResponse(statusCode int, body []byte, apiError *integration.APIErr
         }
         return fmt.Errorf("API returned error %d: %s", statusCode, errMsg)
     }
-
     return nil
 }
 ```
@@ -875,8 +846,8 @@ if err != nil {
     return fmt.Errorf("login request failed: %w", err)
 }
 
-// Check for API errors
-if err := handleAPIResponse(resp.StatusCode(), resp.Body, resp.HTTPResponse); err != nil {
+// Check for API errors (status code)
+if err := handleAPIResponse(resp.StatusCode(), resp.Body); err != nil {
     return err
 }
 
@@ -919,7 +890,10 @@ Test data is created **per scenario** (not per test run or per feature file). Th
 ```go
 // CleanupScenarioResources deletes all tracked resources via API
 func (ctx *ScenarioContext) CleanupScenarioResources() error {
-    client := ctx.GetAuthenticatedClient()
+    client, err := ctx.GetAuthenticatedClient()
+    if err != nil {
+        return fmt.Errorf("failed to get authenticated client for cleanup: %w", err)
+    }
 
     // Retry configuration
     maxRetries := 3
