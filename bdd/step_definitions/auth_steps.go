@@ -37,7 +37,6 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.When(`^I verify my authentication token with "([^"]*)"$`, ctx.iVerifyAuthTokenWithToken)
 	suite.When(`^I get my user profile$`, ctx.iGetUserProfile)
 	suite.When(`^I attempt to create a provider$`, ctx.iAttemptToCreateProvider)
-	suite.When(`^I get team analytics$`, ctx.iGetTeamAnalytics)
 	suite.When(`^I get my usage statistics$`, ctx.iGetMyUsageStatistics)
 	suite.When(`^I list all users$`, ctx.iListAllUsers)
 	suite.When(`^I list all providers$`, ctx.iListAllProviders)

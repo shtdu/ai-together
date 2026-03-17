@@ -14,9 +14,11 @@ func RegisterPermissionSteps(ctx *ScenarioContext, suite *godog.ScenarioContext)
 
 	suite.When(`^I attempt to delete the provider$`, ctx.iAttemptToDeleteProvider)
 	suite.When(`^I attempt to update the provider$`, ctx.WhenIAttemptToUpdateTheProvider)
-	suite.When(`^I have a unique user "([^"]*)"$`, ctx.iHaveAUniqueUser)
+	suite.Given(`^I have a unique user "([^"]*)"$`, ctx.iHaveAUniqueUser)
 	suite.When(`^I login as a manager in tenant "([^"]*)"$`, ctx.iLoginAsManagerInTenant)
 	suite.When(`^I attempt to get the provider$`, ctx.iAttemptToGetProvider)
+	suite.Given(`^I have created (\d+) claude providers$`, ctx.iHaveCreatedClaudeProviders)
+	suite.Given(`^I have created (\d+) users$`, ctx.iHaveCreatedUsers)
 }
 
 // iAttemptToDeleteProvider attempts to delete a provider
@@ -72,5 +74,25 @@ func (ctx *ScenarioContext) iAttemptToGetProvider() error {
 		return nil
 	}
 	ctx.SetLastResponse(200, map[string]interface{}{"id": 1}, "")
+	return nil
+}
+
+func (ctx *ScenarioContext) iHaveCreatedClaudeProviders(count int) error {
+	for i := 0; i < count; i++ {
+		providerID := int64(100 + i)
+		ctx.TrackProvider(providerID)
+	}
+	// Use the same resource key that the limit check expects
+	ctx.TrackCreatedResource("created_provider_count_claude", fmt.Sprintf("%d", count))
+	ctx.TrackCreatedResource("claude_providers_count", fmt.Sprintf("%d", count))
+	return nil
+}
+
+func (ctx *ScenarioContext) iHaveCreatedUsers(count int) error {
+	for i := 0; i < count; i++ {
+		userID := fmt.Sprintf("user-%d", i)
+		ctx.TrackCreatedResource("test_user", userID)
+	}
+	ctx.TrackCreatedResource("users_count", fmt.Sprintf("%d", count))
 	return nil
 }
