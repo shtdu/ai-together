@@ -12,7 +12,7 @@ if [ -f .env.test ]; then
 fi
 
 # Default values
-TEST_SERVER_URL="${TEST_SERVER_URL:-http://localhost:9080}"
+TEST_SERVER_URL="${TEST_SERVER_URL:-http://localhost:8088}"
 GODOG_FORMAT="${GODOG_FORMAT:-pretty}"
 GODOG_TAGS="${GODOG_TAGS:-}"
 START_SERVER="${START_SERVER:-true}"
