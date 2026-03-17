@@ -19,41 +19,29 @@ func (ctx *ScenarioContext) ResetScenarioState() {
 }
 
 // CleanupScenarioResources cleans up all resources created during the scenario
+// TODO: Will delete resources via API during step definition conversion
 func (ctx *ScenarioContext) CleanupScenarioResources() error {
 	log.Printf("Cleaning up scenario resources...")
 
-	// Clean up providers
-	providers := ctx.GetCreatedProviders()
-	for _, providerID := range providers {
-		log.Printf("Cleaning up provider %d", providerID)
-		// TODO: Delete provider via API
-		// ctx.Client.DeleteApiV1ProvidersProviderIdWithResponse(context.Background(), providerID)
-	}
-
-	// Clean up users
-	users := ctx.GetCreatedUsers()
-	for _, userID := range users {
-		log.Printf("Cleaning up user %s", userID)
-		// TODO: Delete user via API
-		// ctx.ManagerClient.DeleteApiV1UsersUserIdWithResponse(context.Background(), userID)
-	}
-
-	// Clean up teams
+	// Log resources that would be cleaned up
 	teams := ctx.GetCreatedTeams()
-	for _, teamID := range teams {
-		log.Printf("Cleaning up team %d", teamID)
-		// Skip default team (ID 1)
-		if teamID == 1 {
-			continue
-		}
-		// TODO: Delete team via API
-		// ctx.ManagerClient.DeleteApiV1TeamsTeamIdWithResponse(context.Background(), teamID)
+	providers := ctx.GetCreatedProviders()
+	users := ctx.GetCreatedUsers()
+
+	if len(teams) > 0 {
+		log.Printf("Would clean up %d teams: %v", len(teams), teams)
+	}
+	if len(providers) > 0 {
+		log.Printf("Would clean up %d providers: %v", len(providers), providers)
+	}
+	if len(users) > 0 {
+		log.Printf("Would clean up %d users: %v", len(users), users)
 	}
 
 	// Clear resource lists
 	ctx.ClearCreatedResources()
 
-	log.Printf("Cleanup complete")
+	log.Printf("Cleanup complete (API deletion will be added during step conversion)")
 	return nil
 }
 
