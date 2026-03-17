@@ -196,13 +196,35 @@
 - **This is correct behavior:** API should validate license format
 - **Note:** To make tests pass, need valid test license keys or test helper endpoint
 
-## Next Steps (Phase 7+)
+## Completed (Phase 7)
 
-### Convert Usage Analytics
-- [ ] Usage statistics (`usage_steps.go`)
+### Usage Analytics - Statistics
+- [x] **Converted usage statistics to real API calls** (`step_definitions/usage_steps.go`)
+  - `iGetDailyUsageStatistics()` - Uses `GET /api/v1/usage/stats` endpoint
+  - `iGetUsageStatistics()` - Uses `GET /api/v1/usage/stats` endpoint
+  - Requires authenticated client (member/manager)
+  - Handles JSON200/JSON401 responses
+  - Returns real usage statistics from database
+
+### Test Validation
+- [x] **Usage statistics API working correctly**
+  - API calls are being made successfully ✅
+  - Authentication required and enforced ✅
+  - Returns correct HTTP status codes (200 for authenticated users)
+
+### Test Results
+- **@wip scenarios:** 1/1 passing (usage statistics)
+- **All steps passing** with real API calls to `/api/v1/usage/stats`
+
+## Next Steps (Phase 8+)
+
+### Convert More Usage Analytics
+- [ ] Upload usage records (`POST /api/v1/usage`)
+- [ ] Filter usage by provider/user/model
+- [ ] Cost calculation endpoints
+- [ ] Usage aggregation by time period
 - [ ] Team usage analytics
 - [ ] Personal usage tracking
-- [ ] Cost calculation endpoints
 
 ### Convert Dashboard Operations
 - [ ] Dashboard summaries (`dashboard_steps.go`)
@@ -302,6 +324,10 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 17. `cdeb928` fix: resolve function signature mismatches and validation issues
 18. `a8a6fa6` feat: implement user creation step via manager API
 
+### Phase 7 - Usage Analytics (Statistics)
+19. `TODO` feat: convert usage statistics to real API calls
+20. `TODO` docs: update infrastructure notes for Phase 7
+
 ## Design Decisions
 
 ### Logger Strategy
@@ -344,5 +370,5 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 
 ---
 
-**Last Updated:** 2025-03-17
-**Status:** Phase 3 complete (user creation implemented). 199/215 scenarios passing (92.5%). Login and authentication scenarios fully working. Ready for Phase 4 (profile, provider, license, and dashboard step conversions).
+**Last Updated:** 2026-03-17
+**Status:** Phase 7 complete (usage statistics conversion). Usage analytics @wip scenario passing with real API calls. Ready for Phase 8 (more usage analytics, dashboard operations).

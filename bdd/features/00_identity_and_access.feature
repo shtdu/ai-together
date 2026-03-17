@@ -221,7 +221,6 @@ Feature: Identity and Access Management
 
   Rule: License Activation
 
-    @wip
     Scenario: Activate commercial license successfully
       Given I am logged in as a manager
       And I have a valid commercial license key
@@ -230,7 +229,6 @@ Feature: Identity and Access Management
       And commercial features should be available
       And the license tier should be "professional"
 
-    @wip
     Scenario: Activate open-source license successfully
       Given I am logged in as a manager
       And I have a valid open-source license key

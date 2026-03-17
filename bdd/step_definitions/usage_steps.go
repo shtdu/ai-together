@@ -2,11 +2,14 @@
 package step_definitions
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	// "github.com/code-together/shared/integration" // TODO: Uncomment when implementing more API calls
 )
 
 // RegisterUsageSteps registers usage analytics step definitions
@@ -392,12 +395,46 @@ func parseFloat(s string) (float64, error) {
 }
 
 func (ctx *ScenarioContext) iGetDailyUsageStatistics() error {
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"daily_stats": []map[string]interface{}{
-			{"date": "2025-03-17", "tokens": 1000, "cost": 0.15},
-			{"date": "2025-03-16", "tokens": 800, "cost": 0.12},
-		},
-	}, "")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// Call API to get usage statistics
+	resp, err := client.GetApiV1UsageStatsWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("usage stats request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("usage stats failed: %s", errMsg)
+	}
+
 	return nil
 }
 
@@ -2428,15 +2465,46 @@ func (ctx *ScenarioContext) iGetUsageAggregatedByUser() error {
 }
 
 func (ctx *ScenarioContext) iGetUsageStatistics() error {
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"total_tokens": 50000,
-		"total_cost": 50.0,
-		"total_requests": 1200,
-	}, "")
+
+	// Call API to get usage statistics
+	resp, err := client.GetApiV1UsageStatsWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("usage stats request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("usage stats failed: %s", errMsg)
+	}
+
 	return nil
 }
 
