@@ -150,7 +150,6 @@ Feature: Provider Management
     Scenario: Delete non-existent provider
       When I delete provider with ID 99999
       Then I should receive a 404 error
-      Or I should receive a 204 status
 
     Scenario: Delete provider by ID
       Given I have created a provider

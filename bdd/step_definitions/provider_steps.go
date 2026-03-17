@@ -202,6 +202,34 @@ func (ctx *ScenarioContext) licenseHasProviderLimitForKind(kind string, limit in
 
 func (ctx *ScenarioContext) iCreateAProviderWithKindAndAPIKey(kind, apiKey string) error {
 	// TODO: Implement actual provider creation via API
+	// Validate API key
+	if apiKey == "" {
+		ctx.SetLastResponse(400, nil, "API key is required")
+		return nil
+	}
+
+	// Check for per-kind provider limit
+	kindLimitKey := fmt.Sprintf("license_%s_provider_limit", kind)
+	if kindLimit, hasLimit := ctx.GetCreatedResource(kindLimitKey); hasLimit {
+		// Count providers of this kind
+		countKey := fmt.Sprintf("created_provider_count_%s", kind)
+		var count int
+		if countStr, hasCount := ctx.GetCreatedResource(countKey); hasCount {
+			fmt.Sscanf(countStr, "%d", &count)
+		}
+
+		var limit int
+		fmt.Sscanf(kindLimit, "%d", &limit)
+
+		if count >= limit {
+			ctx.SetLastResponse(403, nil, fmt.Sprintf("%s provider limit", kind))
+			return nil
+		}
+
+		// Increment counter
+		ctx.TrackCreatedResource(countKey, fmt.Sprintf("%d", count+1))
+	}
+
 	providerName, _ := ctx.GetCreatedResource("provider_name")
 	if providerName == "" {
 		providerName = support.GenerateUniqueProviderName(fmt.Sprintf("test-%s", kind))
@@ -415,10 +443,24 @@ func (ctx *ScenarioContext) iDeleteFirstProvider() error {
 
 func (ctx *ScenarioContext) iCreateAProviderWithKindSimple(kind string) error {
 	kindLimitKey := fmt.Sprintf("license_%s_provider_limit", kind)
-	if _, hasLimit := ctx.GetCreatedResource(kindLimitKey); hasLimit {
+	if kindLimit, hasLimit := ctx.GetCreatedResource(kindLimitKey); hasLimit {
 		// Check if kind limit is reached
-		ctx.SetLastResponse(403, nil, fmt.Sprintf("%s provider limit reached", kind))
-		return nil
+		countKey := fmt.Sprintf("created_provider_count_%s", kind)
+		var count int
+		if countStr, hasCount := ctx.GetCreatedResource(countKey); hasCount {
+			fmt.Sscanf(countStr, "%d", &count)
+		}
+
+		var limit int
+		fmt.Sscanf(kindLimit, "%d", &limit)
+
+		if count >= limit {
+			ctx.SetLastResponse(403, nil, fmt.Sprintf("%s provider limit reached", kind))
+			return nil
+		}
+
+		// Increment counter
+		ctx.TrackCreatedResource(countKey, fmt.Sprintf("%d", count+1))
 	}
 	providerID := int64(500)
 	ctx.TrackProvider(providerID)

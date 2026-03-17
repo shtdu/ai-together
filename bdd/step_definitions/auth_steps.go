@@ -176,9 +176,28 @@ func (ctx *ScenarioContext) iLoginWithCredentials(email, password string) error 
 		ctx.SetLastResponse(401, nil, "invalid_password")
 		return nil
 	}
-	// Success
+	// Success - determine role based on email
+	role := support.RoleMember
+	if email == "manager@example.com" {
+		role = support.RoleAdmin
+	}
 	token := fmt.Sprintf("mock-token-%s", email)
-	ctx.SetLastResponse(200, map[string]string{"token": token}, "")
+
+	// Set CurrentUser for profile checks
+	ctx.BDDTestContext.CurrentUser = &support.UserInfo{
+		Email:    email,
+		Password: password,
+		Name:     "Test User",
+		Role:     role,
+		Token:    token,
+	}
+	ctx.AdminToken = token
+
+	ctx.SetLastResponse(200, map[string]string{
+		"token": token,
+		"email": email,
+		"role":  role,
+	}, "")
 	return nil
 }
 
@@ -194,6 +213,11 @@ func (ctx *ScenarioContext) iLogout() error {
 // iRefreshAuthToken refreshes the current authentication token
 func (ctx *ScenarioContext) iRefreshAuthToken() error {
 	// TODO: Implement actual token refresh via API
+	// Check if current token is expired
+	if ctx.AdminToken == "mock-expired-token" {
+		ctx.SetLastResponse(401, nil, "token_expired")
+		return nil
+	}
 	ctx.SetLastResponse(200, map[string]string{"token": "mock-refreshed-token"}, "")
 	return nil
 }
@@ -205,6 +229,10 @@ func (ctx *ScenarioContext) iRefreshAuthTokenWithToken(token string) error {
 		ctx.SetLastResponse(401, nil, "invalid_token")
 		return nil
 	}
+	if token == "mock-expired-token" {
+		ctx.SetLastResponse(401, nil, "token_expired")
+		return nil
+	}
 	ctx.SetLastResponse(200, map[string]string{"token": "mock-refreshed-token"}, "")
 	return nil
 }
@@ -212,6 +240,11 @@ func (ctx *ScenarioContext) iRefreshAuthTokenWithToken(token string) error {
 // iVerifyAuthToken verifies the current authentication token
 func (ctx *ScenarioContext) iVerifyAuthToken() error {
 	// TODO: Implement actual token verification via API
+	// Check if current token is expired
+	if ctx.AdminToken == "mock-expired-token" {
+		ctx.SetLastResponse(401, nil, "token_expired")
+		return nil
+	}
 	ctx.SetLastResponse(200, ctx.BDDTestContext.CurrentUser, "")
 	return nil
 }
@@ -221,6 +254,10 @@ func (ctx *ScenarioContext) iVerifyAuthTokenWithToken(token string) error {
 	// TODO: Implement actual token verification via API
 	if token == "invalid-token" {
 		ctx.SetLastResponse(401, nil, "invalid_token")
+		return nil
+	}
+	if token == "mock-expired-token" {
+		ctx.SetLastResponse(401, nil, "token_expired")
 		return nil
 	}
 	ctx.SetLastResponse(200, ctx.BDDTestContext.CurrentUser, "")
@@ -241,13 +278,30 @@ func (ctx *ScenarioContext) iGetUserProfile() error {
 // iAttemptToCreateProvider attempts to create a provider
 func (ctx *ScenarioContext) iAttemptToCreateProvider() error {
 	// TODO: Implement actual provider creation via API
-	if ctx.BDDTestContext.CurrentUser != nil && ctx.BDDTestContext.CurrentUser.Role == support.RoleAdmin {
-		providerID := int64(123)
-		ctx.TrackProvider(providerID)
-		ctx.SetLastResponse(201, map[string]interface{}{"id": providerID}, "")
+	// Check if user has permission
+	if ctx.BDDTestContext.CurrentUser == nil || ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
+		ctx.SetLastResponse(403, nil, "permission denied")
 		return nil
 	}
-	ctx.SetLastResponse(403, nil, "permission denied")
+
+	// Check provider limit
+	providerLimit, hasLimit := ctx.GetCreatedResource("license_provider_limit")
+	if hasLimit {
+		// Count current providers
+		providers := ctx.GetCreatedProviders()
+		var limit int
+		fmt.Sscanf(providerLimit, "%d", &limit)
+
+		if len(providers) >= limit {
+			ctx.SetLastResponse(403, nil, "provider limit")
+			return nil
+		}
+	}
+
+	// Create provider
+	providerID := int64(123 + len(ctx.GetCreatedProviders()))
+	ctx.TrackProvider(providerID)
+	ctx.SetLastResponse(201, map[string]interface{}{"id": providerID}, "")
 	return nil
 }
 

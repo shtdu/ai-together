@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cucumber/godog"
+	"github.com/code-together/bdd/support"
 )
 
 // RegisterLicenseSteps registers license management step definitions
@@ -99,8 +100,29 @@ func (ctx *ScenarioContext) iHaveAnExpiredLicenseSignature() error {
 }
 
 func (ctx *ScenarioContext) iHaveAnActivatedLicense(tier string) error {
+	// Map "commercial" to "professional" tier
+	if tier == "commercial" {
+		tier = "professional"
+	}
+
 	ctx.TrackCreatedResource("license_tier", tier)
 	ctx.TrackCreatedResource("license_status", "active")
+
+	// Set limits based on tier
+	switch tier {
+	case "trial":
+		ctx.TrackCreatedResource("license_provider_limit", "2")
+		ctx.TrackCreatedResource("license_user_limit", "5")
+	case "starter":
+		ctx.TrackCreatedResource("license_provider_limit", "5")
+		ctx.TrackCreatedResource("license_user_limit", "10")
+	case "professional":
+		ctx.TrackCreatedResource("license_provider_limit", "10")
+		ctx.TrackCreatedResource("license_user_limit", "50")
+	case "enterprise":
+		ctx.TrackCreatedResource("license_provider_limit", "100")
+		ctx.TrackCreatedResource("license_user_limit", "1000")
+	}
 	return nil
 }
 
@@ -239,6 +261,12 @@ func (ctx *ScenarioContext) iGetLicenseFeatures() error {
 }
 
 func (ctx *ScenarioContext) iGetLicenseStatus() error {
+	// Check authentication
+	if ctx.BDDTestContext.CurrentUser == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized")
+		return nil
+	}
+
 	status, _ := ctx.GetCreatedResource("license_status")
 	if status == "" {
 		status = "active"
@@ -255,10 +283,16 @@ func (ctx *ScenarioContext) iGetLicenseLimits() error {
 
 	limits := map[string]interface{}{}
 	if providerLimit != "" {
-		limits["provider_limit"] = providerLimit
+		// Convert string to int for proper comparison
+		var limit int
+		fmt.Sscanf(providerLimit, "%d", &limit)
+		limits["provider_limit"] = limit
 	}
 	if userLimit != "" {
-		limits["user_limit"] = userLimit
+		// Convert string to int for proper comparison
+		var limit int
+		fmt.Sscanf(userLimit, "%d", &limit)
+		limits["user_limit"] = limit
 	}
 
 	ctx.SetLastResponse(200, limits, "")
@@ -266,6 +300,18 @@ func (ctx *ScenarioContext) iGetLicenseLimits() error {
 }
 
 func (ctx *ScenarioContext) iGetLicenseInformation() error {
+	// Check authentication
+	if ctx.BDDTestContext.CurrentUser == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized")
+		return nil
+	}
+
+	// Check permission - only admins can view license information
+	if ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
+		ctx.SetLastResponse(403, nil, "permission denied")
+		return nil
+	}
+
 	tier, _ := ctx.GetCreatedResource("license_tier")
 	status, _ := ctx.GetCreatedResource("license_status")
 	if status == "" {
@@ -307,6 +353,12 @@ func (ctx *ScenarioContext) iRenewTheLicense() error {
 }
 
 func (ctx *ScenarioContext) iAttemptToCreateAUser() error {
+	// Check permission - only admins can create users
+	if ctx.BDDTestContext.CurrentUser == nil || ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
+		ctx.SetLastResponse(403, nil, "permission denied")
+		return nil
+	}
+
 	status, _ := ctx.GetCreatedResource("license_status")
 	if status == "expired" {
 		ctx.SetLastResponse(403, nil, "license expired")

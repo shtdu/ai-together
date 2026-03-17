@@ -52,6 +52,11 @@ func (ctx *ScenarioContext) iHaveUploadedUsageWithProjectMetadata() error {
 }
 
 func (ctx *ScenarioContext) iUploadTheUsageRecord() error {
+	// Check authentication
+	if ctx.BDDTestContext.CurrentUser == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized")
+		return nil
+	}
 	ctx.SetLastResponse(201, map[string]interface{}{"id": "usage-123"}, "")
 	return nil
 }

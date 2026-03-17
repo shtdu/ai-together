@@ -3,7 +3,6 @@ package godog
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -15,12 +14,24 @@ import (
 
 // TestGodog runs the godog test suite
 func TestGodog(t *testing.T) {
+	// Read configuration from environment variables
+	format := "pretty"
+	if f := os.Getenv("GODOG_FORMAT"); f != "" {
+		format = f
+	}
+
+	tags := ""
+	if tg := os.Getenv("GODOG_TAGS"); tg != "" {
+		tags = tg
+	}
+
 	suite := godog.TestSuite{
 		Name:                 "bdd",
 		TestSuiteInitializer: InitializeScenario,
 		Options: &godog.Options{
-			Format:      "pretty",
+			Format:      format,
 			Paths:       []string{"../features"},
+			Tags:        tags,
 			Strict:      true,
 			StopOnFailure: false,
 			NoColors:    false,
@@ -33,7 +44,7 @@ func TestGodog(t *testing.T) {
 }
 
 // InitializeScenario sets up the scenario context and registers step definitions
-func InitializeScenario(ctx *godog.ScenarioContext) {
+func InitializeScenario(suite *godog.TestSuiteContext) {
 	// Create test context with server configuration
 	testContext := &step_definitions.ScenarioContext{
 		BDDTestContext: &support.BDDTestContext{
@@ -41,6 +52,9 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 			TestDBURL: support.GetTestDatabaseURL(),
 		},
 	}
+
+	// Get the scenario context from the suite
+	ctx := suite.ScenarioContext()
 
 	// Register step definitions
 	step_definitions.RegisterCommonSteps(testContext, ctx)

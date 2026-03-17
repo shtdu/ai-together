@@ -94,7 +94,7 @@ func GetTestServerLogPath() string {
 }
 
 // StartTestServer starts the test server using the integration test script
-// This is typically called from the Makefile, but can be called programmatically
+// This is typically called from shell scripts, but can be called programmatically
 func StartTestServer() error {
 	// The test server is usually started via the integration/test-server.sh script
 	// This function is provided for programmatic control if needed
@@ -105,10 +105,10 @@ func StartTestServer() error {
 		return fmt.Errorf("test server is already running at %s", serverURL)
 	}
 
-	// In most cases, the test server should be started via Makefile:
-	// make integration-test-server
+	// In most cases, the test server should be started manually:
+	// cd ../integration && ./test-server.sh
 
-	return fmt.Errorf("test server should be started via Makefile: make integration-test-server")
+	return fmt.Errorf("test server should be started via shell script: cd ../integration && ./test-server.sh")
 }
 
 // StopTestServer stops the test server by PID

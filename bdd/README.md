@@ -18,25 +18,17 @@ This BDD test suite converts existing integration tests into Gherkin scenarios t
 ### Run All BDD Tests
 
 ```bash
-make test-bdd
+# First, start the test server in another terminal
+cd ../integration && ./test-server.sh
+
+# Then run BDD tests in the bdd directory
+./bdd-test.sh
 ```
 
 ### Run Specific Feature
 
 ```bash
-cd godog && go test -v -godog.paths="../features/hello_world.feature"
-```
-
-### Run with Specific Tags
-
-```bash
-make test-bdd-tags tags="@smoke"
-```
-
-### Run with Coverage
-
-```bash
-make test-bdd-coverage
+cd godog && go test -v ./...
 ```
 
 ## Project Structure
@@ -69,27 +61,19 @@ bdd/
 ├── godog/                       # Test suite entry points
 │   ├── godog_suite_test.go      # Test suite initializer
 │   └── godog_test.go            # Main test runner
-├── Makefile                     # Test execution commands
+├── bdd-test.sh                  # Test execution script
 └── README.md                    # This file
 ```
 
-## Makefile Commands
+## Test Script Commands
 
 | Command | Description |
 |---------|-------------|
-| `make help` | Show all available commands |
-| `make test-bdd` | Run all BDD tests |
-| `make test-bdd-ci` | Run with JUnit output for CI/CD |
-| `make test-bdd-coverage` | Run with coverage report |
-| `make test-bdd-tags tags="@smoke"` | Run with specific tags |
-| `make ensure-test-server` | Ensure test server is running |
-| `make clean` | Clean test artifacts |
-| `make deps` | Download Go dependencies |
-| `make fmt` | Format Go code |
-| `make vet` | Vet Go code |
-| `make lint` | Run all linters |
-| `make test-server-logs` | Show test server logs |
-| `make test-server-health` | Check test server health |
+| `./bdd-test.sh` | Run all BDD tests (auto-starts server if needed) |
+| `./bdd-test.sh --format junit` | Run with JUnit output for CI/CD |
+| `./bdd-test.sh --tags "@smoke"` | Run scenarios with specific tags |
+| `./bdd-test.sh --no-server` | Don't auto-start server (must be running) |
+| `./bdd-test.sh --help` | Show all available options |
 
 ## Writing New Scenarios
 
@@ -123,18 +107,38 @@ suite.When(`^I create a ([^"]*) provider with API key "([^"]*)"$`,
 ### 3. Run the Scenario
 
 ```bash
-make test-bdd
+./bdd-test.sh
 ```
 
 ## Test Server
 
-The BDD tests require a running test server. The Makefile will automatically start the server if it's not running.
+The BDD tests require a running test server. The script will automatically start the server if it's not running.
 
-### Manual Server Start
+### Automatic Server Management (Default)
 
 ```bash
+./bdd-test.sh
+```
+
+This will:
+- Check if test server is running
+- Start the server automatically if not running (via `../integration/test-server.sh`)
+- Wait for server to be ready
+- Execute BDD tests
+- Stop the server automatically if we started it
+- Handle Ctrl+C gracefully to cleanup
+
+### Manual Server Management
+
+If you prefer to manage the server manually:
+
+```bash
+# Terminal 1: Start server manually
 cd ../integration
 ./test-server.sh
+
+# Terminal 2: Run tests with --no-server flag
+./bdd-test.sh --no-server
 ```
 
 ### Check Server Status
@@ -188,10 +192,10 @@ Cleanup failures are logged but don't fail the scenario.
 
 ```bash
 # Check server status
-make test-server-health
+curl http://localhost:8088/health
 
 # View server logs
-make test-server-logs
+cat /tmp/test-server.log
 
 # Manually start server
 cd ../integration && ./test-server.sh

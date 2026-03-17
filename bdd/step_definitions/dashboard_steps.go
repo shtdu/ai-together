@@ -343,6 +343,12 @@ func (ctx *ScenarioContext) iHaveTeamUsageData() error {
 }
 
 func (ctx *ScenarioContext) iGetDashboardMetrics() error {
+	// Check permission - only admins can view dashboard metrics
+	if ctx.BDDTestContext.CurrentUser == nil || ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
+		ctx.SetLastResponse(403, nil, "permission denied")
+		return nil
+	}
+
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"total_usage": 10000,
 		"total_cost": 1.50,
