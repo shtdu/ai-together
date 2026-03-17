@@ -572,8 +572,27 @@ func (ctx *ScenarioContext) iGetTeamAnalytics() error {
 
 // iGetMyUsageStatistics retrieves usage statistics for current user
 func (ctx *ScenarioContext) iGetMyUsageStatistics() error {
-	// TODO: Implement actual usage retrieval via API
-	ctx.SetLastResponse(200, map[string]interface{}{"total_tokens": 1000}, "")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	resp, err := client.GetApiV1UsageCurrentWithResponse(context.Background(), nil)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
