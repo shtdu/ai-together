@@ -657,47 +657,61 @@ func CreateTestDataFromFixtures(ctx *BDDTestContext, fixtures *FixtureData) erro
 }
 ```
 
-**Data Structures:**
+**Data Structures (Existing - in bdd/support/fixtures.go):**
 
 ```go
 // FixtureData represents test fixture data loaded from JSON
 type FixtureData struct {
-    Users     []TestFixtureUser      `json:"users"`
-    Providers []TestFixtureProvider  `json:"providers"`
-    Teams     []TestFixtureTeam      `json:"teams"`
-    Licenses  []TestFixtureLicense   `json:"licenses"`
+    Users     []UserFixture     `json:"users"`
+    Providers []ProviderFixture `json:"providers"`
+    Teams     []TeamFixture     `json:"teams"`
+    Licenses  []LicenseFixture  `json:"licenses"`
 }
 
-// TestFixtureUser defines a test user
-// ID is populated after API creation (not specified in fixtures)
-type TestFixtureUser struct {
-    Email    string `json:"email"`     // Required
-    Password string `json:"password"`  // Required
-    Name     string `json:"name"`      // Required
-    Role     string `json:"role"`      // Required: "manager" or "member"
+// UserFixture defines a test user
+// ID can be specified in fixtures or populated after API creation
+type UserFixture struct {
+    ID             string `json:"id"`                        // Optional: populated after creation
+    Email          string `json:"email"`                     // Required
+    Name           string `json:"name"`                      // Required
+    Password       string `json:"password"`                  // Required
+    Role           string `json:"role"`                      // Required: "admin" or "member"
+    TenantID       int64  `json:"tenant_id"`                 // Required
+    ProviderUserID string `json:"provider_user_id,omitempty"` // Optional
 }
 
-// TestFixtureProvider defines a test provider
-type TestFixtureProvider struct {
-    Name  string `json:"name"`       // Required
-    Kind  string `json:"kind"`       // Required: "claude", "codex", "opencode"
-    APIKey string `json:"api_key"`   // Required
+// ProviderFixture defines a test provider
+type ProviderFixture struct {
+    ID        int64  `json:"id"`          // Optional: populated after creation
+    Name      string `json:"name"`        // Required
+    Kind      string `json:"kind"`        // Required: "claude", "codex", "opencode"
+    APIKey    string `json:"api_key"`     // Required
+    Priority  int    `json:"priority"`    // Optional
+    Enabled   bool   `json:"enabled"`     // Optional
+    TenantID  int64  `json:"tenant_id"`   // Required
+    CreatedAt string `json:"created_at,omitempty"` // Optional
 }
 
-// TestFixtureTeam defines a test team
-type TestFixtureTeam struct {
-    ID   int64  `json:"id"`    // Optional: use to specify known team (e.g., default team ID 1)
-    Name string `json:"name"`  // Required
+// TeamFixture defines a test team
+type TeamFixture struct {
+    ID          int64  `json:"id"`                       // Optional: use to specify known team (e.g., default team ID 1)
+    Name        string `json:"name"`                     // Required
+    Description string `json:"description,omitempty"`    // Optional
+    TenantID    int64  `json:"tenant_id"`                // Required
+    CreatedAt   string `json:"created_at,omitempty"`     // Optional
 }
 
-// TestFixtureLicense defines a test license
-type TestFixtureLicense struct {
-    Key  string `json:"key"`   // Required
-    Tier string `json:"tier"`  // Required: "free", "professional", "enterprise"
+// LicenseFixture defines a test license
+type LicenseFixture struct {
+    ID        string `json:"id"`                       // Optional: populated after creation
+    Key       string `json:"key"`                      // Required
+    Tier      string `json:"tier"`                     // Required: "trial", "professional", "enterprise"
+    ExpiresAt string `json:"expires_at,omitempty"`     // Optional
+    CreatedAt string `json:"created_at,omitempty"`     // Optional
 }
 ```
 
-**Note:** User IDs are **not specified in fixture data**. They are populated from API responses after user creation. This ensures IDs match the actual database values and avoids ID conflicts.
+**Note:** The fixture types already exist in `bdd/support/fixtures.go`. The spec uses these existing types rather than creating new ones. User IDs can be specified in fixtures or populated from API responses after creation.
 
 **AfterScenario Hook:**
 ```go
@@ -1234,3 +1248,48 @@ cd godog && go test -v -godog.paths="../features/hello_world.feature"
 2. Convert and validate smoke tests (Phase 2)
 3. Document findings and adjust approach if needed
 4. Plan full conversion (Phase 3) based on learnings
+
+## Implementation Checklist
+
+### Files to CREATE:
+
+- [ ] `bdd/support/client_factory.go` - Client initialization functions
+- [ ] `bdd/support/api_helpers.go` - Response handling utilities (optional, can be inline)
+- [ ] `bdd/support/fixtures.json` - Test data fixtures (optional, uses defaults if missing)
+
+### Files to MODIFY:
+
+- [ ] `bdd/support/test_context.go` - Add Logger field and 5 new methods:
+  - `InitializeClients(serverURL string, logger *slog.Logger) error`
+  - `GetAnonymousClient() *integration.ClientWithResponses`
+  - `GetAuthToken() (string, error)`
+  - `GetAuthenticatedClient() (*integration.ClientWithResponses, error)`
+  - `UpdateAuthenticatedClients(token string) error`
+
+- [ ] `bdd/step_definitions/context.go` - Add/update method:
+  - `CleanupScenarioResources() error` - Implement with retry logic
+
+- [ ] `bdd/godog/godog_suite_test.go` - Update hooks:
+  - Initialize clients in suite setup
+  - Update BeforeScenario to call CreateTestDataFromFixtures
+  - Update AfterScenario to call CleanupScenarioResources
+
+- [ ] `bdd/step_definitions/*.go` - Convert mock implementations to real API calls:
+  - `auth_steps.go` - Login, logout, refresh, verify
+  - `common_steps.go` - Health checks
+  - `provider_steps.go` - CRUD operations
+  - `license_steps.go` - Activation, status
+  - `usage_steps.go` - Statistics
+  - `dashboard_steps.go` - Analytics
+  - `permission_steps.go` - RBAC
+  - `health_steps.go` - System health
+
+### Existing Types (already in bdd/support/fixtures.go):
+
+- `FixtureData` - Container for all fixtures
+- `UserFixture` - User test data
+- `ProviderFixture` - Provider test data
+- `TeamFixture` - Team test data
+- `LicenseFixture` - License test data
+
+**Note:** No new fixture types need to be created. Use existing types from `fixtures.go`.
