@@ -3,7 +3,10 @@ package support
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
+
+	"github.com/code-together/shared/integration"
 )
 
 // BDDTestContext holds shared state across BDD scenarios.
@@ -18,10 +21,12 @@ type BDDTestContext struct {
 	TestDBURL string
 
 	// API clients (immutable after setup)
-	// These will be set when the test context is initialized
-	AnonymousClient interface{}
-	Client          interface{}
-	ManagerClient   interface{}
+	AnonymousClient *integration.ClientWithResponses
+	Client          *integration.ClientWithResponses
+	ManagerClient   *integration.ClientWithResponses
+
+	// Logger for client creation and operations
+	Logger *slog.Logger
 
 	// Authentication (per-scenario)
 	AdminToken  string
