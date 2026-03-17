@@ -37,7 +37,7 @@ ignore:
   - "shared/integration_manager/generated.go"
 
   # Member client (Wails desktop app with Vue.js frontend - not Go server code)
-  - "member"
+  - "member/**"
 
   # Test files and utilities
   - "**/*_test.go"
