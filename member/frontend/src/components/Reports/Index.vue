@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '../common/BaseButton.vue'
@@ -116,6 +116,13 @@ const maxDate = ref(getTodayDate())
 
 // Debounce timer for date changes
 let dateChangeTimer: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (dateChangeTimer !== null) {
+    clearTimeout(dateChangeTimer)
+    dateChangeTimer = null
+  }
+})
 
 // Get the first tool's data (default to claude if available)
 const currentToolData = computed(() => {
