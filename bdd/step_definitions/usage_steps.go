@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
-	"github.com/code-together/bdd/support"
 	"github.com/code-together/shared/integration"
 )
 
@@ -440,25 +439,27 @@ func (ctx *ScenarioContext) iGetDailyUsageStatistics() error {
 }
 
 func (ctx *ScenarioContext) iGetTeamAnalyticsUsage() error {
-	// Check permissions - only admins can view team analytics
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
-	if ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
-		ctx.SetLastResponse(403, nil, "permission denied")
+
+	resp, err := client.GetApiV1UsageStatsWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
 		return nil
 	}
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"total_usage": 10000,
-		"total_cost": 1.50,
-		"team_total_cost": 1.50,
-		"users": []string{"user1@example.com", "user2@example.com"},
-		"per_user": map[string]interface{}{
-			"user1@example.com": 5000,
-			"user2@example.com": 5000,
-		},
-	}, "")
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 

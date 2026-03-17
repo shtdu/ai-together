@@ -545,12 +545,27 @@ func (ctx *ScenarioContext) iAttemptToCreateProvider() error {
 
 // iGetTeamAnalytics retrieves team analytics
 func (ctx *ScenarioContext) iGetTeamAnalytics() error {
-	// TODO: Implement actual analytics retrieval via API
-	if ctx.BDDTestContext.CurrentUser != nil && ctx.BDDTestContext.CurrentUser.Role == support.RoleAdmin {
-		ctx.SetLastResponse(200, map[string]interface{}{"total_users": 10}, "")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
-	ctx.SetLastResponse(403, nil, "permission denied")
+
+	resp, err := client.GetApiV1UsageStatsWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
