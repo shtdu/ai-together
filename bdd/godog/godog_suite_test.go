@@ -3,7 +3,9 @@ package godog
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"testing"
 
@@ -45,12 +47,21 @@ func TestGodog(t *testing.T) {
 
 // InitializeScenario sets up the scenario context and registers step definitions
 func InitializeScenario(suite *godog.TestSuiteContext) {
+	// Create logger for client operations
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
 	// Create test context with server configuration
 	testContext := &step_definitions.ScenarioContext{
 		BDDTestContext: &support.BDDTestContext{
 			ServerURL: support.GetTestServerURL(),
 			TestDBURL: support.GetTestDatabaseURL(),
 		},
+	}
+
+	// Initialize API clients
+	if err := testContext.InitializeClients(testContext.ServerURL, logger); err != nil {
+		log.Printf("WARNING: Failed to initialize API clients: %v", err)
+		// Continue anyway - scenarios may handle this
 	}
 
 	// Get the scenario context from the suite
@@ -66,13 +77,6 @@ func InitializeScenario(suite *godog.TestSuiteContext) {
 	step_definitions.RegisterDashboardSteps(testContext, ctx)
 	step_definitions.RegisterHealthSteps(testContext, ctx)
 
-	// Register additional step definitions as they are implemented
-	// step_definitions.RegisterProviderSteps(testContext, ctx)
-	// step_definitions.RegisterLicenseSteps(testContext, ctx)
-	// step_definitions.RegisterUsageSteps(testContext, ctx)
-	// step_definitions.RegisterDashboardSteps(testContext, ctx)
-	// step_definitions.RegisterHealthSteps(testContext, ctx)
-
 	// Before scenario hook - reset state and setup test environment
 	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
 		log.Printf("=== Starting Scenario: %s ===", sc.Name)
@@ -83,14 +87,19 @@ func InitializeScenario(suite *godog.TestSuiteContext) {
 		// Ensure test server is running
 		if !support.IsTestServerRunning(testContext.ServerURL) {
 			log.Printf("WARNING: Test server is not running at %s", testContext.ServerURL)
-			// Continue anyway - scenarios may handle this appropriately
+			return ctx, fmt.Errorf("test server not running at %s", testContext.ServerURL)
 		}
 
-		// Load standard fixtures
-		_, err := support.LoadFixtureData()
+		// Load fixtures and create test data via API
+		fixtures, err := support.LoadFixtureData()
 		if err != nil {
-			log.Printf("WARNING: Could not load fixture data: %v (using defaults)", err)
+			return ctx, fmt.Errorf("failed to load fixtures: %w", err)
 		}
+
+		// TODO: Create test data from fixtures via API
+		// This will be implemented when CreateTestDataFromFixtures is added
+		log.Printf("Loaded %d users, %d providers, %d teams, %d licenses from fixtures",
+			len(fixtures.Users), len(fixtures.Providers), len(fixtures.Teams), len(fixtures.Licenses))
 
 		return ctx, nil
 	})
