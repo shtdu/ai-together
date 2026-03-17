@@ -3,7 +3,7 @@ module github.com/code-together/shared
 go 1.25
 
 require (
-	github.com/oapi-codegen/runtime v1.1.2
+	github.com/oapi-codegen/runtime v1.2.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 )
