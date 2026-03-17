@@ -305,7 +305,29 @@
 - **Overall:** 197/215 scenarios passing (91.6%)
 - **Note:** Member scenario has data issue (user login credentials mismatch)
 
-## Next Steps (Phase 12+)
+## Completed (Phase 12)
+
+### User Management - Listing
+- [x] **Converted user listing to real API calls** (`step_definitions/auth_steps.go`)
+  - `iListAllUsers()` - Uses `GET /api/v1/users` endpoint from integration_manager
+  - Creates integration_manager client inline for user management operations
+  - Added slog import to auth_steps.go
+  - Handles JSON200/JSON401/JSON403 responses
+  - Returns real user data from database
+
+### Test Validation
+- [x] **User listing API working correctly**
+  - API calls are being made successfully ✅
+  - Returns 3 real users from database (admin, manager, member) ✅
+  - Authentication required and enforced ✅
+  - Proper response structure with all user fields ✅
+
+### Test Results
+- **@wip scenarios:** 1/1 passing (list all users)
+- **Overall:** 197/215 scenarios passing (91.6%)
+- **Note:** Uses integration_manager client (separate from integration client)
+
+## Next Steps (Phase 13+)
 
 ### Convert More Usage Analytics
 - [ ] Upload usage records (`POST /api/v1/usage/batch`)
@@ -462,4 +484,4 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 ---
 
 **Last Updated:** 2026-03-17
-**Status:** Phase 11 complete (team analytics conversion). 197/215 scenarios passing (91.6%). Converted team analytics to real API calls. Both manager/member scenarios using same endpoint. Ready for Phase 12 (remaining conversions).
+**Status:** Phase 12 complete (user listing conversion). 197/215 scenarios passing (91.6%). Converted user listing to real API using integration_manager client. Returns 3 real users from DB. Ready for Phase 13 (remaining conversions).
