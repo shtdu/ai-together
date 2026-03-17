@@ -1,7 +1,10 @@
 # Codecov configuration for AI Together
-# https://docs.codecov.com/docs/codecov-yaml
+# Reference: https://docs.codecov.com/docs/codecov-yaml
+# Validation: curl -X POST --data-binary @codecov.yml https://api.codecov.io/validate
 
 coverage:
+  precision: 2
+  round: down
   status:
     project:
       default:
@@ -14,11 +17,20 @@ coverage:
         threshold: 5%
 
 comment:
-  layout: "header, diff, files, footer"
+  layout: "header, diff, flags, files, footer"
   behavior: default
   require_changes: false
   require_base: false
   require_head: true
+
+# Map the flags uploaded in .github/workflows/test.yml to their respective directories
+flags:
+  server:
+    paths:
+      - server/
+  shared:
+    paths:
+      - shared/
 
 flag_management:
   default_rules:
@@ -37,7 +49,8 @@ ignore:
   - "shared/integration_manager/generated.go"
 
   # Member client (Wails desktop app with Vue.js frontend - not Go server code)
-  - "member/**"
+  - "member"
+  - "member/"
 
   # Test files and utilities
   - "**/*_test.go"
