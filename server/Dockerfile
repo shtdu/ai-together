@@ -25,7 +25,7 @@ COPY Makefile ./
 RUN make server-production
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:13.3-slim
 
 WORKDIR /app
 
