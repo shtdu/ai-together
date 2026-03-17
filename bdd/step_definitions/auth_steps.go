@@ -4,6 +4,7 @@ package step_definitions
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/code-together/bdd/support"
@@ -132,6 +133,49 @@ func (ctx *ScenarioContext) iHaveAnExpiredAuthToken() error {
 
 // userExists creates a test user via manager API
 func (ctx *ScenarioContext) userExists(email, password string) error {
+	// Special case: admin/manager user is created by test server setup
+	// For these users, just mark as existing (they will be created by setup or already exist)
+	if email == "admin@example.com" || email == "manager@example.com" {
+		// Try to login to verify the user exists
+		loginReq := integration.PostAuthLoginJSONRequestBody{
+			Email:    openapi_types.Email(email),
+			Password: password,
+		}
+
+		loginResp, err := ctx.AnonymousClient.PostAuthLoginWithResponse(context.Background(), loginReq)
+		if err != nil {
+			return fmt.Errorf("failed to verify admin user: %w", err)
+		}
+
+		// Store the login response for subsequent steps
+		if loginResp.StatusCode() == 200 && loginResp.JSON200 != nil {
+			// User exists, store the token and user info
+			token := loginResp.JSON200.AccessToken
+			user := loginResp.JSON200.User
+
+			// Store token based on role
+			if string(user.Role) == "admin" || string(user.Role) == "manager" {
+				ctx.AdminToken = token
+			} else {
+				ctx.MemberToken = token
+			}
+
+			ctx.BDDTestContext.CurrentUser = &support.UserInfo{
+				Email:    string(user.Email),
+				Password: password,
+				Name:     user.Name,
+				Role:     string(user.Role),
+				Token:    token,
+			}
+
+			ctx.SetLastResponse(200, loginResp.JSON200, "")
+			return nil
+		}
+
+		// User doesn't exist or login failed, continue to creation
+		log.Printf("Admin user login failed with status %d, will try to create", loginResp.StatusCode())
+	}
+
 	// Login as admin to get manager token
 	adminEmail := openapi_types.Email("admin@example.com")
 	adminPassword := "AdminPassword123!"
