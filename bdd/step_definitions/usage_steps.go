@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
@@ -662,14 +663,61 @@ func (ctx *ScenarioContext) iQueryUsageForTheLastDays(days int) error {
 }
 
 func (ctx *ScenarioContext) iUploadTheUsageRecordsAsABatch() error {
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"batch_id": "batch-123",
-		"records_uploaded": 10,
-	}, "")
+
+	// Get the count of usage records from tracked resources
+	countStr, hasCount := ctx.GetCreatedResource("usage_records_count")
+	if !hasCount {
+		ctx.SetLastResponse(400, nil, "no usage records count found")
+		return nil
+	}
+
+	count, err := strconv.Atoi(countStr)
+	if err != nil || count <= 0 {
+		ctx.SetLastResponse(400, nil, "invalid usage records count")
+		return nil
+	}
+
+	// Create mock usage records for the batch
+	now := time.Now()
+	inputTokens := 1000
+	outputTokens := 500
+	userId := int64(1)
+
+	usageRecords := make([]integration.UsageRecord, count)
+	for i := 0; i < count; i++ {
+		usageRecords[i] = integration.UsageRecord{
+			Id:           int64(i + 1),
+			Model:        "claude-3-5-sonnet-20241022",
+			Platform:     "test-platform",
+			Provider:     "claude",
+			HttpCode:     200,
+			CreatedAt:    now,
+			InputTokens:  &inputTokens,
+			OutputTokens: &outputTokens,
+			UserId:       &userId,
+		}
+	}
+
+	resp, err := client.PostApiV1UsageBatchWithResponse(context.Background(), usageRecords)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
