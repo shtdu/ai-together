@@ -9,7 +9,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
-	// "github.com/code-together/shared/integration" // TODO: Uncomment when implementing more API calls
+	"github.com/code-together/shared/integration"
 )
 
 // RegisterUsageSteps registers usage analytics step definitions
@@ -1929,48 +1929,28 @@ func (ctx *ScenarioContext) iGetModelPerformanceMetrics() error {
 }
 
 func (ctx *ScenarioContext) iGetMyUsageDashboard() error {
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"current_usage": 1000,
-		"total_usage": 50000,
-		"total_cost": 500.0,
-		"usage_trend": []interface{}{
-			map[string]interface{}{
-				"date": "2026-03-17",
-				"tokens": 1000,
-				"percentage_of_total": 2.0,
-			},
-		},
-		"trend_data_points": []interface{}{
-			map[string]interface{}{
-				"date": "2026-03-17",
-				"value": 1000,
-			},
-			map[string]interface{}{
-				"date": "2026-03-16",
-				"value": 1200,
-			},
-		},
-		"daily_average": 150,
-		"summary_statistics": map[string]interface{}{
-			"total_tokens": 50000,
-			"total_requests": 1200,
-			"average_tokens_per_request": 41.67,
-		},
-		"success_rate_by_model": map[string]interface{}{
-			"claude-3": 98.5,
-			"codex": 95.0,
-		},
-		"usage_data": []interface{}{
-			map[string]interface{}{
-				"date": "2026-03-17",
-				"tokens": 1000,
-			},
-		},
-	}, "")
+
+	params := (*integration.GetApiV1UsageCurrentParams)(nil)
+	resp, err := client.GetApiV1UsageCurrentWithResponse(context.Background(), params)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
