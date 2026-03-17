@@ -262,7 +262,29 @@
 - **Overall:** 197/215 scenarios passing (91.6%)
 - **Note:** Team creation/update/delete not yet available in API (no endpoints)
 
-## Next Steps (Phase 10+)
+## Completed (Phase 10)
+
+### Usage Analytics - Batch Upload
+- [x] **Converted batch usage upload to real API calls** (`step_definitions/usage_steps.go`)
+  - `iUploadTheUsageRecordsAsABatch()` - Uses `POST /api/v1/usage/batch` endpoint
+  - Creates mock UsageRecord objects with proper structure
+  - Supports configurable record count from tracked resources
+  - Handles JSON200/JSON401 responses
+  - Returns real batch upload response from API
+
+### Test Validation
+- [x] **Batch upload API working correctly**
+  - API calls are being made successfully ✅
+  - Authentication required and enforced ✅
+  - Batch of 10 usage records uploaded successfully ✅
+  - Returns correct HTTP status codes (200 for authenticated users)
+
+### Test Results
+- **@wip scenarios:** 1/1 passing (batch upload)
+- **Overall:** 197/215 scenarios passing (91.6%)
+- **Note:** Single record upload still uses mock (complex validation logic, ~470 lines)
+
+## Next Steps (Phase 11+)
 
 ### Convert More Usage Analytics
 - [ ] Upload usage records (`POST /api/v1/usage/batch`)
@@ -419,4 +441,4 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 ---
 
 **Last Updated:** 2026-03-17
-**Status:** Phase 9 complete (dashboard operations conversion). 197/215 scenarios passing (91.6%). Converted dashboard metrics and team listing to real API calls. Fixed member access expectations. Ready for Phase 10 (remaining conversions).
+**Status:** Phase 10 complete (batch upload conversion). 197/215 scenarios passing (91.6%). Converted batch usage upload to real API. Single record upload still mock (complex validation). Ready for Phase 11 (remaining conversions).
