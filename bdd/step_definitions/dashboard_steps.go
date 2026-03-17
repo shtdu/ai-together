@@ -7,7 +7,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
-	// "github.com/code-together/shared/integration" // TODO: Uncomment when adding more dashboard API calls
+	"github.com/code-together/shared/integration"
 )
 
 // RegisterDashboardSteps registers dashboard step definitions
@@ -175,9 +175,27 @@ func (ctx *ScenarioContext) teamMemberCountShouldDecrease() error {
 }
 
 func (ctx *ScenarioContext) iListAllTeamsAlt() error {
-	ctx.SetLastResponse(200, []map[string]interface{}{
-		{"id": 1, "name": "Default Team"},
-	}, "")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	resp, err := client.GetApiV1TeamsWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
@@ -350,6 +368,9 @@ func (ctx *ScenarioContext) iGetDashboardMetrics() error {
 		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
+
+	// Explicitly type client to use integration package methods
+	var _ = (*integration.ClientWithResponses)(client)
 
 	resp, err := client.GetApiV1UsageStatsWithResponse(context.Background())
 	if err != nil {
