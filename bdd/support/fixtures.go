@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 // FixtureData holds test fixture data loaded from integration/testdata
@@ -61,8 +62,12 @@ type LicenseFixture struct {
 // Priority: 1) local fixtures.json, 2) integration testdata, 3) error
 // Note: Falls back to integration testdata for compatibility during transition
 func LoadFixtureData() (*FixtureData, error) {
+	// Get the directory of this file (support package)
+	_, currentFilePath, _, _ := runtime.Caller(0)
+	supportDir := filepath.Dir(currentFilePath)
+
 	// First, try local fixtures.json (in bdd/support/)
-	localFixturePath := filepath.Join(".", "fixtures.json")
+	localFixturePath := filepath.Join(supportDir, "fixtures.json")
 
 	if data, err := os.ReadFile(localFixturePath); err == nil {
 		var fixtures FixtureData
@@ -73,7 +78,7 @@ func LoadFixtureData() (*FixtureData, error) {
 	}
 
 	// Fall back to integration testdata (for compatibility)
-	integrationFixturePath := filepath.Join("..", "..", "integration", "testdata", "fixtures.json")
+	integrationFixturePath := filepath.Join(supportDir, "..", "..", "integration", "testdata", "fixtures.json")
 
 	if _, err := os.Stat(integrationFixturePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("no fixtures file found: tried %s and %s", localFixturePath, integrationFixturePath)
