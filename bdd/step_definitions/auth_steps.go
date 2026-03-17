@@ -8,6 +8,7 @@ import (
 
 	"github.com/code-together/bdd/support"
 	"github.com/code-together/shared/integration"
+	"github.com/code-together/integration_manager"
 	"github.com/cucumber/godog"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -129,11 +130,41 @@ func (ctx *ScenarioContext) iHaveAnExpiredAuthToken() error {
 	return nil
 }
 
-// userExists creates a test user via API registration
+// userExists creates a test user via manager API
 func (ctx *ScenarioContext) userExists(email, password string) error {
-	client := ctx.GetAnonymousClient()
-	if client == nil {
-		return fmt.Errorf("anonymous client not initialized")
+	// Login as admin to get manager token
+	adminEmail := openapi_types.Email("admin@example.com")
+	adminPassword := "AdminPassword123!"
+
+	loginReq := integration.PostAuthLoginJSONRequestBody{
+		Email:    adminEmail,
+		Password: adminPassword,
+	}
+
+	loginResp, err := ctx.AnonymousClient.PostAuthLoginWithResponse(context.Background(), loginReq)
+	if err != nil {
+		return fmt.Errorf("admin login failed: %w", err)
+	}
+
+	if loginResp.StatusCode() != 200 {
+		return fmt.Errorf("admin login failed with status %d", loginResp.StatusCode())
+	}
+
+	if loginResp.JSON200 == nil {
+		return fmt.Errorf("admin login response is empty")
+	}
+
+	// Store admin token temporarily
+	adminToken := loginResp.JSON200.AccessToken
+
+	// Create authenticated manager client
+	managerClient, err := integration_manager.NewAuthenticatedClient(
+		ctx.ServerURL,
+		integration_manager.TokenGetter(func() (string, error) { return adminToken, nil }),
+		ctx.Logger,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create manager client: %w", err)
 	}
 
 	// Extract name from email (before @) for display
@@ -151,16 +182,20 @@ func (ctx *ScenarioContext) userExists(email, password string) error {
 		name = strings.Join(words, " ")
 	}
 
-	req := integration.PostAuthRegisterJSONRequestBody{
+	// Default role to member
+	role := integration_manager.PostApiV1UsersJSONBodyRoleMember
+
+	req := integration_manager.PostApiV1UsersJSONRequestBody{
 		Email:    openapi_types.Email(email),
 		Password: password,
 		Name:     name,
+		Role:     role,
 	}
 
-	resp, err := client.PostAuthRegisterWithResponse(context.Background(), req)
+	resp, err := managerClient.PostApiV1UsersWithResponse(context.Background(), req)
 	if err != nil {
 		ctx.SetLastResponse(0, nil, err.Error())
-		return fmt.Errorf("user registration request failed: %w", err)
+		return fmt.Errorf("user creation request failed: %w", err)
 	}
 
 	// Handle error responses
@@ -168,8 +203,6 @@ func (ctx *ScenarioContext) userExists(email, password string) error {
 		errMsg := ""
 		if resp.JSON400 != nil {
 			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
-		} else if resp.JSON403 != nil {
-			errMsg = fmt.Sprintf("forbidden: %s", resp.JSON403.Error)
 		} else if len(resp.Body) > 0 {
 			errMsg = string(resp.Body)
 		}
@@ -180,15 +213,11 @@ func (ctx *ScenarioContext) userExists(email, password string) error {
 
 	if resp.JSON201 == nil {
 		ctx.SetLastResponse(resp.StatusCode(), nil, "empty response body")
-		return fmt.Errorf("user registration response is empty")
+		return fmt.Errorf("user creation response is empty")
 	}
 
-	// Track user for cleanup (convert int64 to string for tracking)
-	userID := fmt.Sprintf("%d", resp.JSON201.User.Id)
-	ctx.TrackUser(userID)
-
-	// Store user ID in LastUserID for reference
-	ctx.LastUserID = userID
+	// Track user for cleanup (convert int64 ID to string for tracking)
+	ctx.TrackUser(fmt.Sprintf("%d", resp.JSON201.Id))
 
 	// Store response for assertions
 	ctx.SetLastResponse(resp.StatusCode(), resp.JSON201, "")

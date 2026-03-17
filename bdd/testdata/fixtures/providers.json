@@ -1,0 +1,29 @@
+{
+  "claude": {
+    "name": "test-claude",
+    "kind": "claude",
+    "api_key": "sk-ant-test-key-12345",
+    "api_url": "https://api.anthropic.com",
+    "enabled": true,
+    "level": 1,
+    "supported_models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"]
+  },
+  "codex": {
+    "name": "test-codex",
+    "kind": "codex",
+    "api_key": "test-codex-key",
+    "api_url": "https://api.codex.example.com",
+    "enabled": true,
+    "level": 1,
+    "supported_models": ["codex-model-1"]
+  },
+  "opencode": {
+    "name": "test-opencode",
+    "kind": "opencode",
+    "api_key": "test-opencode-key",
+    "api_url": "https://api.opencode.example.com",
+    "enabled": true,
+    "level": 1,
+    "supported_models": ["opencode-model-1"]
+  }
+}
