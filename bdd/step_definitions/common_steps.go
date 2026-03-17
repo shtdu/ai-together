@@ -2,6 +2,8 @@
 package step_definitions
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/cucumber/godog"
@@ -50,9 +52,40 @@ func (ctx *ScenarioContext) iHaveAUniqueProviderName(baseName string) error {
 
 // iCheckTheHealthEndpoint checks the server health endpoint
 func (ctx *ScenarioContext) iCheckTheHealthEndpoint() error {
-	// TODO: Implement actual health check via API
-	// For now, just set a success status
-	ctx.SetLastResponse(200, nil, "")
+	client := ctx.GetAnonymousClient()
+	if client == nil {
+		return fmt.Errorf("anonymous client not initialized")
+	}
+
+	resp, err := client.GetHealthWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("health check request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON503 != nil {
+		body = resp.JSON503
+	} else if resp.Body != nil {
+		// Fallback: try to parse as JSON
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := string(resp.Body)
+		if errMsg == "" {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("health check failed: %s", errMsg)
+	}
+
 	return nil
 }
 
@@ -83,8 +116,13 @@ func (ctx *ScenarioContext) theResponseShouldBeSuccessful() error {
 }
 
 // theSystemShouldBeHealthy checks if the system health check passed
-// For development/testing, we allow tests to proceed without actual server
 func (ctx *ScenarioContext) theSystemShouldBeHealthy() error {
-	// Don't fail if server is not running - tests use mock responses
+	statusCode, _, errMsg := ctx.GetLastResponse()
+
+	if statusCode != 200 {
+		return fmt.Errorf("expected system to be healthy (200), got status %d. Error: %s",
+			statusCode, errMsg)
+	}
+
 	return nil
 }
