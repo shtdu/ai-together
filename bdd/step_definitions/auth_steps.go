@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/code-together/bdd/support"
@@ -578,12 +579,48 @@ func (ctx *ScenarioContext) iGetMyUsageStatistics() error {
 
 // iListAllUsers lists all users
 func (ctx *ScenarioContext) iListAllUsers() error {
-	// TODO: Implement actual user listing via API
-	users := []map[string]interface{}{
-		{"id": "1", "email": "user1@example.com", "tenant_id": 1},
-		{"id": "2", "email": "user2@example.com", "tenant_id": 1},
+	// Get authenticated client and token
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
 	}
-	ctx.SetLastResponse(200, users, "")
+
+	token, err := ctx.GetAuthToken()
+	if err != nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: no token available")
+		return nil
+	}
+
+	// Create integration_manager client for user management endpoints
+	logger := slog.Default()
+	managerClient, err := integration_manager.NewAuthenticatedClient(
+		ctx.BDDTestContext.ServerURL,
+		integration_manager.TokenGetter(func() (string, error) { return token, nil }),
+		logger,
+	)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("failed to create manager client: %v", err))
+		return nil
+	}
+
+	resp, err := managerClient.GetApiV1UsersWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON403 != nil:
+		ctx.SetLastResponse(403, resp.JSON403, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
