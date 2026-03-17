@@ -2,10 +2,13 @@
 package step_definitions
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	"github.com/code-together/shared/integration"
 )
 
 // RegisterProviderSteps registers provider management step definitions
@@ -219,48 +222,119 @@ func (ctx *ScenarioContext) licenseHasProviderLimitForKind(kind string, limit in
 // WHENS - Perform actions
 
 func (ctx *ScenarioContext) iCreateAProviderWithKindAndAPIKey(kind, apiKey string) error {
-	// TODO: Implement actual provider creation via API
+	// Get authenticated client (must be admin/manager)
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: admin/manager access required")
+		return nil
+	}
+
 	// Validate API key
 	if apiKey == "" {
 		ctx.SetLastResponse(400, nil, "API key is required")
 		return nil
 	}
 
-	// Check for per-kind provider limit
-	kindLimitKey := fmt.Sprintf("license_%s_provider_limit", kind)
-	if kindLimit, hasLimit := ctx.GetCreatedResource(kindLimitKey); hasLimit {
-		// Count providers of this kind
+	// Get or generate provider name
+	providerName, _ := ctx.GetCreatedResource("provider_name")
+	if providerName == "" {
+		providerName = support.GenerateUniqueProviderName(fmt.Sprintf("test-%s", kind))
+	}
+
+	// Convert kind string to enum
+	var providerKind integration.CreateProviderRequestKind
+	switch kind {
+	case "claude":
+		providerKind = integration.CreateProviderRequestKindClaude
+	case "codex":
+		providerKind = integration.CreateProviderRequestKindCodex
+	case "opencode":
+		providerKind = integration.CreateProviderRequestKindOpencode
+	default:
+		ctx.SetLastResponse(400, nil, fmt.Sprintf("invalid provider kind: %s", kind))
+		return nil
+	}
+
+	// Set API URL based on provider kind
+	var apiUrl string
+	switch kind {
+	case "claude":
+		apiUrl = "https://api.anthropic.com"
+	case "codex":
+		apiUrl = "https://api.github.com"
+	case "opencode":
+		apiUrl = "https://api.opencode.com"
+	}
+
+	// Default enabled to true
+	enabled := true
+
+	// Create provider request
+	req := integration.PostApiV1ProvidersJSONRequestBody{
+		Name:    providerName,
+		Kind:    &providerKind,
+		ApiKey:  apiKey,
+		ApiUrl:  apiUrl,
+		Enabled: &enabled,
+	}
+
+	// Call API to create provider
+	resp, err := client.PostApiV1ProvidersWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("provider creation request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON201 != nil {
+		body = resp.JSON201
+	} else if resp.JSON400 != nil {
+		body = resp.JSON400
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if resp.JSON403 != nil {
+		body = resp.JSON403
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON400 != nil {
+			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
+		} else if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON403 != nil {
+			errMsg = fmt.Sprintf("forbidden: %s", resp.JSON403.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("provider creation failed: %s", errMsg)
+	}
+
+	// Track provider for cleanup if creation succeeded
+	if resp.JSON201 != nil {
+		providerID := fmt.Sprintf("%d", resp.JSON201.Id)
+		ctx.TrackProvider(resp.JSON201.Id)
+		ctx.LastProviderID = resp.JSON201.Id
+		ctx.TrackCreatedResource("created_provider_id", providerID)
+
+		// Track provider kind for limit checking
 		countKey := fmt.Sprintf("created_provider_count_%s", kind)
 		var count int
 		if countStr, hasCount := ctx.GetCreatedResource(countKey); hasCount {
 			fmt.Sscanf(countStr, "%d", &count)
 		}
-
-		var limit int
-		fmt.Sscanf(kindLimit, "%d", &limit)
-
-		if count >= limit {
-			ctx.SetLastResponse(403, nil, fmt.Sprintf("%s provider limit", kind))
-			return nil
-		}
-
-		// Increment counter
 		ctx.TrackCreatedResource(countKey, fmt.Sprintf("%d", count+1))
 	}
 
-	providerName, _ := ctx.GetCreatedResource("provider_name")
-	if providerName == "" {
-		providerName = support.GenerateUniqueProviderName(fmt.Sprintf("test-%s", kind))
-	}
-	providerID := int64(300)
-	ctx.TrackProvider(providerID)
-	ctx.LastProviderID = providerID
-	ctx.SetLastResponse(201, map[string]interface{}{
-		"id":     providerID,
-		"name":   providerName,
-		"kind":   kind,
-		"enabled": true,
-	}, "")
 	return nil
 }
 
@@ -299,12 +373,46 @@ func (ctx *ScenarioContext) iCreateAProviderWithNameOnly(kind, name string) erro
 }
 
 func (ctx *ScenarioContext) iListAllProvidersFromProvider() error {
-	// TODO: Implement actual provider listing via API
-	providers := []map[string]interface{}{
-		{"id": 1, "name": "provider1", "kind": "claude"},
-		{"id": 2, "name": "provider2", "kind": "codex"},
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
 	}
-	ctx.SetLastResponse(200, providers, "")
+
+	// Call API to list providers
+	resp, err := client.GetApiV1ProvidersWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("provider list request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("provider list failed: %s", errMsg)
+	}
+
 	return nil
 }
 
@@ -317,12 +425,58 @@ func (ctx *ScenarioContext) iListProvidersWithKind(kind string) error {
 }
 
 func (ctx *ScenarioContext) iGetProviderByID() error {
-	// TODO: Implement actual provider retrieval
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"id":   ctx.LastProviderID,
-		"name": "test-provider",
-		"kind": "claude",
-	}, "")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// Use LastProviderID from context
+	if ctx.LastProviderID == 0 {
+		ctx.SetLastResponse(400, nil, "no provider ID available")
+		return nil
+	}
+
+	providerId := integration.ProviderId(ctx.LastProviderID)
+
+	// Call API to get provider
+	resp, err := client.GetApiV1ProvidersProviderIdWithResponse(context.Background(), providerId)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("provider get request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if resp.JSON404 != nil {
+		body = resp.JSON404
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON404 != nil {
+			errMsg = fmt.Sprintf("not found: %s", resp.JSON404.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("provider get failed: %s", errMsg)
+	}
+
 	return nil
 }
 
@@ -345,11 +499,67 @@ func (ctx *ScenarioContext) iGetProviderWithID(id int) error {
 }
 
 func (ctx *ScenarioContext) iUpdateProviderName(name string) error {
-	// TODO: Implement actual provider update
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"id":   ctx.LastProviderID,
-		"name": name,
-	}, "")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// Use LastProviderID from context
+	if ctx.LastProviderID == 0 {
+		ctx.SetLastResponse(400, nil, "no provider ID available")
+		return nil
+	}
+
+	providerId := integration.ProviderId(ctx.LastProviderID)
+
+	// Create update request with just the name
+	req := integration.UpdateProviderRequest{
+		Name: &name,
+	}
+
+	// Call API to update provider
+	resp, err := client.PutApiV1ProvidersProviderIdWithResponse(context.Background(), providerId, req)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("provider update request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON400 != nil {
+		body = resp.JSON400
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if resp.JSON404 != nil {
+		body = resp.JSON404
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON400 != nil {
+			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
+		} else if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON404 != nil {
+			errMsg = fmt.Sprintf("not found: %s", resp.JSON404.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("provider update failed: %s", errMsg)
+	}
+
 	return nil
 }
 
@@ -394,9 +604,58 @@ func (ctx *ScenarioContext) iUpdateProviderWithID(id int) error {
 }
 
 func (ctx *ScenarioContext) iDeleteProvider() error {
-	ctx.SetLastResponse(204, nil, "")
-	// Remove from tracking
-	ctx.ClearCreatedResources()
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// Use LastProviderID from context
+	if ctx.LastProviderID == 0 {
+		ctx.SetLastResponse(400, nil, "no provider ID available")
+		return nil
+	}
+
+	providerId := integration.ProviderId(ctx.LastProviderID)
+
+	// Call API to delete provider
+	resp, err := client.DeleteApiV1ProvidersProviderIdWithResponse(context.Background(), providerId)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("provider deletion request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if resp.JSON404 != nil {
+		body = resp.JSON404
+	} else if len(resp.Body) > 0 {
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON404 != nil {
+			errMsg = fmt.Sprintf("not found: %s", resp.JSON404.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("provider deletion failed: %s", errMsg)
+	}
+
 	return nil
 }
 

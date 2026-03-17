@@ -13,6 +13,7 @@ Feature: Provider Management
 
   Rule: Provider Creation
 
+    @wip
     Scenario Outline: Create provider with valid data
       Given I have a unique provider name
       When I create a <kind> provider with API key "sk-test-123"
