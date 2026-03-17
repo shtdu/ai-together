@@ -216,20 +216,41 @@
 - **@wip scenarios:** 1/1 passing (usage statistics)
 - **All steps passing** with real API calls to `/api/v1/usage/stats`
 
-## Next Steps (Phase 8+)
+## Completed (Phase 8)
+
+### Usage Analytics - Personal Dashboard
+- [x] **Converted personal usage dashboard to real API calls** (`step_definitions/usage_steps.go`)
+  - `iGetMyUsageDashboard()` - Uses `GET /api/v1/usage/current` endpoint
+  - Requires authenticated client (member/manager)
+  - Handles JSON200/JSON401 responses
+  - Returns real current usage data from database
+
+### Test Validation
+- [x] **Personal dashboard API working correctly**
+  - API calls are being made successfully ✅
+  - Authentication required and enforced ✅
+  - Returns correct HTTP status codes (200 for authenticated users)
+
+### Test Results
+- **@wip scenarios:** 1/1 passing (personal usage dashboard)
+- **Overall:** 196/215 scenarios passing (91.2%)
+
+## Next Steps (Phase 9+)
 
 ### Convert More Usage Analytics
-- [ ] Upload usage records (`POST /api/v1/usage`)
+- [ ] Upload usage records (`POST /api/v1/usage/batch`)
 - [ ] Filter usage by provider/user/model
 - [ ] Cost calculation endpoints
 - [ ] Usage aggregation by time period
 - [ ] Team usage analytics
-- [ ] Personal usage tracking
 
 ### Convert Dashboard Operations
 - [ ] Dashboard summaries (`dashboard_steps.go`)
 - [ ] Team statistics
 - [ ] Team management (create, update, delete)
+
+### Convert Additional Provider Operations
+- [ ] Provider enable/disable (still mock)
 
 ### Convert Additional Provider Operations
 - [ ] Provider enable/disable (still mock)
@@ -371,4 +392,4 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 ---
 
 **Last Updated:** 2026-03-17
-**Status:** Phase 7 complete (usage statistics conversion). Usage analytics @wip scenario passing with real API calls. Ready for Phase 8 (more usage analytics, dashboard operations).
+**Status:** Phase 8 complete (personal usage dashboard conversion). 196/215 scenarios passing (91.2%). Real API calls for usage stats and personal dashboard working correctly. Ready for Phase 9 (dashboard operations, batch upload).
