@@ -1053,26 +1053,31 @@ psql $TEST_DATABASE_URL -c "DELETE FROM users WHERE email LIKE '%@example.com';"
 **Fixture File Requirements:**
 
 - **Required file:** `bdd/support/fixtures.json`
-- **Required content:** At least one user with `role: "manager"` (for authentication)
+- **Required content:** At least one user with `role: "admin"` (for authentication)
 - **Optional content:** Users, providers, teams, licenses
-- **File format:** Valid JSON
-- **Missing file:** If file doesn't exist, use hardcoded defaults (create minimal manager user)
-- **Validation:** Validate JSON schema on load, log warning and use defaults if invalid
+- **File format:** Valid JSON matching `FixtureData` structure
+- **Single source of truth:** All test fixtures loaded from JSON files
+- **No hardcoded defaults:** Both `LoadFixtureData()` and `GetStandardFixtureData()` load from JSON
 
-**Default Fallback (if fixtures.json missing or invalid):**
+**Fixture Loading Strategy:**
+
 ```go
-// Default fixtures used when file is not available
-var defaultFixtures = &FixtureData{
-    Users: []TestFixtureUser{
-        {
-            Email:    "bdd-test-manager@example.com",
-            Password: "BddTestPassword123!",
-            Name:     "BDD Test Manager",
-            Role:     "manager",
-        },
-    },
-}
+// LoadFixtureData loads fixtures with this priority:
+// 1. bdd/support/fixtures.json (local BDD fixtures)
+// 2. ../integration/testdata/fixtures.json (shared integration fixtures)
+// 3. Return empty FixtureData with error if neither exists
+//
+// GetStandardFixtureData() loads with this priority:
+// 1. bdd/support/fixtures.json (local BDD fixtures)
+// 2. Return error if file doesn't exist (no hardcoded fallback)
 ```
+
+**Rationale:**
+- **Maintainability:** All fixtures in JSON, easy to modify without code changes
+- **DRY principle:** Single source of truth, no duplication between code and JSON
+- **Flexibility:** Easy to add new fixtures or modify existing ones
+- **Error visibility:** Missing fixtures fail early rather than using hidden defaults
+- **Consistency:** Same fixture data used across BDD, integration, and manual testing
 
 ## Trade-offs
 
@@ -1273,6 +1278,11 @@ cd godog && go test -v -godog.paths="../features/hello_world.feature"
 - [ ] `bdd/support/fixtures.json` - Test data fixtures (optional, uses defaults if missing)
 
 ### Files to MODIFY:
+
+- [ ] `bdd/support/fixtures.go` - Remove hardcoded defaults:
+  - Update `GetStandardFixtureData()` to load from `fixtures.json`
+  - Remove hardcoded fixture data (use JSON only)
+  - Return error if JSON file not found (fail fast)
 
 - [ ] `bdd/support/test_context.go` - Add Logger field and 5 new methods:
   - `InitializeClients(serverURL string, logger *slog.Logger) error`
