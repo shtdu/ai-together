@@ -27,7 +27,7 @@ NC='\033[0m' # No Color
 SERVER_STARTED_BY_US=false
 SERVER_PID=""
 
-# Cleanup function to stop server on exit
+# Cleanup function to stop server on exit (for signal handling)
 cleanup() {
   echo ""
   echo "Stopping server..."
@@ -47,6 +47,27 @@ cleanup() {
   fi
   echo "Server stopped"
   exit 0
+}
+
+# Function to stop server without exiting (for normal shutdown)
+stop_server() {
+  echo ""
+  echo "Stopping server..."
+  if [ -n "$SERVER_PID" ]; then
+    # Send SIGTERM for graceful shutdown
+    kill -TERM $SERVER_PID 2>/dev/null || true
+    # Wait up to 5 seconds for graceful shutdown
+    for i in {1..10}; do
+      if ! kill -0 $SERVER_PID 2>/dev/null; then
+        break
+      fi
+      sleep 0.5
+    done
+    # Force kill if still running
+    kill -9 $SERVER_PID 2>/dev/null || true
+    wait $SERVER_PID 2>/dev/null || true
+  fi
+  echo "Server stopped"
 }
 
 # Trap SIGINT and SIGTERM to cleanup
@@ -184,12 +205,11 @@ if [ $TEST_EXIT_CODE -eq 0 ]; then
 else
   echo -e "${RED}✗ Some BDD tests failed${NC}"
 fi
+echo "================================"
 
 # Cleanup if we started the server
 if [ "$SERVER_STARTED_BY_US" = "true" ]; then
-  cleanup
-else
-  echo "================================"
+  stop_server
 fi
 
 exit $TEST_EXIT_CODE
