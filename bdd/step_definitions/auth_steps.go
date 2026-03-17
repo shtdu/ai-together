@@ -4,10 +4,11 @@ package step_definitions
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
 	"github.com/code-together/shared/integration"
+	"github.com/cucumber/godog"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -128,11 +129,70 @@ func (ctx *ScenarioContext) iHaveAnExpiredAuthToken() error {
 	return nil
 }
 
-// userExists creates a test user (mock for now)
+// userExists creates a test user via API registration
 func (ctx *ScenarioContext) userExists(email, password string) error {
-	// TODO: Create user via API
-	// For now, just track the user
-	ctx.TrackCreatedResource("test_user", email)
+	client := ctx.GetAnonymousClient()
+	if client == nil {
+		return fmt.Errorf("anonymous client not initialized")
+	}
+
+	// Extract name from email (before @) for display
+	name := "Test User"
+	if parts := strings.Split(email, "@"); len(parts) > 0 {
+		// Convert email local part to name (e.g., "john.doe" -> "John Doe")
+		name = strings.ReplaceAll(parts[0], ".", " ")
+		// Capitalize first letter of each word
+		words := strings.Fields(name)
+		for i, word := range words {
+			if len(word) > 0 {
+				words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+			}
+		}
+		name = strings.Join(words, " ")
+	}
+
+	req := integration.PostAuthRegisterJSONRequestBody{
+		Email:    openapi_types.Email(email),
+		Password: password,
+		Name:     name,
+	}
+
+	resp, err := client.PostAuthRegisterWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("user registration request failed: %w", err)
+	}
+
+	// Handle error responses
+	if resp.StatusCode() != 201 {
+		errMsg := ""
+		if resp.JSON400 != nil {
+			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
+		} else if resp.JSON403 != nil {
+			errMsg = fmt.Sprintf("forbidden: %s", resp.JSON403.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		}
+
+		ctx.SetLastResponse(resp.StatusCode(), nil, errMsg)
+		return nil // Return nil - let assertion step validate status
+	}
+
+	if resp.JSON201 == nil {
+		ctx.SetLastResponse(resp.StatusCode(), nil, "empty response body")
+		return fmt.Errorf("user registration response is empty")
+	}
+
+	// Track user for cleanup (convert int64 to string for tracking)
+	userID := fmt.Sprintf("%d", resp.JSON201.User.Id)
+	ctx.TrackUser(userID)
+
+	// Store user ID in LastUserID for reference
+	ctx.LastUserID = userID
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), resp.JSON201, "")
+
 	return nil
 }
 
@@ -522,10 +582,10 @@ func (ctx *ScenarioContext) iAmLoggedInAsAManagerInTenant(tenantID string) error
 	}
 	ctx.AdminToken = ctx.BDDTestContext.CurrentUser.Token
 	ctx.SetLastResponse(200, map[string]string{
-		"token":   ctx.BDDTestContext.CurrentUser.Token,
-		"email":   ctx.BDDTestContext.CurrentUser.Email,
-		"role":    ctx.BDDTestContext.CurrentUser.Role,
-		"tenant":  tenantID,
+		"token":  ctx.BDDTestContext.CurrentUser.Token,
+		"email":  ctx.BDDTestContext.CurrentUser.Email,
+		"role":   ctx.BDDTestContext.CurrentUser.Role,
+		"tenant": tenantID,
 	}, "")
 	return nil
 }
@@ -539,10 +599,10 @@ func (ctx *ScenarioContext) iAmLoggedInAsAMemberInTenant(tenantID string) error 
 	}
 	ctx.AdminToken = ctx.BDDTestContext.CurrentUser.Token
 	ctx.SetLastResponse(200, map[string]string{
-		"token":   ctx.BDDTestContext.CurrentUser.Token,
-		"email":   ctx.BDDTestContext.CurrentUser.Email,
-		"role":    ctx.BDDTestContext.CurrentUser.Role,
-		"tenant":  tenantID,
+		"token":  ctx.BDDTestContext.CurrentUser.Token,
+		"email":  ctx.BDDTestContext.CurrentUser.Email,
+		"role":   ctx.BDDTestContext.CurrentUser.Role,
+		"tenant": tenantID,
 	}, "")
 	return nil
 }
