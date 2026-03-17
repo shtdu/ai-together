@@ -31,6 +31,9 @@ flags:
   shared:
     paths:
       - shared/
+  member:
+    paths:
+      - member/
 
 flag_management:
   default_rules:
@@ -48,8 +51,8 @@ ignore:
   - "shared/integration/generated.go"
   - "shared/integration_manager/generated.go"
 
-  # Member client (Wails desktop app with Vue.js frontend - not Go server code)
-  - "**/member/**"
+  # Ignore specific member service files
+  - "**/member/services/**"
 
   # Test files and utilities
   - "**/*_test.go"
