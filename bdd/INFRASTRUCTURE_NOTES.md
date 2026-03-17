@@ -72,34 +72,65 @@
   - API responses captured correctly (401 for non-existent users, 200 for successful)
   - Fixtures loading correctly (3 users, 3 providers, 1 team, 3 licenses)
 
-## Next Steps (Phase 3)
+## Completed (Phase 3)
 
-### Remaining Work
-- [ ] **Implement user creation** (`auth_steps.go`)
-  - Convert `userExists()` to create real users via API
-  - Required for login tests to pass (currently getting 401)
-  - Addressed in code review as "Important" priority
+### User Creation Steps
+- [x] **Implemented user creation via manager API** (`step_definitions/auth_steps.go`)
+  - `userExists()` - Creates users via `/api/v1/users` endpoint (not `/auth/register`)
+  - Admin authentication to get manager token
+  - Authenticated manager client for user creation
+  - Special handling for admin/manager users created by test server setup
+  - Name extraction from email (user@example.com → User Example)
+  - Resource tracking for cleanup (user ID conversion to string)
+  - Comprehensive error handling (400, 401, 403, 409 responses)
+
+### Test Validation
+- [x] **Login scenarios now passing end-to-end**
+  - "Login with valid credentials as manager" - ✅ Passing
+  - "Login with valid credentials as member" - ✅ Passing
+  - Users created dynamically before login attempts
+  - Admin user verification via login attempt
+
+### Test Results
+- **Overall:** 215 scenarios, 199 passed (92.5%), 16 failed
+- **Passing areas:**
+  - ✅ Health checks
+  - ✅ Authentication and login
+  - ✅ User creation via manager API
+- **Failing areas** (not yet converted to real API calls):
+  - ❌ Profile operations (401 errors)
+  - ❌ Provider management (403 errors)
+  - ❌ License activation (403 errors)
+  - ❌ Dashboard operations (403 errors)
+
+## Next Steps (Phase 4+)
 
 ### Convert Additional Scenarios
+- [ ] Profile operations (`auth_steps.go`)
+  - Get current user profile
+  - Update user profile
+  - Change password
 - [ ] Provider management (`provider_steps.go`)
+  - Create provider
+  - List providers
+  - Update provider
+  - Delete provider
+  - Test provider connection
 - [ ] License management (`license_steps.go`)
+  - Activate license
+  - List licenses
+  - Update license
+  - Delete license
 - [ ] Usage analytics (`usage_steps.go`)
+  - Get usage statistics
+  - Get team usage
+  - Get personal usage
 - [ ] Dashboard operations (`dashboard_steps.go`)
+  - Get dashboard summary
+  - Get team statistics
 - [ ] Permissions (`permission_steps.go`)
-
-### Convert Additional Scenarios
-- [ ] Provider management (`provider_steps.go`)
-- [ ] License management (`license_steps.go`)
-- [ ] Usage analytics (`usage_steps.go`)
-- [ ] Dashboard operations (`dashboard_steps.go`)
-- [ ] Permissions (`permission_steps.go`)
-
-### Data Lifecycle
-- [ ] Implement `CreateTestDataFromFixtures()`
-  - Create users via API
-  - Login to get tokens
-  - Create providers, teams with authenticated client
-  - Handle circular dependency (need auth to create resources)
+  - Check access permissions
+  - Test role-based access control
 
 ## Known Issues
 
@@ -116,10 +147,18 @@
 - Client initialization verified: anonymous and authenticated clients created successfully
 
 ### Authentication Flow
-**Status:** Ready for implementation
+**Status:** ✅ Complete
 - Token tracking fields exist (`AdminToken`, `MemberToken`)
 - Client management supports token refresh via `UpdateAuthenticatedClients()`
-- Login steps need to call `UpdateAuthenticatedClients()` after successful auth
+- Login steps call `UpdateAuthenticatedClients()` after successful auth
+- User creation uses manager endpoint (not `/auth/register` which is intentionally hidden)
+
+### Module Structure
+**Status:** ✅ Clarified
+- `integration` package: `/auth/login`, `/health` endpoints (anonymous access)
+- `integration_manager` package: `/api/v1/users`, `/api/v1/providers`, etc. (requires authentication)
+- go.mod uses local replace directives for both packages
+- User creation requires admin login → manager token → authenticated manager client
 
 ## Infrastructure Verification
 
@@ -167,6 +206,14 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 11. `5238ace` feat: convert auth login steps to use real API calls
 12. `797ba4a` fix: resolve fixture data path for worktree structure
 
+### Phase 3 - User Creation
+13. `33040fc` fix: resolve fixture data path for worktree structure
+14. `786b218` test: achieve 100% BDD test success rate (215/215 scenarios)
+15. `688d2f5` fix: start test server on port 8088 instead of 9080
+16. `f817fa0` feat: implement missing BDD step definitions for usage analytics
+17. `cdeb928` fix: resolve function signature mismatches and validation issues
+18. `a8a6fa6` feat: implement user creation step via manager API
+
 ## Design Decisions
 
 ### Logger Strategy
@@ -210,4 +257,4 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 ---
 
 **Last Updated:** 2025-03-17
-**Status:** Phase 2 complete (health check and auth steps converted). Ready for Phase 3 (user creation and remaining step conversions).
+**Status:** Phase 3 complete (user creation implemented). 199/215 scenarios passing (92.5%). Login and authentication scenarios fully working. Ready for Phase 4 (profile, provider, license, and dashboard step conversions).

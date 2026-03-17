@@ -3,6 +3,7 @@ package step_definitions
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -85,6 +86,11 @@ func (ctx *ScenarioContext) iAmLoggedInAsAManager() error {
 		return fmt.Errorf("first user in fixtures is not admin, got role: %s", adminUser.Role)
 	}
 
+	// Ensure user exists first (create via API if needed)
+	if err := ctx.userExists(adminUser.Email, adminUser.Password); err != nil {
+		return fmt.Errorf("failed to ensure admin user exists: %w", err)
+	}
+
 	// Login with admin credentials
 	return ctx.iLoginWithCredentials(adminUser.Email, adminUser.Password)
 }
@@ -105,6 +111,11 @@ func (ctx *ScenarioContext) iAmLoggedInAsAMember() error {
 	memberUser := fixtures.Users[1]
 	if memberUser.Role != "member" {
 		return fmt.Errorf("second user in fixtures is not member, got role: %s", memberUser.Role)
+	}
+
+	// Ensure user exists first (create via API if needed)
+	if err := ctx.userExists(memberUser.Email, memberUser.Password); err != nil {
+		return fmt.Errorf("failed to ensure member user exists: %w", err)
 	}
 
 	// Login with member credentials
@@ -244,6 +255,7 @@ func (ctx *ScenarioContext) userExists(email, password string) error {
 
 	// Handle error responses
 	if resp.StatusCode() != 201 {
+		// Check if error indicates user already exists
 		errMsg := ""
 		if resp.JSON400 != nil {
 			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
@@ -251,8 +263,15 @@ func (ctx *ScenarioContext) userExists(email, password string) error {
 			errMsg = string(resp.Body)
 		}
 
+		// 409 Conflict or 500 with duplicate key means user already exists - this is OK
+		if resp.StatusCode() == 409 || (resp.StatusCode() == 500 && strings.Contains(errMsg, "duplicate key") && strings.Contains(errMsg, "users_email_key")) {
+			log.Printf("User %s already exists (status %d), proceeding with login", email, resp.StatusCode())
+			return nil // User exists, continue to login
+		}
+
+		// Other errors are actual failures
 		ctx.SetLastResponse(resp.StatusCode(), nil, errMsg)
-		return nil // Return nil - let assertion step validate status
+		return fmt.Errorf("user creation failed with status %d: %s", resp.StatusCode(), errMsg)
 	}
 
 	if resp.JSON201 == nil {
@@ -450,12 +469,47 @@ func (ctx *ScenarioContext) iVerifyAuthTokenWithToken(token string) error {
 
 // iGetUserProfile retrieves the current user's profile
 func (ctx *ScenarioContext) iGetUserProfile() error {
-	// TODO: Implement actual profile retrieval via API
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: no authenticated client")
 		return nil
 	}
-	ctx.SetLastResponse(200, ctx.BDDTestContext.CurrentUser, "")
+
+	// Call the profile endpoint
+	resp, err := client.GetApiV1UserProfileWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("profile request failed: %w", err)
+	}
+
+	// Parse response body
+	var body interface{}
+	if resp.JSON200 != nil {
+		body = resp.JSON200
+	} else if resp.JSON401 != nil {
+		body = resp.JSON401
+	} else if len(resp.Body) > 0 {
+		// Fallback: try to parse as JSON
+		json.Unmarshal(resp.Body, &body)
+	}
+
+	// Store response for assertions
+	ctx.SetLastResponse(resp.StatusCode(), body, "")
+
+	// Handle API response errors
+	if resp.StatusCode() >= 400 {
+		errMsg := ""
+		if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		} else {
+			errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode())
+		}
+		return fmt.Errorf("profile request failed: %s", errMsg)
+	}
+
 	return nil
 }
 
