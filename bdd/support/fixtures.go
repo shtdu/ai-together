@@ -58,10 +58,11 @@ type LicenseFixture struct {
 }
 
 // LoadFixtureData loads test fixture data from the integration testdata directory
-// The fixture path is relative to the bdd directory
+// The fixture path is relative to the godog directory (where tests run)
 func LoadFixtureData() (*FixtureData, error) {
-	// Navigate from bdd/ to ../integration/testdata/
-	fixturePath := filepath.Join("..", "integration", "testdata", "fixtures.json")
+	// Navigate from godog/ to ../../integration/testdata/
+	// This handles both worktree and normal monorepo structures
+	fixturePath := filepath.Join("..", "..", "integration", "testdata", "fixtures.json")
 
 	// Check if file exists
 	if _, err := os.Stat(fixturePath); os.IsNotExist(err) {
