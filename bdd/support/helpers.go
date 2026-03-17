@@ -32,6 +32,11 @@ func GenerateUniqueLicenseKey() string {
 	return fmt.Sprintf("test-license-%s", uuid.New().String())
 }
 
+// GenerateUniqueID creates a unique integer ID for testing
+func GenerateUniqueID() int64 {
+	return time.Now().UnixNano()
+}
+
 // Test data constants for consistent test values
 const (
 	TestAPIKeyClaude   = "sk-test-claude-123"

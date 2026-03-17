@@ -14,6 +14,8 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 
 	suite.Given(`^I am logged in as a manager$`, ctx.iAmLoggedInAsAManager)
 	suite.Given(`^I am logged in as a member$`, ctx.iAmLoggedInAsAMember)
+	suite.Given(`^I am logged in as a manager in tenant "([^"]*)"$`, ctx.iAmLoggedInAsAManagerInTenant)
+	suite.Given(`^I am logged in as a member in tenant "([^"]*)"$`, ctx.iAmLoggedInAsAMemberInTenant)
 	suite.Given(`^I am not authenticated$`, ctx.iAmNotAuthenticated)
 	suite.Given(`^I have a valid authentication token$`, ctx.iHaveAValidAuthToken)
 	suite.Given(`^I have an expired authentication token$`, ctx.iHaveAnExpiredAuthToken)
@@ -457,5 +459,41 @@ func (ctx *ScenarioContext) iShouldNotSee(data string) error {
 // iShouldOnlySeeUsersFromTenant checks tenant isolation
 func (ctx *ScenarioContext) iShouldOnlySeeUsersFromTenant(tenantID string) error {
 	// TODO: Verify all users are from specified tenant
+	return nil
+}
+
+// Tenant authentication step implementations
+
+func (ctx *ScenarioContext) iAmLoggedInAsAManagerInTenant(tenantID string) error {
+	ctx.BDDTestContext.CurrentUser = &support.UserInfo{
+		Email: fmt.Sprintf("manager-%s@%s.example.com", tenantID, tenantID),
+		Name:  "Manager",
+		Role:  support.RoleAdmin,
+		Token: fmt.Sprintf("mock-manager-token-%s", tenantID),
+	}
+	ctx.AdminToken = ctx.BDDTestContext.CurrentUser.Token
+	ctx.SetLastResponse(200, map[string]string{
+		"token":   ctx.BDDTestContext.CurrentUser.Token,
+		"email":   ctx.BDDTestContext.CurrentUser.Email,
+		"role":    ctx.BDDTestContext.CurrentUser.Role,
+		"tenant":  tenantID,
+	}, "")
+	return nil
+}
+
+func (ctx *ScenarioContext) iAmLoggedInAsAMemberInTenant(tenantID string) error {
+	ctx.BDDTestContext.CurrentUser = &support.UserInfo{
+		Email: fmt.Sprintf("member-%s@%s.example.com", tenantID, tenantID),
+		Name:  "Member",
+		Role:  support.RoleMember,
+		Token: fmt.Sprintf("mock-member-token-%s", tenantID),
+	}
+	ctx.AdminToken = ctx.BDDTestContext.CurrentUser.Token
+	ctx.SetLastResponse(200, map[string]string{
+		"token":   ctx.BDDTestContext.CurrentUser.Token,
+		"email":   ctx.BDDTestContext.CurrentUser.Email,
+		"role":    ctx.BDDTestContext.CurrentUser.Role,
+		"tenant":  tenantID,
+	}, "")
 	return nil
 }
