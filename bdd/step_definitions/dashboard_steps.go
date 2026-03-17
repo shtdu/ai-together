@@ -2,10 +2,12 @@
 package step_definitions
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	// "github.com/code-together/shared/integration" // TODO: Uncomment when adding more dashboard API calls
 )
 
 // RegisterDashboardSteps registers dashboard step definitions
@@ -343,17 +345,27 @@ func (ctx *ScenarioContext) iHaveTeamUsageData() error {
 }
 
 func (ctx *ScenarioContext) iGetDashboardMetrics() error {
-	// Check permission - only admins can view dashboard metrics
-	if ctx.BDDTestContext.CurrentUser == nil || ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
-		ctx.SetLastResponse(403, nil, "permission denied")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
 
-	ctx.SetLastResponse(200, map[string]interface{}{
-		"total_usage": 10000,
-		"total_cost": 1.50,
-		"active_users": 5,
-	}, "")
+	resp, err := client.GetApiV1UsageStatsWithResponse(context.Background())
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 

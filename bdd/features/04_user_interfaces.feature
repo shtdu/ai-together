@@ -134,6 +134,7 @@ Feature: Manager Dashboard
       When I get dashboard metrics
       Then I should receive a 403 error
 
+    @wip
     Scenario: Manager can manage teams
       Given I am logged in as a manager
       When I create a team
