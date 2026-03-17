@@ -57,43 +57,33 @@ type LicenseFixture struct {
 	CreatedAt string `json:"created_at,omitempty"`
 }
 
-// LoadFixtureData loads test fixture data from local fixtures.json
-// Falls back to integration testdata if local file doesn't exist
-// The fixture path is relative to the support package directory
+// LoadFixtureData loads test fixture data from JSON files
+// Priority: 1) local fixtures.json, 2) integration testdata, 3) error
+// Note: Falls back to integration testdata for compatibility during transition
 func LoadFixtureData() (*FixtureData, error) {
 	// First, try local fixtures.json (in bdd/support/)
 	localFixturePath := filepath.Join(".", "fixtures.json")
 
-	// Check if local file exists
-	if _, err := os.Stat(localFixturePath); err == nil {
-		data, err := os.ReadFile(localFixturePath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read local fixture file: %w", err)
-		}
-
+	if data, err := os.ReadFile(localFixturePath); err == nil {
 		var fixtures FixtureData
 		if err := json.Unmarshal(data, &fixtures); err != nil {
 			return nil, fmt.Errorf("failed to parse local fixture JSON: %w", err)
 		}
-
 		return &fixtures, nil
 	}
 
 	// Fall back to integration testdata (for compatibility)
-	// Navigate from support/ to ../../integration/testdata/
 	integrationFixturePath := filepath.Join("..", "..", "integration", "testdata", "fixtures.json")
 
 	if _, err := os.Stat(integrationFixturePath); os.IsNotExist(err) {
-		return GetStandardFixtureData(), nil
+		return nil, fmt.Errorf("no fixtures file found: tried %s and %s", localFixturePath, integrationFixturePath)
 	}
 
-	// Read integration testdata file
 	data, err := os.ReadFile(integrationFixturePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read integration fixture file: %w", err)
 	}
 
-	// Parse JSON
 	var fixtures FixtureData
 	if err := json.Unmarshal(data, &fixtures); err != nil {
 		return nil, fmt.Errorf("failed to parse integration fixture JSON: %w", err)
@@ -118,54 +108,24 @@ func LoadLicenseFixture(tier string) (*LicenseFixture, error) {
 	return nil, fmt.Errorf("license fixture with tier '%s' not found", tier)
 }
 
-// GetStandardFixtureData returns a standard set of fixture data for testing
-// This creates basic test data if the fixtures.json file is not available
-func GetStandardFixtureData() *FixtureData {
-	return &FixtureData{
-		Users: []UserFixture{
-			{
-				ID:       "test-admin-1",
-				Email:    "admin@example.com",
-				Name:     "Test Admin",
-				Password: "TestPassword123!",
-				Role:     "admin",
-				TenantID: 1,
-			},
-			{
-				ID:       "test-member-1",
-				Email:    "member@example.com",
-				Name:     "Test Member",
-				Password: "TestPassword123!",
-				Role:     "member",
-				TenantID: 1,
-			},
-		},
-		Providers: []ProviderFixture{
-			{
-				ID:       1,
-				Name:     "test-claude-provider",
-				Kind:     "claude",
-				APIKey:   "sk-test-claude-123",
-				Priority: 1,
-				Enabled:  true,
-				TenantID: 1,
-			},
-		},
-		Teams: []TeamFixture{
-			{
-				ID:          1,
-				Name:        "Default Team",
-				Description: "Default team for testing",
-				TenantID:    1,
-			},
-		},
-		Licenses: []LicenseFixture{
-			{
-				ID:        "license-1",
-				Key:       "test-license-key",
-				Tier:      "trial",
-				ExpiresAt: "2025-12-31T23:59:59Z",
-			},
-		},
+// GetStandardFixtureData returns fixture data from fixtures.json
+// Returns error if file doesn't exist (no hardcoded fallback)
+func GetStandardFixtureData() (*FixtureData, error) {
+	localFixturePath := filepath.Join(".", "fixtures.json")
+
+	if _, err := os.Stat(localFixturePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("fixtures.json not found in %s", localFixturePath)
 	}
+
+	data, err := os.ReadFile(localFixturePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read fixtures.json: %w", err)
+	}
+
+	var fixtures FixtureData
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		return nil, fmt.Errorf("failed to parse fixtures.json: %w", err)
+	}
+
+	return &fixtures, nil
 }
