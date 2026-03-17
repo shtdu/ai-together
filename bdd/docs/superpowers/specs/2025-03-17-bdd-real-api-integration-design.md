@@ -66,22 +66,34 @@ import (
 )
 
 // NewAnonymousClient creates a client without authentication
-func NewAnonymousClient(serverURL string, logger *slog.Logger) (*integration.ClientWithResponses, error)
+func NewAnonymousClient(serverURL string, logger *slog.Logger) (*integration.ClientWithResponses, error) {
+    return integration.NewAnonymousClient(serverURL, logger, false)
+}
 
 // NewAuthenticatedClient creates a client with automatic token injection
-func NewAuthenticatedClient(serverURL string, getToken func() (string, error), logger *slog.Logger) (*integration.ClientWithResponses, error)
+func NewAuthenticatedClient(serverURL string, getToken func() (string, error), logger *slog.Logger) (*integration.ClientWithResponses, error) {
+    return integration.NewAuthenticatedClient(serverURL, getToken, logger, false)
+}
 ```
+
+**Note:** The `verbose` parameter defaults to `false` for minimal logging. Set to `true` for debugging.
 
 #### 2. Test Context Updates (`support/test_context.go` - MODIFY)
 
 Replace interface{} types with actual API client types.
 
 **Changes:**
-- `AnonymousClient interface{}` → `*integration.ClientWithResponses`
-- `Client interface{}` → `*integration.ClientWithResponses`
-- `ManagerClient interface{}` → `*integration.ClientWithResponses`
-- Add `InitializeClients(serverURL string) error` method
-- Add `GetAuthToken() (string, error)` method for token retrieval
+- `AnonymousClient interface{}` → `*integration.ClientWithResponses` (for unauthenticated requests)
+- `Client interface{}` → `*integration.ClientWithResponses` (authenticated with current user token)
+- `ManagerClient interface{}` → `*integration.ClientWithResponses` (authenticated with admin/manager token)
+
+**Client Architecture:**
+The three client types correspond to different authentication contexts:
+- **AnonymousClient**: Used for login, registration, and public endpoints
+- **Client**: Authenticated with the current scenario user's token (for member-level operations)
+- **ManagerClient**: Authenticated with admin/manager token (for administrative operations)
+
+All three are the same underlying type (`*integration.ClientWithResponses`) but are created with different token getters to match the authentication context required by different scenarios.
 
 **New Methods:**
 ```go
@@ -188,6 +200,117 @@ ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error
 })
 ```
 
+**CreateTestDataFromFixtures Implementation:**
+
+This function creates test resources via API calls based on fixture data.
+
+```go
+// CreateTestDataFromFixtures creates test resources from fixture data via API
+func CreateTestDataFromFixtures(ctx *BDDTestContext, fixtures *FixtureData) error {
+    client := ctx.GetAnonymousClient()
+
+    // Create users and track IDs
+    for _, user := range fixtures.Users {
+        // Skip if user already exists (check by email)
+        // Register/login user via API
+        req := integration.PostAuthRegisterJSONRequestBody{
+            Email:    user.Email,
+            Password: user.Password,
+            Name:     user.Name,
+        }
+
+        resp, err := client.PostAuthRegisterWithResponse(context.Background(), req)
+        if err != nil {
+            return fmt.Errorf("failed to create user %s: %w", user.Email, err)
+        }
+
+        if resp.StatusCode() == 201 || resp.StatusCode() == 200 {
+            if resp.JSON200 != nil && resp.JSON200.ID != nil {
+                ctx.TrackUser(*resp.JSON200.ID)
+            }
+        } else if resp.StatusCode() != 409 { // 409 = already exists, which is OK
+            return fmt.Errorf("unexpected status creating user %s: %d", user.Email, resp.StatusCode())
+        }
+    }
+
+    // Create providers and track IDs
+    authenticatedClient := ctx.GetAuthenticatedClient()
+    for _, provider := range fixtures.Providers {
+        req := integration.PostApiV1ProvidersJSONRequestBody{
+            Name:  provider.Name,
+            Kind:  provider.Kind,
+            ApiKey: provider.APIKey,
+        }
+
+        resp, err := authenticatedClient.PostApiV1ProvidersWithResponse(context.Background(), req)
+        if err != nil {
+            return fmt.Errorf("failed to create provider %s: %w", provider.Name, err)
+        }
+
+        if resp.StatusCode() == 201 && resp.JSON201 != nil {
+            ctx.TrackProvider(resp.JSON201.ID)
+        }
+    }
+
+    // Create teams and track IDs (skip default team ID 1)
+    for _, team := range fixtures.Teams {
+        if team.ID == 1 {
+            continue // Default team already exists
+        }
+
+        req := integration.PostApiV1TeamsJSONRequestBody{
+            Name: team.Name,
+        }
+
+        resp, err := authenticatedClient.PostApiV1TeamsWithResponse(context.Background(), req)
+        if err != nil {
+            return fmt.Errorf("failed to create team %s: %w", team.Name, err)
+        }
+
+        if resp.StatusCode() == 201 && resp.JSON201 != nil {
+            ctx.TrackTeam(resp.JSON201.ID)
+        }
+    }
+
+    return nil
+}
+```
+
+**Data Structures:**
+
+```go
+// FixtureData represents test fixture data loaded from JSON
+type FixtureData struct {
+    Users     []TestFixtureUser    `json:"users"`
+    Providers []TestFixtureProvider `json:"providers"`
+    Teams     []TestFixtureTeam    `json:"teams"`
+    Licenses  []TestFixtureLicense `json:"licenses"`
+}
+
+type TestFixtureUser struct {
+    Email    string `json:"email"`
+    Password string `json:"password"`
+    Name     string `json:"name"`
+    Role     string `json:"role"`
+}
+
+type TestFixtureProvider struct {
+    Name  string `json:"name"`
+    Kind  string `json:"kind"`
+    APIKey string `json:"api_key"`
+}
+
+type TestFixtureTeam struct {
+    ID   int64  `json:"id"`
+    Name string `json:"name"`
+}
+
+type TestFixtureLicense struct {
+    Key  string `json:"key"`
+    Tier string `json:"tier"`
+}
+```
+
 **AfterScenario Hook:**
 ```go
 ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
@@ -202,12 +325,18 @@ ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Cont
 ```
 
 **Resource Tracking (`resource_tracking.go`):**
+
+The `BDDTestContext` tracks created resources using slices:
+- `createdProviders []int64` - Provider IDs
+- `createdUsers []string` - User IDs (UUID strings)
+- `createdTeams []int64` - Team IDs
+
 ```go
 // CleanupScenarioResources deletes all tracked resources via API
 func (ctx *ScenarioContext) CleanupScenarioResources() error {
     client := ctx.GetAuthenticatedClient()
 
-    // Clean up providers
+    // Clean up providers (returns []int64)
     for _, providerID := range ctx.GetCreatedProviders() {
         _, err := client.DeleteApiV1ProvidersProviderIdWithResponse(
             context.Background(), providerID)
@@ -216,7 +345,7 @@ func (ctx *ScenarioContext) CleanupScenarioResources() error {
         }
     }
 
-    // Clean up users
+    // Clean up users (returns []string - UUIDs)
     for _, userID := range ctx.GetCreatedUsers() {
         // Note: User deletion may require admin privileges
         _, err := client.DeleteApiV1UsersUserIdWithResponse(
@@ -226,7 +355,7 @@ func (ctx *ScenarioContext) CleanupScenarioResources() error {
         }
     }
 
-    // Clean up teams (skip default team ID 1)
+    // Clean up teams (returns []int64, skip default team ID 1)
     for _, teamID := range ctx.GetCreatedTeams() {
         if teamID == 1 {
             continue
@@ -259,7 +388,7 @@ func (ctx *ScenarioContext) CleanupScenarioResources() error {
 #### Phase 2: Smoke Test Conversion
 
 **Tasks:**
-1. Identify smoke test scenarios (grep for `@smoke` tag)
+1. Identify smoke test scenarios (see methodology below)
 2. Convert health check steps (simplest - no auth required)
 3. Convert authentication steps (enables authenticated requests)
 4. Convert remaining smoke test step definitions
@@ -268,9 +397,22 @@ func (ctx *ScenarioContext) CleanupScenarioResources() error {
 
 **Deliverable:** All smoke tests using real API calls
 
-**Smoke Test Files:**
-- `features/hello_world.feature` (health check validation)
-- Any scenarios tagged `@smoke` in other feature files
+**Smoke Test Identification:**
+
+Find all smoke test scenarios using:
+```bash
+# Grep for @smoke tag
+grep -r "@smoke" bdd/features/
+
+# Expected results:
+# - features/hello_world.feature (all scenarios - infrastructure validation)
+# - Scenarios tagged @smoke in other feature files
+```
+
+**Smoke Test Scope:**
+- All scenarios in `features/hello_world.feature` (health check, basic connectivity)
+- Any scenario in other feature files tagged with `@smoke`
+- These validate core infrastructure is working before running full test suite
 
 #### Phase 3: Full Conversion (Future)
 
@@ -298,15 +440,16 @@ func (ctx *ScenarioContext) CleanupScenarioResources() error {
 **Response Handler:**
 ```go
 // handleAPIResponse processes API response and returns error if unsuccessful
-func handleAPIResponse(resp interface{}, statusCode int, err error) error {
-    if err != nil {
-        return fmt.Errorf("API call failed: %w", err)
+func handleAPIResponse(statusCode int, body []byte, apiError *integration.APIError) error {
+    if apiError != nil {
+        return fmt.Errorf("API call failed: %s (code: %s, status: %d)",
+            apiError.Message, apiError.ErrorCode, apiError.StatusCode)
     }
 
     if statusCode >= 400 {
-        var errMsg string
-        if errResp, ok := resp.(interface{ GetError() string }); ok {
-            errMsg = errResp.GetError()
+        errMsg := string(body)
+        if errMsg == "" {
+            errMsg = http.StatusText(statusCode)
         }
         return fmt.Errorf("API returned error %d: %s", statusCode, errMsg)
     }
@@ -315,7 +458,40 @@ func handleAPIResponse(resp interface{}, statusCode int, err error) error {
 }
 ```
 
+**Usage Example:**
+```go
+resp, err := client.PostAuthLoginWithResponse(context.Background(), req)
+
+// Check for network/transport errors
+if err != nil {
+    return fmt.Errorf("login request failed: %w", err)
+}
+
+// Check for API errors
+if err := handleAPIResponse(resp.StatusCode(), resp.Body, resp.HTTPResponse); err != nil {
+    return err
+}
+
+// Success - store response
+ctx.SetLastResponse(resp.StatusCode(), resp.JSON200, "")
+```
+
 ### Test Data Management
+
+**Creation Strategy:**
+
+Test data is created **per scenario** (not per test run or per feature file). This ensures:
+- Each scenario has isolated test data
+- No state leakage between scenarios
+- Scenarios can run in any order
+- Failed scenarios don't affect others
+
+**Performance Considerations:**
+- Per-scenario creation has more API overhead but ensures isolation
+- If performance becomes an issue, consider:
+  - Using test database transactions for rollback (faster than API deletes)
+  - Caching commonly used resources (e.g., default team)
+  - Parallel scenario execution (requires thread-safe context)
 
 **Fixture Loading:**
 - Load test data from `bdd/support/fixtures.json`
@@ -473,9 +649,10 @@ require github.com/code-together/shared => ../shared
 ```
 
 The `shared/integration` package provides:
-- `ClientWithResponses` - Generated OpenAPI client
-- `NewAnonymousClient()` - Client factory for auth
-- `NewAuthenticatedClient()` - Client factory with token injection
+- `ClientWithResponses` - Generated OpenAPI client type
+- `integration.NewAnonymousClient(baseURL, logger, verbose bool)` - Client factory for auth
+- `integration.NewAuthenticatedClient(baseURL, getToken, logger, verbose bool)` - Client factory with token injection
+- `APIError` - Error type with `Message`, `ErrorCode`, `StatusCode` fields
 
 ### Environment Variables
 
