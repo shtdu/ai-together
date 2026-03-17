@@ -129,10 +129,11 @@ Feature: Manager Dashboard
       When I get dashboard metrics
       Then the operation should succeed
 
-    Scenario: Member cannot access dashboard
+    Scenario: Member can access their own usage statistics
       Given I am logged in as a member
       When I get dashboard metrics
-      Then I should receive a 403 error
+      Then the operation should succeed
+      And I should see total usage
 
     Scenario: Manager can manage teams
       Given I am logged in as a manager
