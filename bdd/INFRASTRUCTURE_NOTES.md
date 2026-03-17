@@ -235,7 +235,34 @@
 - **@wip scenarios:** 1/1 passing (personal usage dashboard)
 - **Overall:** 196/215 scenarios passing (91.2%)
 
-## Next Steps (Phase 9+)
+## Completed (Phase 9)
+
+### Dashboard Operations
+- [x] **Converted dashboard metrics to real API calls** (`step_definitions/dashboard_steps.go`)
+  - `iGetDashboardMetrics()` - Uses `GET /api/v1/usage/stats` endpoint
+  - Removed mock role check (API handles permissions)
+  - Fixed scenario expectation: members CAN access their own usage stats (200, not 403)
+
+### Team Management - Listing
+- [x] **Converted team listing to real API calls** (`step_definitions/dashboard_steps.go`)
+  - `iListAllTeamsAlt()` - Uses `GET /api/v1/teams` endpoint
+  - Requires authenticated client
+  - Handles JSON200/JSON401 responses
+  - Returns real team data from database
+
+### Test Validation
+- [x] **Dashboard APIs working correctly**
+  - Dashboard metrics API calls successful ✅
+  - Team listing API calls successful ✅
+  - Authentication required and enforced ✅
+  - Fixed member access expectations to match real API behavior
+
+### Test Results
+- **@wip scenarios:** 2/2 passing (dashboard metrics, team listing)
+- **Overall:** 197/215 scenarios passing (91.6%)
+- **Note:** Team creation/update/delete not yet available in API (no endpoints)
+
+## Next Steps (Phase 10+)
 
 ### Convert More Usage Analytics
 - [ ] Upload usage records (`POST /api/v1/usage/batch`)
@@ -392,4 +419,4 @@ client, err := NewAnonymousClient("http://localhost:8088", false)
 ---
 
 **Last Updated:** 2026-03-17
-**Status:** Phase 8 complete (personal usage dashboard conversion). 196/215 scenarios passing (91.2%). Real API calls for usage stats and personal dashboard working correctly. Ready for Phase 9 (dashboard operations, batch upload).
+**Status:** Phase 9 complete (dashboard operations conversion). 197/215 scenarios passing (91.6%). Converted dashboard metrics and team listing to real API calls. Fixed member access expectations. Ready for Phase 10 (remaining conversions).
