@@ -194,3 +194,103 @@ func (ctx *BDDTestContext) String() string {
 		len(ctx.createdTeams),
 	)
 }
+
+// InitializeClients sets up all API clients for testing
+// Called once during test suite initialization (not per scenario)
+func (ctx *BDDTestContext) InitializeClients(serverURL string, logger *slog.Logger) error {
+	// Store logger for client creation
+	ctx.Logger = logger
+
+	// Create anonymous client (no authentication required)
+	anonClient, err := NewAnonymousClient(serverURL, false)
+	if err != nil {
+		return fmt.Errorf("failed to create anonymous client: %w", err)
+	}
+	ctx.AnonymousClient = anonClient
+
+	// Authenticated clients will be created per-scenario after user login
+	ctx.Client = nil
+	ctx.ManagerClient = nil
+
+	return nil
+}
+
+// GetAnonymousClient returns the anonymous client for unauthenticated requests
+func (ctx *BDDTestContext) GetAnonymousClient() *integration.ClientWithResponses {
+	return ctx.AnonymousClient
+}
+
+// GetAuthToken returns the current authentication token for the scenario
+// Checks AdminToken first, then MemberToken
+func (ctx *BDDTestContext) GetAuthToken() (string, error) {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+
+	if ctx.AdminToken != "" {
+		return ctx.AdminToken, nil
+	}
+	if ctx.MemberToken != "" {
+		return ctx.MemberToken, nil
+	}
+	return "", fmt.Errorf("no authentication token available")
+}
+
+// GetAuthenticatedClient returns a client with automatic token injection
+// Creates or reuses the authenticated client for the current scenario
+// Uses ManagerClient for admin operations, Client for member operations
+func (ctx *BDDTestContext) GetAuthenticatedClient() (*integration.ClientWithResponses, error) {
+	// Get current token
+	_, err := ctx.GetAuthToken()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create authenticated client without token: %w", err)
+	}
+
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+
+	// Create or reuse authenticated client based on user role
+	if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "admin" {
+		if ctx.ManagerClient == nil {
+			client, err := NewAuthenticatedClient(ctx.ServerURL, ctx.GetAuthToken, false)
+			if err != nil {
+				return nil, err
+			}
+			ctx.ManagerClient = client
+		}
+		return ctx.ManagerClient, nil
+	}
+
+	// Use Client for non-admin users
+	if ctx.Client == nil {
+		client, err := NewAuthenticatedClient(ctx.ServerURL, ctx.GetAuthToken, false)
+		if err != nil {
+			return nil, err
+		}
+		ctx.Client = client
+	}
+	return ctx.Client, nil
+}
+
+// UpdateAuthenticatedClients refreshes the authenticated clients with a new token
+// Called after login/logout to update token injection
+func (ctx *BDDTestContext) UpdateAuthenticatedClients(token string) error {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+
+	// Create token getter that returns the provided token
+	tokenGetter := func() (string, error) {
+		return token, nil
+	}
+
+	client, err := NewAuthenticatedClient(ctx.ServerURL, tokenGetter, false)
+	if err != nil {
+		return err
+	}
+
+	if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "admin" {
+		ctx.ManagerClient = client
+	} else {
+		ctx.Client = client
+	}
+	return nil
+}
