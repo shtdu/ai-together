@@ -95,7 +95,6 @@ Feature: Usage Insights and Analytics
 
   Rule: Usage Aggregation
 
-    @wip
     Scenario: Get daily usage statistics
       Given I have uploaded usage for the past 7 days
       When I get daily usage statistics
