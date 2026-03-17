@@ -57,28 +57,46 @@ type LicenseFixture struct {
 	CreatedAt string `json:"created_at,omitempty"`
 }
 
-// LoadFixtureData loads test fixture data from the integration testdata directory
-// The fixture path is relative to the godog directory (where tests run)
+// LoadFixtureData loads test fixture data from local fixtures.json
+// Falls back to integration testdata if local file doesn't exist
+// The fixture path is relative to the support package directory
 func LoadFixtureData() (*FixtureData, error) {
-	// Navigate from godog/ to ../../integration/testdata/
-	// This handles both worktree and normal monorepo structures
-	fixturePath := filepath.Join("..", "..", "integration", "testdata", "fixtures.json")
+	// First, try local fixtures.json (in bdd/support/)
+	localFixturePath := filepath.Join(".", "fixtures.json")
 
-	// Check if file exists
-	if _, err := os.Stat(fixturePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("fixture file not found: %s", fixturePath)
+	// Check if local file exists
+	if _, err := os.Stat(localFixturePath); err == nil {
+		data, err := os.ReadFile(localFixturePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read local fixture file: %w", err)
+		}
+
+		var fixtures FixtureData
+		if err := json.Unmarshal(data, &fixtures); err != nil {
+			return nil, fmt.Errorf("failed to parse local fixture JSON: %w", err)
+		}
+
+		return &fixtures, nil
 	}
 
-	// Read file
-	data, err := os.ReadFile(fixturePath)
+	// Fall back to integration testdata (for compatibility)
+	// Navigate from support/ to ../../integration/testdata/
+	integrationFixturePath := filepath.Join("..", "..", "integration", "testdata", "fixtures.json")
+
+	if _, err := os.Stat(integrationFixturePath); os.IsNotExist(err) {
+		return GetStandardFixtureData(), nil
+	}
+
+	// Read integration testdata file
+	data, err := os.ReadFile(integrationFixturePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read fixture file: %w", err)
+		return nil, fmt.Errorf("failed to read integration fixture file: %w", err)
 	}
 
 	// Parse JSON
 	var fixtures FixtureData
 	if err := json.Unmarshal(data, &fixtures); err != nil {
-		return nil, fmt.Errorf("failed to parse fixture JSON: %w", err)
+		return nil, fmt.Errorf("failed to parse integration fixture JSON: %w", err)
 	}
 
 	return &fixtures, nil

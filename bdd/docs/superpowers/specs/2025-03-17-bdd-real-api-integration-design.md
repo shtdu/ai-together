@@ -871,6 +871,21 @@ ctx.SetLastResponse(resp.StatusCode(), resp.JSON200, "")
 
 ### Test Data Management
 
+**Available Test Data:**
+
+The BDD module has test data available in `bdd/testdata/` (copied from `integration/testdata/`):
+
+- `testdata/fixtures/users.json` - User credentials (admin, member, member2)
+- `testdata/fixtures/providers.json` - Provider configs (claude, codex, opencode)
+- `testdata/licenses/*.pem` - License files for different tiers
+
+**Format Note:** The existing test data files use a different format than `FixtureData` expects. We have two options:
+
+1. **Convert to FixtureData format** - Create `bdd/support/fixtures.json` matching the expected array format
+2. **Adapt loader** - Update `LoadFixtureData()` to handle both formats
+
+**Recommended:** Create `bdd/support/fixtures.json` in the expected format for clarity and simplicity.
+
 **Creation Strategy:**
 
 Test data is created **per scenario** (not per test run or per feature file). This ensures:

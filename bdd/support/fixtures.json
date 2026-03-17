@@ -1,0 +1,85 @@
+{
+  "users": [
+    {
+      "id": "bdd-admin-1",
+      "email": "admin@example.com",
+      "password": "AdminPassword123!",
+      "name": "Test Admin",
+      "role": "admin",
+      "tenant_id": 1
+    },
+    {
+      "id": "bdd-member-1",
+      "email": "member@example.com",
+      "password": "MemberPass123!",
+      "name": "Test Member",
+      "role": "member",
+      "tenant_id": 1
+    },
+    {
+      "id": "bdd-member-2",
+      "email": "member2@example.com",
+      "password": "MemberPass456!",
+      "name": "Test Member 2",
+      "role": "member",
+      "tenant_id": 1
+    }
+  ],
+  "providers": [
+    {
+      "id": 1,
+      "name": "test-claude",
+      "kind": "claude",
+      "api_key": "sk-ant-test-key-12345",
+      "priority": 1,
+      "enabled": true,
+      "tenant_id": 1
+    },
+    {
+      "id": 2,
+      "name": "test-codex",
+      "kind": "codex",
+      "api_key": "test-codex-key",
+      "priority": 1,
+      "enabled": true,
+      "tenant_id": 1
+    },
+    {
+      "id": 3,
+      "name": "test-opencode",
+      "kind": "opencode",
+      "api_key": "test-opencode-key",
+      "priority": 1,
+      "enabled": true,
+      "tenant_id": 1
+    }
+  ],
+  "teams": [
+    {
+      "id": 1,
+      "name": "Default Team",
+      "description": "Default team for BDD testing",
+      "tenant_id": 1
+    }
+  ],
+  "licenses": [
+    {
+      "id": "license-tier-0",
+      "key": "tier_0.pem",
+      "tier": "trial",
+      "expires_at": "2025-12-31T23:59:59Z"
+    },
+    {
+      "id": "license-tier-1",
+      "key": "tier_1.pem",
+      "tier": "professional",
+      "expires_at": "2025-12-31T23:59:59Z"
+    },
+    {
+      "id": "license-tier-2",
+      "key": "tier_2.pem",
+      "tier": "enterprise",
+      "expires_at": "2025-12-31T23:59:59Z"
+    }
+  ]
+}
