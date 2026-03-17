@@ -237,7 +237,7 @@ func (ctx *BDDTestContext) GetAuthToken() (string, error) {
 
 // GetAuthenticatedClient returns a client with automatic token injection
 // Creates or reuses the authenticated client for the current scenario
-// Uses ManagerClient for admin operations, Client for member operations
+// Uses ManagerClient for admin/manager operations, Client for member operations
 func (ctx *BDDTestContext) GetAuthenticatedClient() (*integration.ClientWithResponses, error) {
 	// Get current token
 	_, err := ctx.GetAuthToken()
@@ -249,7 +249,8 @@ func (ctx *BDDTestContext) GetAuthenticatedClient() (*integration.ClientWithResp
 	defer ctx.mu.Unlock()
 
 	// Create or reuse authenticated client based on user role
-	if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "admin" {
+	// Use ManagerClient for admin/manager roles, Client for member roles
+	if ctx.CurrentUser != nil && (ctx.CurrentUser.Role == "admin" || ctx.CurrentUser.Role == "manager") {
 		if ctx.ManagerClient == nil {
 			client, err := NewAuthenticatedClient(ctx.ServerURL, ctx.GetAuthToken, false)
 			if err != nil {
@@ -260,7 +261,7 @@ func (ctx *BDDTestContext) GetAuthenticatedClient() (*integration.ClientWithResp
 		return ctx.ManagerClient, nil
 	}
 
-	// Use Client for non-admin users
+	// Use Client for non-admin/non-manager users
 	if ctx.Client == nil {
 		client, err := NewAuthenticatedClient(ctx.ServerURL, ctx.GetAuthToken, false)
 		if err != nil {
@@ -287,7 +288,8 @@ func (ctx *BDDTestContext) UpdateAuthenticatedClients(token string) error {
 		return err
 	}
 
-	if ctx.CurrentUser != nil && ctx.CurrentUser.Role == "admin" {
+	// Use ManagerClient for admin/manager roles, Client for member roles
+	if ctx.CurrentUser != nil && (ctx.CurrentUser.Role == "admin" || ctx.CurrentUser.Role == "manager") {
 		ctx.ManagerClient = client
 	} else {
 		ctx.Client = client

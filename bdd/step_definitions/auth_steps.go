@@ -2,10 +2,13 @@
 package step_definitions
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	"github.com/code-together/shared/integration"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // RegisterAuthSteps registers authentication step definitions
@@ -63,31 +66,46 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 
 // iAmLoggedInAsAManager sets up authentication as a manager
 func (ctx *ScenarioContext) iAmLoggedInAsAManager() error {
-	// TODO: Implement actual login via API
-	// For now, set mock token
-	ctx.AdminToken = "mock-manager-token"
-	ctx.BDDTestContext.CurrentUser = &support.UserInfo{
-		Email:    "manager@example.com",
-		Password: "TestPassword123!",
-		Name:     "Test Manager",
-		Role:     support.RoleAdmin,
-		Token:    ctx.AdminToken,
+	// Load fixtures to get admin credentials
+	fixtures, err := support.LoadFixtureData()
+	if err != nil {
+		return fmt.Errorf("failed to load fixtures: %w", err)
 	}
-	return nil
+
+	if len(fixtures.Users) == 0 {
+		return fmt.Errorf("no users found in fixtures")
+	}
+
+	// Get admin user (first user should be admin)
+	adminUser := fixtures.Users[0]
+	if adminUser.Role != "admin" {
+		return fmt.Errorf("first user in fixtures is not admin, got role: %s", adminUser.Role)
+	}
+
+	// Login with admin credentials
+	return ctx.iLoginWithCredentials(adminUser.Email, adminUser.Password)
 }
 
 // iAmLoggedInAsAMember sets up authentication as a member
 func (ctx *ScenarioContext) iAmLoggedInAsAMember() error {
-	// TODO: Implement actual login via API
-	ctx.MemberToken = "mock-member-token"
-	ctx.BDDTestContext.CurrentUser = &support.UserInfo{
-		Email:    "member@example.com",
-		Password: "TestPassword123!",
-		Name:     "Test Member",
-		Role:     support.RoleMember,
-		Token:    ctx.MemberToken,
+	// Load fixtures to get member credentials
+	fixtures, err := support.LoadFixtureData()
+	if err != nil {
+		return fmt.Errorf("failed to load fixtures: %w", err)
 	}
-	return nil
+
+	if len(fixtures.Users) < 2 {
+		return fmt.Errorf("not enough users in fixtures (need at least 2)")
+	}
+
+	// Get member user (second user should be member)
+	memberUser := fixtures.Users[1]
+	if memberUser.Role != "member" {
+		return fmt.Errorf("second user in fixtures is not member, got role: %s", memberUser.Role)
+	}
+
+	// Login with member credentials
+	return ctx.iLoginWithCredentials(memberUser.Email, memberUser.Password)
 }
 
 // iAmNotAuthenticated ensures no user is logged in
@@ -167,38 +185,70 @@ func (ctx *ScenarioContext) iHaveAProviderWithID(id string) error {
 
 // iLoginWithCredentials attempts to login with email and password
 func (ctx *ScenarioContext) iLoginWithCredentials(email, password string) error {
-	// TODO: Implement actual login via API
-	// For now, simulate success/failure based on credentials
-	if email == "nonexistent@example.com" || email == "nobody@example.com" {
-		ctx.SetLastResponse(401, nil, "user_not_found")
-		return nil
+	client := ctx.GetAnonymousClient()
+	if client == nil {
+		return fmt.Errorf("anonymous client not initialized")
 	}
-	if password == "WrongPassword" {
-		ctx.SetLastResponse(401, nil, "invalid_password")
-		return nil
+
+	req := integration.PostAuthLoginJSONRequestBody{
+		Email:    openapi_types.Email(email),
+		Password: password,
 	}
-	// Success - determine role based on email
-	role := support.RoleMember
-	if email == "manager@example.com" {
-		role = support.RoleAdmin
+
+	resp, err := client.PostAuthLoginWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(0, nil, err.Error())
+		return fmt.Errorf("login request failed: %w", err)
 	}
-	token := fmt.Sprintf("mock-token-%s", email)
+
+	// Handle error responses
+	if resp.StatusCode() != 200 {
+		errMsg := ""
+		if resp.JSON400 != nil {
+			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
+		} else if resp.JSON401 != nil {
+			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+		} else if resp.JSON403 != nil {
+			errMsg = fmt.Sprintf("forbidden: %s", resp.JSON403.Error)
+		} else if len(resp.Body) > 0 {
+			errMsg = string(resp.Body)
+		}
+
+		ctx.SetLastResponse(resp.StatusCode(), nil, errMsg)
+		return nil // Return nil error - the assertion step will check status code
+	}
+
+	if resp.JSON200 == nil {
+		ctx.SetLastResponse(resp.StatusCode(), nil, "empty response body")
+		return fmt.Errorf("login response is empty")
+	}
+
+	token := resp.JSON200.AccessToken
+	user := resp.JSON200.User
+
+	// Store token based on role (handle both "admin" and "manager" for flexibility)
+	userRole := string(user.Role)
+	if userRole == "admin" || userRole == "manager" {
+		ctx.AdminToken = token
+	} else {
+		ctx.MemberToken = token
+	}
 
 	// Set CurrentUser for profile checks
 	ctx.BDDTestContext.CurrentUser = &support.UserInfo{
-		Email:    email,
+		Email:    string(user.Email),
 		Password: password,
-		Name:     "Test User",
-		Role:     role,
+		Name:     user.Name,
+		Role:     userRole,
 		Token:    token,
 	}
-	ctx.AdminToken = token
 
-	ctx.SetLastResponse(200, map[string]string{
-		"token": token,
-		"email": email,
-		"role":  role,
-	}, "")
+	// Update authenticated clients with new token
+	if err := ctx.UpdateAuthenticatedClients(token); err != nil {
+		return fmt.Errorf("failed to update authenticated clients: %w", err)
+	}
+
+	ctx.SetLastResponse(resp.StatusCode(), resp.JSON200, "")
 	return nil
 }
 
