@@ -333,16 +333,59 @@ curl -H "Authorization: Bearer <token>" http://localhost:8088/api/v1/providers |
 
 ## Next Steps for Resolution
 
-1. **HIGH PRIORITY:** Fix user registration approach
-   - Replace manager endpoint user creation with public registration
-   - Follow integration test pattern (registerAndLoginUserFromFixture)
-   - Impact: Fixes 9+ scenarios (member authentication)
+### 1. **HIGH PRIORITY:** Fix user registration approach
 
-2. **MEDIUM PRIORITY:** Investigate provider list API
+**Status:** ✅ **Investigation Complete**
+
+**Findings:**
+- Public registration endpoint `POST /auth/register` works correctly
+- Automatically assigns `role="member"` to new users
+- Returns access token and user info immediately
+- Login with registered credentials succeeds
+
+**Implementation Requirements:**
+- Replace `userExists()` manager endpoint approach with public registration
+- Follow integration test pattern from `registerAndLoginUserFromFixture()`:
+  1. Try login first (user might already exist)
+  2. If login fails, register via `POST /auth/register`
+  3. Handle 500 error (duplicate user) by retrying login
+  4. Store token based on user role (admin/manager vs member)
+
+**Code Pattern:**
+```go
+func (ctx *ScenarioContext) ensureUserExistsViaPublicRegistration(email, password, name string) error {
+    // 1. Try login first
+    loginResp := ctx.AnonymousClient.PostAuthLoginWithResponse(ctx, loginReq)
+
+    // 2. If login succeeds, store token and return
+    if loginResp.StatusCode() == 200 {
+        // Store token (AdminToken vs MemberToken based on role)
+        return nil
+    }
+
+    // 3. Login failed, try registration
+    regResp := ctx.AnonymousClient.PostAuthRegisterWithResponse(ctx, regReq)
+
+    // 4. Handle 500 (duplicate user) - retry login
+    if regResp.StatusCode() == 500 {
+        loginResp = ctx.AnonymousClient.PostAuthLoginWithResponse(ctx, loginReq)
+    }
+
+    // 5. Login after successful registration
+    loginResp = ctx.AnonymousClient.PostAuthLoginWithResponse(ctx, loginReq)
+
+    // 6. Store token and user info
+    return nil
+}
+```
+
+**Impact:** Fixes 9+ scenarios, reduces failures from 22 to ~13
+
+### 2. **MEDIUM PRIORITY:** Investigate provider list API
    - Check if pagination is limiting results
    - Verify all created providers are persisted
    - Add logging to list providers step
 
-3. **LOW PRIORITY:** Usage metadata verification
+### 3. **LOW PRIORITY:** Usage metadata verification
    - Requires API enhancement (GET /api/v1/usage/{id})
    - Or query usage by timestamp to verify metadata
