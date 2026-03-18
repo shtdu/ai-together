@@ -297,3 +297,52 @@ All 22 failing scenarios have been tagged with `@wip`:
 # Run only @wip scenarios (for debugging)
 ./bdd-test.sh --tags "@wip"
 ```
+
+## Investigation Notes (2026-03-18)
+
+### Provider Count Issue
+**Scenario:** "Count providers towards limit"
+- **Expected:** 3 providers (2 created + 1 new)
+- **Actual:** Only 1 provider returned
+- **Logs show:** 3 providers created successfully (IDs: 2705, 2706, 2707)
+- **Root cause:** GET /api/v1/providers endpoint returns incomplete list
+- **Hypothesis:** Pagination or filtering in provider list API
+
+**Debug steps:**
+```bash
+# Run specific scenario with verbose logging
+./bdd-test.sh --tags "@wip" 2>&1 | grep -A 20 "Count providers towards limit"
+
+# Check provider list API response manually
+curl -H "Authorization: Bearer <token>" http://localhost:8088/api/v1/providers | jq .
+```
+
+### Usage Metadata Issue
+**Scenario:** "Upload usage record with metadata"
+- **API limitation:** POST /api/v1/usage/batch only returns `{synced_count: int}`
+- **Missing:** Response doesn't include uploaded records with metadata
+- **Fix required:** Add GET endpoint to retrieve uploaded records by ID or timestamp
+- **Workaround:** Cannot verify metadata in batch response
+
+### License Permission Issue
+**Scenario:** "Member cannot view license information"
+- **Expected:** 403 Forbidden (permission denied)
+- **Actual:** 401 Unauthorized (not authenticated)
+- **Root cause:** Member user creation fails (user registration approach)
+- **Fix required:** Switch to public registration endpoint (POST /auth/register)
+
+## Next Steps for Resolution
+
+1. **HIGH PRIORITY:** Fix user registration approach
+   - Replace manager endpoint user creation with public registration
+   - Follow integration test pattern (registerAndLoginUserFromFixture)
+   - Impact: Fixes 9+ scenarios (member authentication)
+
+2. **MEDIUM PRIORITY:** Investigate provider list API
+   - Check if pagination is limiting results
+   - Verify all created providers are persisted
+   - Add logging to list providers step
+
+3. **LOW PRIORITY:** Usage metadata verification
+   - Requires API enhancement (GET /api/v1/usage/{id})
+   - Or query usage by timestamp to verify metadata
