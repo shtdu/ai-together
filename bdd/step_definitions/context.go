@@ -5,11 +5,13 @@ import (
 	"log"
 
 	"github.com/code-together/bdd/support"
+	integration_manager "github.com/code-together/integration_manager"
 )
 
 // ScenarioContext wraps BDDTestContext with scenario-specific methods
 type ScenarioContext struct {
 	*support.BDDTestContext
+	ManagerClient *integration_manager.ClientWithResponses // For manager-specific operations
 }
 
 // ResetScenarioState resets all scenario state before execution

@@ -9,6 +9,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	integration_manager "github.com/code-together/integration_manager"
 	"github.com/code-together/shared/integration"
 )
 
@@ -1507,20 +1508,51 @@ func (ctx *ScenarioContext) iAttemptToCreateATeam() error {
 }
 
 func (ctx *ScenarioContext) iCreateATeam() error {
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
-		return nil
+	// Ensure we have a manager client
+	if ctx.ManagerClient == nil {
+		if ctx.AdminToken == "" {
+			ctx.SetLastResponse(401, nil, "unauthorized: admin token required")
+			return nil
+		}
+
+		// Create manager client
+		client, err := integration_manager.NewAuthenticatedClient(
+			ctx.ServerURL,
+			integration_manager.TokenGetter(func() (string, error) { return ctx.AdminToken, nil }),
+			ctx.Logger,
+		)
+		if err != nil {
+			ctx.SetLastResponse(500, nil, fmt.Sprintf("failed to create manager client: %v", err))
+			return nil
+		}
+		ctx.ManagerClient = client
 	}
-	if ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
-		ctx.SetLastResponse(403, nil, "permission denied")
-		return nil
-	}
+
+	// Create team request
 	teamName := support.GenerateUniqueTeamName("team")
-	ctx.SetLastResponse(201, map[string]interface{}{
-		"id":   fmt.Sprintf("team-%d", support.GenerateUniqueID()),
-		"name": teamName,
-	}, "")
-	ctx.TrackCreatedResource("created_team", teamName)
+	req := integration_manager.PostApiV1TeamsJSONRequestBody{
+		Name: teamName,
+	}
+
+	// Call API
+	resp, err := ctx.ManagerClient.PostApiV1TeamsWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	// Handle response
+	switch {
+	case resp.JSON201 != nil:
+		ctx.SetLastResponse(201, resp.JSON201, "")
+		ctx.TrackTeam(resp.JSON201.Id)
+		ctx.TrackCreatedResource("created_team", teamName)
+	case resp.JSON403 != nil:
+		ctx.SetLastResponse(403, resp.JSON403, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected status: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
