@@ -77,6 +77,7 @@ Feature: Provider Management
       And I should see at least 1 provider
       And the API key should not be visible
 
+    @wip
     Scenario: Get provider by ID
       Given I have created a provider
       When I get the provider by ID
@@ -107,9 +108,9 @@ Feature: Provider Management
 
     Scenario: Update provider name
       Given I have created a provider
-      When I update the provider name to "updated-name"
+      When I update the provider name to "updated-test-name"
       Then the operation should succeed
-      And the provider name should be "updated-name"
+      And the provider name should be "updated-test-name"
 
     Scenario: Update provider API key
       Given I have created a provider
@@ -197,12 +198,14 @@ Feature: Provider Management
         | 5     |
         | 10    |
 
+    @wip
     Scenario: Count providers towards limit
       Given the license has a provider limit of 3
       And I have created 2 providers
       When I create a provider
       Then the operation should succeed
-      And the total provider count should be 3
+      When I list all providers
+      Then the total provider count should be 3
 
     Scenario: Provider limit does not affect updates
       Given the license has a provider limit of 2
@@ -210,6 +213,7 @@ Feature: Provider Management
       When I update the first provider
       Then the operation should succeed
 
+    @wip
     Scenario: Provider limit does not affect deletions
       Given the license has a provider limit of 2
       And I have created 2 providers

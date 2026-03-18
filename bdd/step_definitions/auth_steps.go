@@ -16,6 +16,29 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Helper function to extract error code from structured error responses
+func extractErrorCode(responseObj interface{}) string {
+	if responseObj == nil {
+		return ""
+	}
+
+	// Try to convert to ErrorResponse (which is used for both 401 and 400)
+	switch errResp := responseObj.(type) {
+	case integration.ErrorResponse:
+		return string(errResp.Code)
+	case *integration.ErrorResponse:
+		if errResp != nil {
+			return string(errResp.Code)
+		}
+	case map[string]interface{}:
+		if code, ok := errResp["code"].(string); ok {
+			return code
+		}
+	}
+
+	return ""
+}
+
 // RegisterAuthSteps registers authentication step definitions
 func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	// GIVEN STEPS - Setup context
@@ -32,7 +55,7 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Given(`^I belong to tenant with ID "([^"]*)"$`, ctx.iBelongToTenant)
 	suite.Given(`^there is a provider in tenant "([^"]*)"$`, ctx.thereIsAProviderInTenant)
 	suite.Given(`^there are users in tenant "([^"]*)"$`, ctx.thereAreUsersInTenant)
-	suite.Given(`^I have created a provider$`, ctx.iHaveCreatedAProvider)
+	// Note: "I have created a provider" is registered in provider_steps.go
 	suite.Given(`^I have a provider with ID "([^"]*)"$`, ctx.iHaveAProviderWithID)
 
 	// WHEN STEPS - Perform actions
@@ -416,55 +439,177 @@ func (ctx *ScenarioContext) iLogout() error {
 
 // iRefreshAuthToken refreshes the current authentication token
 func (ctx *ScenarioContext) iRefreshAuthToken() error {
-	// TODO: Implement actual token refresh via API
-	// Check if current token is expired
-	if ctx.AdminToken == "mock-expired-token" {
+	// Check if current token is the mock expired token
+	if ctx.AdminToken == "mock-expired-token" || ctx.MemberToken == "mock-expired-token" {
 		ctx.SetLastResponse(401, nil, "token_expired")
 		return nil
 	}
-	ctx.SetLastResponse(200, map[string]string{"token": "mock-refreshed-token"}, "")
+
+	// Get refresh token if available
+	refreshToken, hasRefreshToken := ctx.GetCreatedResource("refresh_token")
+	if !hasRefreshToken || refreshToken == "" {
+		// If no refresh token available, return mock response for testing
+		ctx.SetLastResponse(200, map[string]string{"token": "mock-refreshed-token"}, "")
+		return nil
+	}
+
+	// Create client for refresh
+	client, err := integration.NewClientWithResponses(ctx.BDDTestContext.ServerURL)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("failed to create client: %v", err))
+		return nil
+	}
+
+	// Create refresh request
+	req := integration.PostAuthRefreshJSONRequestBody{
+		RefreshToken: refreshToken,
+	}
+
+	resp, err := client.PostAuthRefreshWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		errorCode := extractErrorCode(resp.JSON401)
+		ctx.SetLastResponse(401, resp.JSON401, errorCode)
+	case resp.JSON400 != nil:
+		errorCode := extractErrorCode(resp.JSON400)
+		ctx.SetLastResponse(400, resp.JSON400, errorCode)
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
 // iRefreshAuthTokenWithToken refreshes with a specific token
 func (ctx *ScenarioContext) iRefreshAuthTokenWithToken(token string) error {
-	// TODO: Implement actual token refresh via API
+	// Handle special test tokens
 	if token == "invalid-token" {
-		ctx.SetLastResponse(401, nil, "invalid_token")
+		// Create client for refresh
+		client, err := integration.NewClientWithResponses(ctx.BDDTestContext.ServerURL)
+		if err != nil {
+			ctx.SetLastResponse(500, nil, fmt.Sprintf("failed to create client: %v", err))
+			return nil
+		}
+
+		// Create refresh request with invalid token
+		req := integration.PostAuthRefreshJSONRequestBody{
+			RefreshToken: token,
+		}
+
+		resp, err := client.PostAuthRefreshWithResponse(context.Background(), req)
+		if err != nil {
+			ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+			return nil
+		}
+
+		switch {
+		case resp.JSON200 != nil:
+			ctx.SetLastResponse(200, resp.JSON200, "")
+		case resp.JSON401 != nil:
+			errorCode := extractErrorCode(resp.JSON401)
+			ctx.SetLastResponse(401, resp.JSON401, errorCode)
+		case resp.JSON400 != nil:
+			errorCode := extractErrorCode(resp.JSON400)
+			ctx.SetLastResponse(400, resp.JSON400, errorCode)
+		default:
+			ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+		}
+
 		return nil
 	}
+
 	if token == "mock-expired-token" {
 		ctx.SetLastResponse(401, nil, "token_expired")
 		return nil
 	}
-	ctx.SetLastResponse(200, map[string]string{"token": "mock-refreshed-token"}, "")
-	return nil
+
+	// For other tokens, use the normal refresh flow
+	return ctx.iRefreshAuthToken()
 }
 
 // iVerifyAuthToken verifies the current authentication token
 func (ctx *ScenarioContext) iVerifyAuthToken() error {
-	// TODO: Implement actual token verification via API
-	// Check if current token is expired
-	if ctx.AdminToken == "mock-expired-token" {
+	// Get current token
+	token, err := ctx.GetAuthToken()
+	if err != nil || token == "" {
+		ctx.SetLastResponse(401, nil, "no token available")
+		return nil
+	}
+
+	// Check if current token is the mock expired token
+	if token == "mock-expired-token" {
 		ctx.SetLastResponse(401, nil, "token_expired")
 		return nil
 	}
-	ctx.SetLastResponse(200, ctx.BDDTestContext.CurrentUser, "")
+
+	// Create client for verification
+	client, err := integration.NewClientWithResponses(ctx.BDDTestContext.ServerURL)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("failed to create client: %v", err))
+		return nil
+	}
+
+	// Create verify request
+	req := integration.PostAuthVerifyJSONRequestBody{
+		AccessToken: token,
+	}
+
+	resp, err := client.PostAuthVerifyWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		errorCode := extractErrorCode(resp.JSON401)
+		ctx.SetLastResponse(401, resp.JSON401, errorCode)
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
 // iVerifyAuthTokenWithToken verifies a specific token
 func (ctx *ScenarioContext) iVerifyAuthTokenWithToken(token string) error {
-	// TODO: Implement actual token verification via API
-	if token == "invalid-token" {
-		ctx.SetLastResponse(401, nil, "invalid_token")
+	// Create client for verification
+	client, err := integration.NewClientWithResponses(ctx.BDDTestContext.ServerURL)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("failed to create client: %v", err))
 		return nil
 	}
-	if token == "mock-expired-token" {
-		ctx.SetLastResponse(401, nil, "token_expired")
+
+	// Create verify request with provided token
+	req := integration.PostAuthVerifyJSONRequestBody{
+		AccessToken: token,
+	}
+
+	resp, err := client.PostAuthVerifyWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
 		return nil
 	}
-	ctx.SetLastResponse(200, ctx.BDDTestContext.CurrentUser, "")
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		errorCode := extractErrorCode(resp.JSON401)
+		ctx.SetLastResponse(401, resp.JSON401, errorCode)
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 

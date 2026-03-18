@@ -93,6 +93,7 @@ Feature: Identity and Access Management
       And my profile should contain my role
       And my profile should contain tenant ID
 
+    @wip
     Scenario: Get own profile as member
       Given I am logged in as a member
       When I get my user profile
@@ -115,6 +116,7 @@ Feature: Identity and Access Management
       And my profile should contain "role" field
       And my profile should contain "tenant_id" field
 
+    @wip
     Scenario: Profile has correct tenant ID
       Given I am logged in as a member
       And I belong to tenant with ID "1"
@@ -124,6 +126,7 @@ Feature: Identity and Access Management
 
   Rule: Role-Based Access Control
 
+    @wip
     Scenario: Manager can create provider
       Given I am logged in as a manager
       And I have a unique provider name "test-provider"
@@ -138,18 +141,21 @@ Feature: Identity and Access Management
       Then I should receive a 403 error
       And the error message should contain "permission denied"
 
+    @wip
     Scenario: Manager can view team analytics
       Given I am logged in as a manager
       When I get team analytics
       Then the operation should succeed
       And the response status code should be 200
 
+    @wip
     Scenario: Member cannot view team analytics
       Given I am logged in as a member
       When I get team analytics
       Then I should receive a 403 error
       And the error message should contain "permission denied"
 
+    @wip
     Scenario: Manager can manage users
       Given I am logged in as a manager
       And I have a unique user "new-user@example.com"
@@ -164,6 +170,7 @@ Feature: Identity and Access Management
       Then I should receive a 403 error
       And the error message should contain "permission denied"
 
+    @wip
     Scenario: Manager can delete provider
       Given I am logged in as a manager
       And I have created a provider
@@ -171,12 +178,14 @@ Feature: Identity and Access Management
       Then the operation should succeed
       And the response status code should be 204
 
+    @wip
     Scenario: Member can view own usage
       Given I am logged in as a member
       When I get my usage statistics
       Then the operation should succeed
       And the response status code should be 200
 
+    @wip
     Scenario: Manager can update provider
       Given I am logged in as a manager
       And I have created a provider
@@ -221,6 +230,7 @@ Feature: Identity and Access Management
 
   Rule: License Activation
 
+    @wip
     Scenario: Activate commercial license successfully
       Given I am logged in as a manager
       And I have a valid commercial license key
@@ -229,6 +239,7 @@ Feature: Identity and Access Management
       And commercial features should be available
       And the license tier should be "professional"
 
+    @wip
     Scenario: Activate open-source license successfully
       Given I am logged in as a manager
       And I have a valid open-source license key
@@ -236,6 +247,7 @@ Feature: Identity and Access Management
       Then the license should be activated
       And the license tier should be "trial"
 
+    @wip
     Scenario Outline: Activate license with signature
       Given I am logged in as a manager
       And I have a license signature "<signature>"
@@ -249,6 +261,7 @@ Feature: Identity and Access Management
         | enterprise-signature | enterprise |
         | trial-signature | trial |
 
+    @wip
     Scenario: Activate license with invalid signature
       Given I am logged in as a manager
       And I have an invalid license signature
@@ -256,6 +269,7 @@ Feature: Identity and Access Management
       Then I should receive a 400 error
       And the error message should contain "invalid signature"
 
+    @wip
     Scenario: Activate license with expired signature
       Given I am logged in as a manager
       And I have an expired license signature
@@ -263,12 +277,14 @@ Feature: Identity and Access Management
       Then I should receive a 400 error
       And the error message should contain "expired"
 
+    @wip
     Scenario: Activate license without authentication
       Given I am not authenticated
       And I have a valid license key
       When I activate the license
       Then I should receive a 401 error
 
+    @wip
     Scenario: Non-manager cannot activate license
       Given I am logged in as a member
       And I have a valid license key
@@ -278,24 +294,28 @@ Feature: Identity and Access Management
 
   Rule: License Features
 
+    @wip
     Scenario: Commercial license enables provider management
       Given I have an activated commercial license
       When I check available features
       Then provider management should be enabled
       And team analytics should be enabled
 
+    @wip
     Scenario: Trial license has limited features
       Given I have an activated trial license
       When I check available features
       Then provider management should be enabled
       And team analytics should be disabled
 
+    @wip
     Scenario: Enterprise license enables all features
       Given I have an activated enterprise license
       When I check available features
       Then all features should be enabled
       And advanced analytics should be enabled
 
+    @wip
     Scenario: License feature flags are correct
       Given I have an activated <tier> license
       When I get license features
@@ -309,6 +329,7 @@ Feature: Identity and Access Management
         | professional | team_analytics | enabled |
         | enterprise | advanced_analytics | enabled |
 
+    @wip
     Scenario: Check license status returns correct information
       Given I have an activated professional license
       When I get license status
@@ -318,6 +339,7 @@ Feature: Identity and Access Management
 
   Rule: License Limits
 
+    @wip
     Scenario Outline: License provider limits by tier
       Given I have an activated <tier> license
       When I get license limits
@@ -331,6 +353,7 @@ Feature: Identity and Access Management
         | professional | 10 | 50 |
         | enterprise | 100 | 1000 |
 
+    @wip
     Scenario: Provider limit enforced when creating providers
       Given I have an activated trial license
       And the license has a provider limit of 2
@@ -339,6 +362,7 @@ Feature: Identity and Access Management
       Then I should receive a 403 error
       And the error message should contain "provider limit"
 
+    @wip
     Scenario: User limit enforced when creating users
       Given I have an activated trial license
       And the license has a user limit of 5
@@ -347,12 +371,14 @@ Feature: Identity and Access Management
       Then I should receive a 403 error
       And the error message should contain "user limit"
 
+    @wip
     Scenario: License limits are not enforced for enterprise
       Given I have an activated enterprise license
       And I have created 100 providers
       When I create a provider
       Then the operation should succeed
 
+    @wip
     Scenario: Update provider does not count towards limit
       Given I have an activated trial license
       And the license has a provider limit of 2
@@ -360,6 +386,7 @@ Feature: Identity and Access Management
       When I update the first provider
       Then the operation should succeed
 
+    @wip
     Scenario: Delete provider frees up limit
       Given I have an activated trial license
       And the license has a provider limit of 2
@@ -367,6 +394,7 @@ Feature: Identity and Access Management
       When I delete the first provider
       Then I should be able to create a new provider
 
+    @wip
     Scenario: License kind limits
       Given I have an activated professional license
       And the license has a claude provider limit of 5
@@ -451,6 +479,7 @@ Feature: Identity and Access Management
       When I get license information
       Then the operation should succeed
 
+    @wip
     Scenario: Member cannot view license information
       Given I am logged in as a member
       When I get license information

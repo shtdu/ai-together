@@ -249,9 +249,9 @@ func (ctx *ScenarioContext) iHaveUploadedUsageWithProjectMetadata() error {
 }
 
 func (ctx *ScenarioContext) iUploadTheUsageRecord() error {
-	// Check authentication
-	if ctx.BDDTestContext.CurrentUser == nil {
-		ctx.SetLastResponse(401, nil, "unauthorized")
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
 		return nil
 	}
 
@@ -270,64 +270,52 @@ func (ctx *ScenarioContext) iUploadTheUsageRecord() error {
 		}
 	}
 
-	// Build response with default values
-	response := map[string]interface{}{
-		"id": "usage-123",
-		"timestamp": "2026-03-17T12:00:00Z",
-		"model": "claude-3",
-		"tokens": 1000,
-		"cost": 0.15,
-		"provider": "claude",
+	// Build usage record with default values
+	now := time.Now()
+	inputTokens := 1000
+	outputTokens := 500
+	userId := int64(1)
+
+	usageRecord := integration.UsageRecord{
+		Id:           int64(1),
+		Model:        "claude-3-5-sonnet-20241022",
+		Platform:     "test-platform",
+		Provider:     "claude",
+		HttpCode:     200,
+		CreatedAt:    now,
+		InputTokens:  &inputTokens,
+		OutputTokens: &outputTokens,
+		UserId:       &userId,
 	}
 
-	// Check if there's a usage record with specific cost/tokens
-	if recordID, hasRecord := ctx.GetCreatedResource("usage_record"); hasRecord {
-		// Try to parse cost from the record ID (format: "N-tokens-C.cost")
-		if len(recordID) > 10 && contains(recordID, "-tokens-") && contains(recordID, "-cost") {
-			parts := splitString(recordID, "-tokens-")
-			if len(parts) == 2 {
-				costParts := splitString(parts[1], "-cost")
-				if len(costParts) == 2 {
-					// Parse tokens and cost
-					if tokens, err := parseInt(parts[0]); err == nil {
-						response["tokens"] = tokens
-					}
-					if cost, err := parseFloat(costParts[0]); err == nil {
-						response["cost"] = cost
-					}
-				}
-			}
-		}
-	}
-
-	// Check if there's a user email to include
-	if userEmail, hasUser := ctx.GetCreatedResource("usage_user_email"); hasUser {
-		response["user"] = userEmail
-	}
-
-	// Check if there's metadata to include
-	// Also check if the usage_record is set to "with-metadata"
-	if metadataKey, hasMetadataKey := ctx.GetCreatedResource("usage_metadata_key"); hasMetadataKey {
-		if metadataValue, hasMetadataValue := ctx.GetCreatedResource("usage_metadata_value"); hasMetadataValue {
-			response["metadata"] = map[string]string{
-				metadataKey: metadataValue,
-			}
-		}
-	} else if recordID, hasRecord := ctx.GetCreatedResource("usage_record"); hasRecord && recordID == "with-metadata" {
-		// If the record is marked as having metadata, include default metadata
-		response["metadata"] = map[string]string{
-			"project": "ai-assistant",
-		}
-	}
-
-	// Check if there's usage_tokens to include
+	// Check if there's a usage record with specific token count
 	if tokensStr, hasTokens := ctx.GetCreatedResource("usage_tokens"); hasTokens {
-		if tokens, err := parseInt(tokensStr); err == nil {
-			response["tokens"] = tokens
+		if tokens, err := strconv.Atoi(tokensStr); err == nil {
+			usageRecord.InputTokens = &tokens
 		}
 	}
 
-	ctx.SetLastResponse(201, response, "")
+	// Upload as batch with single record
+	usageRecords := []integration.UsageRecord{usageRecord}
+	resp, err := client.PostApiV1UsageBatchWithResponse(context.Background(), usageRecords)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON400 != nil:
+		ctx.SetLastResponse(400, resp.JSON400, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON500 != nil:
+		ctx.SetLastResponse(500, resp.JSON500, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
 	return nil
 }
 
@@ -537,8 +525,8 @@ func (ctx *ScenarioContext) iFilterUsageByProvider(provider string) error {
 
 func (ctx *ScenarioContext) recordShouldBeStored() error {
 	statusCode, _, _ := ctx.GetLastResponse()
-	if statusCode != 201 {
-		return fmt.Errorf("expected status 201, got %d", statusCode)
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
 	}
 	return nil
 }

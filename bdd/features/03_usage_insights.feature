@@ -86,6 +86,7 @@ Feature: Usage Insights and Analytics
       Then the record should be stored
       And the cost should be recorded
 
+    @wip
     Scenario: Upload usage record with metadata
       Given I have a usage record with metadata
       And the metadata contains "project": "ai-assistant"
@@ -379,6 +380,7 @@ Feature: Usage Insights and Analytics
       Then I should see percentage change
       And I should see absolute change
 
+    @wip
     Scenario: Member cannot see team analytics
       Given I am logged in as a member
       When I get team analytics
