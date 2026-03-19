@@ -455,6 +455,31 @@ Feature: Identity and Access Management
       Then I should receive a 403 error
       And the error message should contain "claude provider limit"
 
+  Rule: Team Limit Enforcement
+
+    @wip
+    Scenario: Open Source license allows only 1 team
+      Given I have an Open Source license
+      And I have created 1 team
+      When I attempt to create another team
+      Then I should receive a 403 error
+      And the error message should contain "team limit"
+
+    @wip
+    Scenario: Commercial license allows unlimited teams
+      Given I have a Commercial license
+      And I have created 5 teams
+      When I create another team
+      Then the operation should succeed
+
+    @wip
+    Scenario: Expired Commercial license reverts to 1 team limit
+      Given I have an expired Commercial license
+      And I have 3 existing teams
+      When I attempt to create a new team
+      Then I should receive a 403 error
+      And the error message should contain "team limit"
+
   Rule: License Expiration
 
     Scenario: License expires after end date
