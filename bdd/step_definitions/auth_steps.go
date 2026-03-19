@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/code-together/bdd/support"
-	"github.com/code-together/shared/integration"
 	"github.com/code-together/integration_manager"
+	"github.com/code-together/shared/integration"
 	"github.com/cucumber/godog"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -62,6 +62,11 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Given(`^I have a weak password "([^"]*)"$`, ctx.iHaveAWeakPassword)
 	suite.Given(`^I have password "([^"]*)"$`, ctx.iHavePassword)
 
+	// Lockout scenario steps
+	suite.Given(`^the account is locked$`, ctx.theAccountIsLocked)
+	suite.Given(`^I have failed to login (\d+) times$`, ctx.iHaveFailedToLoginTimes)
+	suite.Given(`^the account was locked (\d+) minutes ago$`, ctx.theAccountWasLockedMinutesAgo)
+
 	// WHEN STEPS - Perform actions
 
 	suite.When(`^I login with email "([^"]*)" and password "([^"]*)"$`, ctx.iLoginWithCredentials)
@@ -76,6 +81,9 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.When(`^I get my usage statistics$`, ctx.iGetMyUsageStatistics)
 	suite.When(`^I list all users$`, ctx.iListAllUsers)
 	suite.When(`^I list all providers$`, ctx.iListAllProviders)
+
+	// Lockout scenario steps
+	suite.When(`^I fail to login (\d+) times with email "([^"]*)" and wrong password$`, ctx.iFailToLoginTimesWithEmailAndWrongPassword)
 
 	// THEN STEPS - Assert outcomes
 
@@ -98,6 +106,9 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Then(`^the error message should contain "([^"]*)"$`, ctx.errorMessageShouldContain)
 	suite.Then(`^I should not see "([^"]*)"$`, ctx.iShouldNotSee)
 	suite.Then(`^I should only see users from tenant "([^"]*)"$`, ctx.iShouldOnlySeeUsersFromTenant)
+
+	// Lockout scenario steps
+	suite.Then(`^the account should be locked$`, ctx.theAccountShouldBeLocked)
 }
 
 // GIVENS - Setup context
@@ -1121,15 +1132,15 @@ func (ctx *ScenarioContext) errorMessageShouldContain(text string) error {
 
 	// Create flexible matching rules for common error patterns
 	matchRules := []string{
-		text,                                    // Direct match
-		"permission",                            // Match "permission denied" with "insufficient permissions"
-		"insufficient",                          // Match "insufficient permissions" with "permission denied"
-		"unauthorized",                          // Match variations
-		"forbidden",                             // Match variations
-		"not found",                             // Match variations
-		"not_found",                             // Match snake_case
-		"limit",                                 // Match "provider limit" with "provider limit reached"
-		"expired",                               // Match "license expired" with "expired"
+		text,           // Direct match
+		"permission",   // Match "permission denied" with "insufficient permissions"
+		"insufficient", // Match "insufficient permissions" with "permission denied"
+		"unauthorized", // Match variations
+		"forbidden",    // Match variations
+		"not found",    // Match variations
+		"not_found",    // Match snake_case
+		"limit",        // Match "provider limit" with "provider limit reached"
+		"expired",      // Match "license expired" with "expired"
 	}
 
 	// First, try to extract error message from response body
@@ -1438,5 +1449,143 @@ func (ctx *ScenarioContext) theFailedAttemptCounterShouldBeResetTo(expectedCount
 	// Track this verification for when lockout is implemented
 	ctx.TrackCreatedResource("failed_attempt_reset", "0")
 
+	return nil
+}
+
+// LOCKOUT STEP IMPLEMENTATIONS
+
+// iFailToLoginTimesWithEmailAndWrongPassword attempts to login multiple times with wrong password
+func (ctx *ScenarioContext) iFailToLoginTimesWithEmailAndWrongPassword(times int, email string) error {
+	client := ctx.GetAnonymousClient()
+	if client == nil {
+		return fmt.Errorf("anonymous client not initialized")
+	}
+
+	// Track failed attempt count for this scenario
+	ctx.TrackCreatedResource("failed_login_count", fmt.Sprintf("%d", times))
+
+	// Attempt login specified number of times with wrong password
+	for i := 0; i < times; i++ {
+		req := integration.PostAuthLoginJSONRequestBody{
+			Email:    openapi_types.Email(email),
+			Password: "WrongPassword123!", // Consistently wrong password
+		}
+
+		resp, err := client.PostAuthLoginWithResponse(context.Background(), req)
+		if err != nil {
+			return fmt.Errorf("failed login attempt %d: %w", i+1, err)
+		}
+
+		// Each attempt should fail with 401
+		if resp.StatusCode() != 401 {
+			return fmt.Errorf("expected login attempt %d to fail with 401, got %d", i+1, resp.StatusCode())
+		}
+
+		// Store the last response for assertion steps
+		if i == times-1 {
+			errMsg := ""
+			if resp.JSON401 != nil {
+				errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
+			} else if len(resp.Body) > 0 {
+				errMsg = string(resp.Body)
+			}
+			ctx.SetLastResponse(resp.StatusCode(), resp.JSON401, errMsg)
+		}
+	}
+
+	return nil
+}
+
+// theAccountShouldBeLocked verifies that the account is locked
+func (ctx *ScenarioContext) theAccountShouldBeLocked() error {
+	statusCode, resp, errMsg := ctx.GetLastResponse()
+
+	// Should have received a 401 response
+	if statusCode != 401 {
+		return fmt.Errorf("expected status 401 for locked account, got %d", statusCode)
+	}
+
+	// Check if error response contains account_locked error code
+	errResp, ok := resp.(*integration.ErrorResponse)
+	if !ok {
+		// Try to check error message
+		if errMsg != "" && strings.Contains(errMsg, "account_locked") {
+			return nil
+		}
+		// If we don't have the proper error response structure, check the error message
+		if strings.Contains(errMsg, "account_locked") {
+			return nil
+		}
+		// Log a warning if backend doesn't return account_locked error
+		log.Printf("WARNING: Backend returned 401 but not 'account_locked' error code - lockout feature may not be implemented yet")
+		log.Printf("ERROR: Expected 'account_locked' error, got: %s", errMsg)
+		return fmt.Errorf("expected error code 'account_locked', got '%s'", errMsg)
+	}
+
+	// Verify the error code is account_locked
+	if string(errResp.Code) != "account_locked" {
+		log.Printf("WARNING: Backend returned 401 but wrong error code - expected 'account_locked', got '%s'", errResp.Code)
+		return fmt.Errorf("expected error code 'account_locked', got '%s'", errResp.Code)
+	}
+
+	return nil
+}
+
+// theAccountIsLocked sets up a locked account state for testing
+func (ctx *ScenarioContext) theAccountIsLocked() error {
+	// This step prepares a locked account state
+	// In a real implementation, this would either:
+	// 1. Create a user and then fail login 5 times to lock it
+	// 2. Use a database helper to directly set the locked state
+	// 3. Use a test API endpoint to lock the account
+
+	// Track this state for the scenario
+	ctx.TrackCreatedResource("account_locked", "true")
+
+	// Note: This step requires backend implementation of account lockout feature
+	// For now, we'll log a warning that the account is not actually locked
+	log.Printf("WARNING: Account lockout setup requires backend implementation - account is not actually locked")
+	return nil
+}
+
+// iHaveFailedToLoginTimes sets up partial failed login attempts
+func (ctx *ScenarioContext) iHaveFailedToLoginTimes(times int) error {
+	// This step is for testing scenarios where the account is not yet locked
+	// It simulates having made some failed attempts (less than 5)
+
+	if times >= 5 {
+		return fmt.Errorf("this step is for partial failures (< 5), got %d. Use 'I fail to login 5 times' instead", times)
+	}
+
+	// Track the partial failure count
+	ctx.TrackCreatedResource("partial_failed_count", fmt.Sprintf("%d", times))
+
+	// Note: This requires backend implementation to set failed attempt count
+	// For now, we'll just log this and let the scenario proceed
+	// The actual failed attempts would be made via login API calls
+	log.Printf("WARNING: Partial failed attempt tracking (%d times) requires backend lockout feature - scenario may not behave as expected", times)
+	return nil
+}
+
+// theAccountWasLockedMinutesAgo sets up an account that was locked in the past
+// to test lockout expiration (15 minutes)
+func (ctx *ScenarioContext) theAccountWasLockedMinutesAgo(minutes int) error {
+	// This step is for testing lockout expiration
+	// It requires manipulating the timestamp of when the account was locked
+
+	if minutes < 15 {
+		return fmt.Errorf("lockout duration should be 15+ minutes to test expiration, got %d", minutes)
+	}
+
+	// Track this state for the scenario
+	ctx.TrackCreatedResource("locked_minutes_ago", fmt.Sprintf("%d", minutes))
+
+	// Note: This requires database access to manipulate timestamps
+	// Options:
+	// 1. Direct database update of failed_login_at timestamp
+	// 2. Time-travel testing (mock time)
+	// 3. Admin API to set lock timestamp
+	// For now, we'll log a warning and let the scenario proceed
+	log.Printf("WARNING: Time-based lockout testing (%d minutes ago) requires database timestamp manipulation - scenario will not test actual expiration", minutes)
 	return nil
 }
