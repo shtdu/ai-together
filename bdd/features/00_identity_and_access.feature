@@ -158,7 +158,7 @@ Feature: Identity and Access Management
       And I am not authenticated
       And I have a unique email "existing@example.com"
       When I register a new account
-      And the response status code should be 400
+      Then the response status code should be 400
       And the error message should contain "email already exists"
 
     Scenario: Registration auto-logs in new user
