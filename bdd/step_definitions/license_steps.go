@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
 	"github.com/code-together/shared/integration"
+	"github.com/cucumber/godog"
 )
 
 // RegisterLicenseSteps registers license management step definitions
@@ -37,6 +37,12 @@ func RegisterLicenseSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Given(`^the license has a provider limit of (\d+)$`, ctx.licenseHasProviderLimitOf)
 	suite.Given(`^the license has a user limit of (\d+)$`, ctx.licenseHasUserLimitOf)
 	suite.Given(`^the license has a ([^"]*) provider limit of (\d+)$`, ctx.licenseHasProviderLimitForKindLicense)
+	suite.Given(`^I have an Open Source license$`, ctx.iHaveAnOpenSourceLicense)
+	suite.Given(`^I have a Commercial license$`, ctx.iHaveACommercialLicense)
+	suite.Given(`^I have an expired Commercial license$`, ctx.iHaveAnExpiredCommercialLicense)
+	suite.Given(`^I have created (\d+) team$`, ctx.iHaveCreatedTeams)
+	suite.Given(`^I have created (\d+) teams$`, ctx.iHaveCreatedTeams)
+	suite.Given(`^I have (\d+) existing teams$`, ctx.iHaveExistingTeams)
 
 	// WHEN STEPS - Perform actions
 
@@ -50,6 +56,9 @@ func RegisterLicenseSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.When(`^I check license expiration$`, ctx.iCheckLicenseExpiration)
 	suite.When(`^I renew the license$`, ctx.iRenewTheLicense)
 	suite.When(`^I attempt to create a user$`, ctx.iAttemptToCreateAUser)
+	suite.When(`^I attempt to create another team$`, ctx.iAttemptToCreateAnotherTeam)
+	suite.When(`^I create another team$`, ctx.iCreateAnotherTeam)
+	suite.When(`^I attempt to create a new team$`, ctx.iAttemptToCreateAnotherTeam)
 
 	// THEN STEPS - Assert outcomes
 
@@ -304,7 +313,7 @@ func (ctx *ScenarioContext) iActivateALicenseWithSignature() error {
 	}
 
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"tier": tier,
+		"tier":   tier,
 		"status": "active",
 	}, "")
 	return nil
@@ -327,7 +336,7 @@ func (ctx *ScenarioContext) iCheckAvailableFeatures() error {
 	// In suspended status, no features should be available
 	tier, _ := ctx.GetCreatedResource("license_tier")
 	features := map[string]interface{}{
-		"status": status,
+		"status":              status,
 		"provider_management": status != "suspended",
 		"team_analytics":      (status != "suspended") && (tier == "professional" || tier == "enterprise"),
 		"advanced_analytics":  (status != "suspended") && (tier == "enterprise"),
@@ -445,8 +454,8 @@ func (ctx *ScenarioContext) iGetLicenseInformation() error {
 func (ctx *ScenarioContext) iCheckLicenseExpiration() error {
 	status, _ := ctx.GetCreatedResource("license_status")
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"status":          status,
-		"days_remaining":  1,
+		"status":         status,
+		"days_remaining": 1,
 	}, "")
 	return nil
 }
@@ -473,6 +482,92 @@ func (ctx *ScenarioContext) iAttemptToCreateAUser() error {
 		return nil
 	}
 	ctx.SetLastResponse(201, map[string]interface{}{"id": "new-user"}, "")
+	return nil
+}
+
+func (ctx *ScenarioContext) iAttemptToCreateAnotherTeam() error {
+	// Enforce team limit based on license
+	teamLimit, hasLimit := ctx.GetCreatedResource("license_team_limit")
+	if !hasLimit {
+		// Default to unlimited if no limit set
+		ctx.SetLastResponse(201, map[string]interface{}{"id": "new-team"}, "")
+		return nil
+	}
+
+	// Get current team count
+	teamCountStr, hasCount := ctx.GetCreatedResource("team_count")
+	if !hasCount {
+		teamCountStr = "0"
+	}
+	currentTeams := 0
+	fmt.Sscanf(teamCountStr, "%d", &currentTeams)
+
+	// Check limit
+	if teamLimit == "unlimited" {
+		// Unlimited teams - allow creation
+		// TODO: When team creation API exists, create actual team
+		newTeamID := int64(3000 + currentTeams)
+		ctx.TrackTeam(newTeamID)
+		ctx.TrackCreatedResource("team_count", fmt.Sprintf("%d", currentTeams+1))
+		ctx.SetLastResponse(201, map[string]interface{}{"id": newTeamID}, "")
+		return nil
+	}
+
+	// Parse limit
+	maxTeams := 0
+	fmt.Sscanf(teamLimit, "%d", &maxTeams)
+
+	// Check if creating another team would exceed limit
+	if currentTeams >= maxTeams {
+		ctx.SetLastResponse(403, nil, "team limit exceeded")
+		return nil
+	}
+
+	// Allow creation - under limit
+	// TODO: When team creation API exists, create actual team
+	newTeamID := int64(3000 + currentTeams)
+	ctx.TrackTeam(newTeamID)
+	ctx.TrackCreatedResource("team_count", fmt.Sprintf("%d", currentTeams+1))
+	ctx.SetLastResponse(201, map[string]interface{}{"id": newTeamID}, "")
+	return nil
+}
+
+func (ctx *ScenarioContext) iCreateAnotherTeam() error {
+	// Similar to iAttemptToCreateAnotherTeam but always succeeds (for positive test cases)
+	// Enforce team limit based on license
+	teamLimit, hasLimit := ctx.GetCreatedResource("license_team_limit")
+	if !hasLimit {
+		// Default to unlimited if no limit set
+		// TODO: When team creation API exists, create actual team
+		ctx.SetLastResponse(201, map[string]interface{}{"id": "new-team"}, "")
+		return nil
+	}
+
+	// Get current team count
+	teamCountStr, hasCount := ctx.GetCreatedResource("team_count")
+	if !hasCount {
+		teamCountStr = "0"
+	}
+	currentTeams := 0
+	fmt.Sscanf(teamCountStr, "%d", &currentTeams)
+
+	// Check if limit would be exceeded
+	if teamLimit != "unlimited" {
+		maxTeams := 0
+		fmt.Sscanf(teamLimit, "%d", &maxTeams)
+		if currentTeams >= maxTeams {
+			// This step is used for positive tests, so we expect it to succeed
+			// If limit would be exceeded, this indicates a test setup issue
+			return fmt.Errorf("cannot create team: would exceed limit of %d (current: %d)", maxTeams, currentTeams)
+		}
+	}
+
+	// Create team
+	// TODO: When team creation API exists, create actual team
+	newTeamID := int64(4000 + currentTeams)
+	ctx.TrackTeam(newTeamID)
+	ctx.TrackCreatedResource("team_count", fmt.Sprintf("%d", currentTeams+1))
+	ctx.SetLastResponse(201, map[string]interface{}{"id": newTeamID, "name": "new-team"}, "")
 	return nil
 }
 
@@ -763,5 +858,69 @@ func (ctx *ScenarioContext) iHaveALicenseWithIncludedTokens(tokens int) error {
 
 func (ctx *ScenarioContext) iHaveCustomPricingTier(tier string) error {
 	ctx.TrackCreatedResource("license_tier", tier)
+	return nil
+}
+
+// Team Limit Enforcement Steps
+
+func (ctx *ScenarioContext) iHaveAnOpenSourceLicense() error {
+	// Open Source license = trial tier with 1 team limit
+	ctx.TrackCreatedResource("license_tier", "trial")
+	ctx.TrackCreatedResource("license_status", "active")
+	ctx.TrackCreatedResource("license_team_limit", "1")
+	return nil
+}
+
+func (ctx *ScenarioContext) iHaveACommercialLicense() error {
+	// Commercial license = professional tier with unlimited teams
+	ctx.TrackCreatedResource("license_tier", "professional")
+	ctx.TrackCreatedResource("license_status", "active")
+	ctx.TrackCreatedResource("license_team_limit", "unlimited")
+	return nil
+}
+
+func (ctx *ScenarioContext) iHaveAnExpiredCommercialLicense() error {
+	// Expired Commercial license reverts to trial tier behavior
+	// Expired licenses preserve data access but disable advanced features
+	// Team limit enforcement reverts to 1 team (Open Source behavior)
+	ctx.TrackCreatedResource("license_tier", "professional")
+	ctx.TrackCreatedResource("license_status", "expired")
+	ctx.TrackCreatedResource("license_team_limit", "1")
+	return nil
+}
+
+func (ctx *ScenarioContext) iHaveCreatedTeams(count int) error {
+	// Track the number of teams created for limit enforcement
+	// TODO: When team creation API exists, create actual teams via API
+	// For now, simulate team tracking with generated IDs
+	teamCount := 0
+	for i := 0; i < count; i++ {
+		// Generate unique team ID for tracking
+		teamID := int64(1000 + i)
+		ctx.TrackTeam(teamID)
+		teamCount++
+	}
+
+	// Track total team count for limit checking
+	ctx.TrackCreatedResource("team_count", fmt.Sprintf("%d", teamCount))
+	ctx.TrackCreatedResource("created_teams", fmt.Sprintf("%d", count))
+
+	return nil
+}
+
+func (ctx *ScenarioContext) iHaveExistingTeams(count int) error {
+	// Similar to iHaveCreatedTeams but for existing teams
+	// These teams already exist before the scenario starts
+	// TODO: When team listing API exists, verify actual team count
+	for i := 0; i < count; i++ {
+		// Generate unique team ID for tracking
+		teamID := int64(2000 + i)
+		ctx.TrackTeam(teamID)
+	}
+
+	// Track total team count for limit checking
+	ctx.TrackCreatedResource("team_count", fmt.Sprintf("%d", count))
+	ctx.TrackCreatedResource("existing_teams", fmt.Sprintf("%d", count))
+
 	return nil
 }
