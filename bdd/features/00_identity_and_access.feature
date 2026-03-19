@@ -612,4 +612,5 @@ Feature: Identity and Access Management
       And there are at least 2 managers in the organization
       When I demote another manager to member
       Then the operation should succeed
+      And the response status code should be 200
       And the user should have the Member role
