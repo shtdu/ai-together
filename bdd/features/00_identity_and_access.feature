@@ -128,7 +128,8 @@ Feature: Identity and Access Management
     Scenario: Registration rejects duplicate email
       Given a user exists with email "existing@example.com"
       And I am not authenticated
-      When I register with email "existing@example.com"
+      And I have a unique email "existing@example.com"
+      When I register a new account
       Then I should receive a 400 error
       And the error message should contain "email already exists"
 
@@ -137,7 +138,8 @@ Feature: Identity and Access Management
       And I have a unique email "autologin@example.com"
       And I have a strong password "StrongPass123!"
       When I register a new account
-      Then I should be able to access protected endpoints
+      Then I should receive a valid authentication token
+      And I should be able to access my user profile
 
   Rule: User Profiles
 
