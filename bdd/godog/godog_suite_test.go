@@ -72,6 +72,7 @@ func InitializeScenario(suite *godog.TestSuiteContext) {
 	step_definitions.RegisterAuthSteps(testContext, ctx)
 	step_definitions.RegisterPasswordResetSteps(testContext, ctx)
 	step_definitions.RegisterInvitationSteps(testContext, ctx)
+	step_definitions.RegisterUserSteps(testContext, ctx)
 	step_definitions.RegisterPermissionSteps(testContext, ctx)
 	step_definitions.RegisterProviderSteps(testContext, ctx)
 	step_definitions.RegisterLicenseSteps(testContext, ctx)
