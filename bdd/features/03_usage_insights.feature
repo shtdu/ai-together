@@ -428,3 +428,36 @@ Feature: Usage Insights and Analytics
       When I check for usage anomalies
       Then unusual patterns should be flagged
       And anomalies should be explained
+
+  Rule: Data Retention by License
+
+    Scenario: Open Source license retains data for 7 days
+      Given I have an Open Source license
+      And I have usage data from 8 days ago
+      When I query usage statistics
+      Then I should not see data older than 7 days
+
+    Scenario: Commercial license retains data for 90 days
+      Given I have a Commercial license
+      And I have usage data from 60 days ago
+      When I query usage statistics
+      Then I should see data from 60 days ago
+
+    Scenario: Data is automatically deleted after retention period
+      Given I have an Open Source license
+      And I have usage data from 10 days ago
+      When the retention cleanup job runs
+      Then the old data should be deleted
+
+    Scenario: License upgrade extends retention period
+      Given I have usage data from 30 days ago
+      And I upgrade from Open Source to Commercial license
+      When I query usage statistics
+      Then I should see data from 30 days ago
+
+    Scenario: License downgrade does not delete existing data immediately
+      Given I have a Commercial license
+      And I have usage data from 60 days ago
+      When I downgrade to Open Source license
+      Then the existing data should be retained
+      But new data should follow 7-day retention
