@@ -84,6 +84,33 @@ Feature: Identity and Access Management
       Then I should receive an "token_expired" error
       And the response status code should be 401
 
+  Rule: Account Lockout
+
+    Scenario: Account locked after 5 failed attempts
+      Given a user exists with email "locktest@example.com"
+      When I fail to login 5 times with wrong password
+      Then the account should be locked
+      And I should receive an "account_locked" error
+
+    Scenario: Locked account cannot login with correct password
+      Given a user exists with email "locked@example.com"
+      And the account is locked
+      When I login with correct credentials
+      Then I should receive an "account_locked" error
+      And the response status code should be 401
+
+    Scenario: Account unlocks after 15 minutes
+      Given a user exists with email "timed@example.com"
+      And the account was locked 16 minutes ago
+      When I login with correct credentials
+      Then I should receive a valid authentication token
+
+    Scenario: Successful login resets failed attempt counter
+      Given a user exists with email "reset@example.com"
+      And I have failed to login 4 times
+      When I login with correct credentials
+      Then the failed attempt counter should be reset to 0
+
   Rule: User Registration
 
     Scenario: Register new organization successfully
