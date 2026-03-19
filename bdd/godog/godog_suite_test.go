@@ -9,9 +9,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/step_definitions"
 	"github.com/code-together/bdd/support"
+	"github.com/cucumber/godog"
 )
 
 // TestGodog runs the godog test suite
@@ -31,12 +31,12 @@ func TestGodog(t *testing.T) {
 		Name:                 "bdd",
 		TestSuiteInitializer: InitializeScenario,
 		Options: &godog.Options{
-			Format:      format,
-			Paths:       []string{"../features"},
-			Tags:        tags,
-			Strict:      true,
+			Format:        format,
+			Paths:         []string{"../features"},
+			Tags:          tags,
+			Strict:        true,
 			StopOnFailure: false,
-			NoColors:    false,
+			NoColors:      false,
 		},
 	}
 
@@ -70,6 +70,7 @@ func InitializeScenario(suite *godog.TestSuiteContext) {
 	// Register step definitions
 	step_definitions.RegisterCommonSteps(testContext, ctx)
 	step_definitions.RegisterAuthSteps(testContext, ctx)
+	step_definitions.RegisterPasswordResetSteps(testContext, ctx)
 	step_definitions.RegisterPermissionSteps(testContext, ctx)
 	step_definitions.RegisterProviderSteps(testContext, ctx)
 	step_definitions.RegisterLicenseSteps(testContext, ctx)
