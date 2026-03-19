@@ -77,13 +77,7 @@ Feature: Provider Management
       And I should see at least 1 provider
       And the API key should not be visible
 
-    @wip
-    Scenario: Get provider by ID
-      Given I have created a provider
-      When I get the provider by ID
-      Then the operation should succeed
-      And the provider should have a name
-      And the API key should not be visible
+    # Note: "Get provider by ID" removed - design uses list endpoint with filtering instead
 
     Scenario: Get provider statistics
       Given I have created a provider
@@ -183,60 +177,6 @@ Feature: Provider Management
       When I test connectivity for provider with ID 99999
       Then I should receive a 404 error
 
-  Rule: Provider Limits
-
-    Scenario Outline: Provider limits by tier
-      Given the license has a provider limit of <limit>
-      And I have created <limit> providers
-      When I attempt to create a provider
-      Then I should receive a 403 error
-      And the error message should contain "provider limit"
-
-      Examples:
-        | limit |
-        | 2     |
-        | 5     |
-        | 10    |
-
-    @wip
-    Scenario: Count providers towards limit
-      Given the license has a provider limit of 3
-      And I have created 2 providers
-      When I create a provider
-      Then the operation should succeed
-      When I list all providers
-      Then the total provider count should be 3
-
-    Scenario: Provider limit does not affect updates
-      Given the license has a provider limit of 2
-      And I have created 2 providers
-      When I update the first provider
-      Then the operation should succeed
-
-    @wip
-    Scenario: Provider limit does not affect deletions
-      Given the license has a provider limit of 2
-      And I have created 2 providers
-      When I delete the first provider
-      Then the operation should succeed
-      And I should be able to create a new provider
-
-    Scenario: Provider kind limits
-      Given the license has a claude provider limit of 1
-      And I have created a claude provider
-      When I attempt to create a claude provider
-      Then I should receive a 403 error
-      And the error message should contain "claude provider limit"
-
-    Scenario: Different provider kinds have separate limits
-      Given the license has a claude provider limit of 1
-      And the license has a codex provider limit of 1
-      And I have created a claude provider
-      When I create a codex provider
-      Then the operation should succeed
-
-    Scenario: Unlimited providers for enterprise tier
-      Given the license has enterprise tier
-      And I have created 100 providers
-      When I create a provider
-      Then the operation should succeed
+  Rule: Provider Management
+    # Note: Per spec, provider limits are NOT enforced - both license types allow unlimited providers
+    # Provider limits by tier scenarios removed as they don't match product requirements

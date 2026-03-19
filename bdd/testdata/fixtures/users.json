@@ -2,16 +2,19 @@
   "admin": {
     "email": "admin@example.com",
     "password": "AdminPassword123!",
-    "name": "Test Admin"
+    "name": "Test Admin",
+    "role": "manager"
   },
   "member": {
     "email": "member@example.com",
     "password": "MemberPass123!",
-    "name": "Test Member"
+    "name": "Test Member",
+    "role": "member"
   },
   "member2": {
     "email": "member2@example.com",
     "password": "MemberPass456!",
-    "name": "Test Member 2"
+    "name": "Test Member 2",
+    "role": "member"
   }
 }
