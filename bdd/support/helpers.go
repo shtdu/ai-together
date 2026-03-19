@@ -46,17 +46,17 @@ const (
 	TestPasswordStrong = "TestPassword123!"
 	TestPasswordWeak   = "weak"
 
-	ProviderKindClaude  = "claude"
-	ProviderKindCodex   = "codex"
+	ProviderKindClaude   = "claude"
+	ProviderKindCodex    = "codex"
 	ProviderKindOpenCode = "opencode"
 
 	RoleAdmin  = "admin"
 	RoleMember = "member"
 
-	TierTrial      = "trial"
-	TierStarter    = "starter"
+	TierTrial        = "trial"
+	TierStarter      = "starter"
 	TierProfessional = "professional"
-	TierEnterprise = "enterprise"
+	TierEnterprise   = "enterprise"
 )
 
 // IsValidProviderKind checks if a provider kind is valid

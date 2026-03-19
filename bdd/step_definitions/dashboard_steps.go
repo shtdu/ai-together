@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
 	integration_manager "github.com/code-together/integration_manager"
 	"github.com/code-together/shared/integration"
+	"github.com/cucumber/godog"
 )
 
 // RegisterDashboardSteps registers dashboard step definitions

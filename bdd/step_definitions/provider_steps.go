@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
 	integration_manager "github.com/code-together/integration_manager"
 	"github.com/code-together/shared/integration"
+	"github.com/cucumber/godog"
 )
 
 // RegisterProviderSteps registers provider management step definitions
@@ -1587,9 +1587,9 @@ func (ctx *ScenarioContext) iAttemptToCreateAClaudeProvider() error {
 		}
 	}
 	ctx.SetLastResponse(201, map[string]interface{}{
-		"id":     "provider-123",
-		"kind":   "claude",
-		"name":   "claude-provider",
+		"id":      "provider-123",
+		"kind":    "claude",
+		"name":    "claude-provider",
 		"api_key": "sk-test-123",
 	}, "")
 	return nil
@@ -1700,9 +1700,9 @@ func (ctx *ScenarioContext) iCreateAProviderWithAPIKey(kind, apiKey string) erro
 	providerID := support.GenerateUniqueID()
 	ctx.TrackCreatedResource("created_provider_id", fmt.Sprintf("%d", providerID))
 	ctx.SetLastResponse(201, map[string]interface{}{
-		"id":     fmt.Sprintf("%d", providerID),
-		"kind":   kind,
-		"name":   providerName,
+		"id":      fmt.Sprintf("%d", providerID),
+		"kind":    kind,
+		"name":    providerName,
 		"api_key": apiKey,
 	}, "")
 	return nil

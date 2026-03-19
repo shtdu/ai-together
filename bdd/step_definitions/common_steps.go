@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	"github.com/cucumber/godog"
 )
 
 // RegisterCommonSteps registers common step definitions for BDD scenarios

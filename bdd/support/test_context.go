@@ -34,10 +34,10 @@ type BDDTestContext struct {
 	CurrentUser *UserInfo
 
 	// Test data storage (per-scenario, for sharing between steps)
-	LastProviderID    int64
-	LastUserID        string
-	LastTeamID        int64
-	LastLicenseID     string
+	LastProviderID     int64
+	LastUserID         string
+	LastTeamID         int64
+	LastLicenseID      string
 	CreatedResourceIDs map[string]string
 
 	// Response storage (per-scenario, for assertions)
@@ -47,8 +47,8 @@ type BDDTestContext struct {
 
 	// Resource tracking for cleanup
 	createdProviders []int64
-	createdUsers      []string
-	createdTeams      []int64
+	createdUsers     []string
+	createdTeams     []int64
 }
 
 // UserInfo represents user information for scenarios
@@ -295,4 +295,41 @@ func (ctx *BDDTestContext) UpdateAuthenticatedClients(token string) error {
 		ctx.Client = client
 	}
 	return nil
+}
+
+// SetTestCredentials stores test credentials for scenario use
+// Used by lockout and other auth testing scenarios that need to reuse credentials
+func (ctx *BDDTestContext) SetTestCredentials(email, password string) {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+	if ctx.CreatedResourceIDs == nil {
+		ctx.CreatedResourceIDs = make(map[string]string)
+	}
+	ctx.CreatedResourceIDs["test_email"] = email
+	ctx.CreatedResourceIDs["test_password"] = password
+}
+
+// GetTestCredentials retrieves stored test credentials
+// Returns empty strings if not set
+func (ctx *BDDTestContext) GetTestCredentials() (email, password string) {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+	if ctx.CreatedResourceIDs == nil {
+		return "", ""
+	}
+	email, _ = ctx.CreatedResourceIDs["test_email"]
+	password, _ = ctx.CreatedResourceIDs["test_password"]
+	return email, password
+}
+
+// GetCreatedResources returns a copy of all tracked resources
+// Used for verification and scenario flow validation
+func (ctx *BDDTestContext) GetCreatedResources() map[string]string {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+	resources := make(map[string]string)
+	for k, v := range ctx.CreatedResourceIDs {
+		resources[k] = v
+	}
+	return resources
 }

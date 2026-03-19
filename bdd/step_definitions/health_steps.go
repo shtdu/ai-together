@@ -47,7 +47,7 @@ func (ctx *ScenarioContext) iCheckTheHealthEndpointAlt() error {
 	dbStatus, _ := ctx.GetCreatedResource("database_status")
 	if dbStatus == "unavailable" || dbStatus == "disconnected" {
 		ctx.SetLastResponse(503, map[string]interface{}{
-			"status": "unhealthy",
+			"status":   "unhealthy",
 			"database": map[string]interface{}{"status": "error"},
 		}, "")
 		return nil
@@ -66,7 +66,7 @@ func (ctx *ScenarioContext) iCheckReadinessEndpoint() error {
 	dbStatus, _ := ctx.GetCreatedResource("database_status")
 	if dbStatus == "disconnected" {
 		ctx.SetLastResponse(503, map[string]interface{}{
-			"status": "not_ready",
+			"status":   "not_ready",
 			"database": map[string]interface{}{"status": "disconnected"},
 		}, "")
 		return nil

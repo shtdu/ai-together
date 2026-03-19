@@ -4,8 +4,8 @@ package step_definitions
 import (
 	"fmt"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	"github.com/cucumber/godog"
 )
 
 // RegisterPermissionSteps registers permission-related step definitions

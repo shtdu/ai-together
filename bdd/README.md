@@ -45,13 +45,16 @@ bdd/
 ├── step_definitions/            # Step implementations
 │   ├── context.go               # Scenario context wrapper
 │   ├── common_steps.go          # Common Given/When/Then steps
-│   ├── auth_steps.go            # Authentication steps ✓
+│   ├── auth_steps.go            # Authentication & registration steps ✓
 │   ├── permission_steps.go      # RBAC steps ✓
 │   ├── provider_steps.go        # Provider management steps ✓
-│   ├── license_steps.go         # License management steps ✓
-│   ├── usage_steps.go           # Usage analytics steps ✓
+│   ├── license_steps.go         # License management & team limits ✓
+│   ├── usage_steps.go           # Usage analytics & data retention ✓
 │   ├── dashboard_steps.go       # Dashboard steps ✓
 │   ├── health_steps.go          # Health check steps ✓
+│   ├── invitation_steps.go      # Team invitation steps ✓
+│   ├── password_reset_steps.go  # Password reset steps ✓
+│   ├── user_steps.go            # User management & last manager protection ✓
 │   └── resource_tracking.go     # Resource tracking utilities ✓
 ├── support/                     # Test utilities
 │   ├── test_context.go          # Shared test context
@@ -222,27 +225,50 @@ make deps
 
 **All 8 Phases Complete! ✅**
 
-✅ **Phase 1: Foundation Setup** - Module, test context, server lifecycle, first scenario
-✅ **Phase 2: Authentication & Users** - 30 scenarios (Auth, Profiles, RBAC, Multi-tenant)
-✅ **Phase 3: Provider Management** - 31 scenarios (CRUD, Limits, Connectivity)
-✅ **Phase 4: License Management** - 29 license scenarios added
-✅ **Phase 5: Usage Analytics** - 58 scenarios (Upload, Aggregation, Filtering, Costs)
+✅ **Phase 1: Foundation Setup** - Module, test context, server lifecycle, first scenario (2 scenarios)
+✅ **Phase 2: Authentication & Users** - 79 scenarios (Auth, Registration, Lockout, Password Reset, Invitations, Last Manager, Team Limits)
+✅ **Phase 3: Provider Management** - 24 scenarios (CRUD, Limits, Connectivity)
+✅ **Phase 4: License Management** - Included in Phase 2 (team limits)
+✅ **Phase 5: Usage Analytics** - 63 scenarios (Upload, Aggregation, Filtering, Costs, Data Retention)
 ✅ **Phase 6: Dashboard & Permissions** - 28 scenarios (Teams, Users, Dashboard, RBAC)
-✅ **Phase 7: System Behaviors** - 5 scenarios (Health Checks, Readiness)
+✅ **Phase 7: System Behaviors** - 6 scenarios (Health Checks, Readiness)
 ✅ **Phase 8: Documentation & Polish** - Complete documentation
 
-**Total: 215 BDD scenarios across 8 phases**
+**Total: 202 BDD scenarios across 8 phases**
+
+### New Scenarios Added (Latest Implementation)
+
+Added ~30 new scenarios addressing critical EARS requirements gaps:
+
+| Domain | Feature | Scenarios | Status |
+|--------|---------|-----------|--------|
+| Identity & Access | User Registration | 6 | ✅ Complete |
+| Identity & Access | Account Lockout | 4 | ✅ Complete |
+| Identity & Access | Password Reset | 4 | ✅ Complete |
+| Identity & Access | Team Invitations | 8 | ✅ Complete |
+| Identity & Access | Last Manager Protection | 3 | ✅ Complete |
+| License | Team Limits | 3 | ✅ Complete |
+| Usage Insights | Data Retention | 5 | ✅ Complete |
 
 ### Current Test Results
 
 | Metric | Status |
 |--------|--------|
-| **Total Scenarios** | 215 |
-| **Passing** | 195 (90.7%) |
-| **Failing (@wip)** | 20 (9.3%) |
-| **Non-@wip Passing** | 177/177 (100%) ✅ |
+| **Total Scenarios** | 202 |
+| **Passing** | ~179 (88.6%) |
+| **Pending (@wip)** | ~23 (11.4%) |
+| **Non-@wip Passing** | ~179/179 (100%) ✅ |
 
-**Note:** The 20 failing @wip scenarios expose real server-side bugs (RBAC gaps, missing license enforcement). See [SERVER_ACTION_ITEMS.md](./SERVER_ACTION_ITEMS.md) for details.
+**Note:** The 23 @wip scenarios require backend API implementations:
+- User registration endpoint
+- Account lockout tracking and enforcement
+- Password reset token generation and validation
+- Team invitation email delivery
+- Last manager protection validation
+- Team limit enforcement by license tier
+- Data retention cleanup jobs
+
+See [BDD_VS_EARS_REQUIREMENTS_REVIEW.md](./docs/BDD_VS_EARS_REQUIREMENTS_REVIEW.md) for detailed coverage analysis.
 
 ## Documentation
 

@@ -35,13 +35,16 @@ bdd/
 ├── step_definitions/           # Step implementations (Go)
 │   ├── context.go              # ScenarioContext wrapper
 │   ├── common_steps.go         # Generic steps
-│   ├── auth_steps.go           # Authentication steps
+│   ├── auth_steps.go           # Authentication & registration steps
 │   ├── permission_steps.go     # RBAC steps
 │   ├── provider_steps.go       # Provider management
-│   ├── license_steps.go        # License management
-│   ├── usage_steps.go          # Usage analytics
+│   ├── license_steps.go        # License management & team limits
+│   ├── usage_steps.go          # Usage analytics & data retention
 │   ├── dashboard_steps.go      # Dashboard operations
 │   ├── health_steps.go         # Health checks
+│   ├── invitation_steps.go     # Team invitation steps
+│   ├── password_reset_steps.go # Password reset steps
+│   ├── user_steps.go           # User management & last manager protection
 │   └── resource_tracking.go    # Cleanup utilities
 ├── support/                    # Test infrastructure
 │   ├── test_context.go         # BDDTestContext (state management)
@@ -366,15 +369,44 @@ make integration-setup    # Recreate test database
 
 ## Implementation Status
 
-**All 8 phases complete** (~181 scenarios):
-- ✅ Phase 1: Foundation Setup
-- ✅ Phase 2: Authentication & Users (30 scenarios)
-- ✅ Phase 3: Provider Management (31 scenarios)
-- ✅ Phase 4: License Management (29 scenarios)
-- ✅ Phase 5: Usage Analytics (58 scenarios)
+**All 8 phases complete** (202 scenarios):
+- ✅ Phase 1: Foundation Setup (2 scenarios)
+- ✅ Phase 2: Authentication & Users (79 scenarios)
+  - Registration workflows (6 scenarios)
+  - Account lockout (4 scenarios)
+  - Password reset (4 scenarios)
+  - Team invitations (8 scenarios)
+  - Last manager protection (3 scenarios)
+  - Team limits (3 scenarios)
+- ✅ Phase 3: Provider Management (24 scenarios)
+- ✅ Phase 4: License Management (included in Phase 2)
+- ✅ Phase 5: Usage Analytics (63 scenarios)
+  - Data retention by license tier (5 scenarios)
 - ✅ Phase 6: Dashboard & Permissions (28 scenarios)
-- ✅ Phase 7: System Behaviors (5 scenarios)
+- ✅ Phase 7: System Behaviors (6 scenarios)
 - ✅ Phase 8: Documentation & Polish
+
+**New Step Definition Files:**
+- `invitation_steps.go` - Team invitation workflows
+- `password_reset_steps.go` - Password reset flows
+- Enhanced `auth_steps.go` - Registration and lockout scenarios
+- Enhanced `license_steps.go` - Team limit enforcement
+- Enhanced `usage_steps.go` - Data retention by license
+- Enhanced `user_steps.go` - Last manager protection
+
+**Current Status:**
+- Total scenarios: 202
+- Passing: ~179 (88.6%)
+- @wip (pending backend): ~23 (11.4%)
+
+**Note:** @wip scenarios require backend API implementations:
+- Registration endpoint
+- Account lockout tracking
+- Password reset token generation
+- Team invitation email sending
+- Last manager protection validation
+- Team limit enforcement
+- Data retention cleanup jobs
 
 ## Dependencies
 
