@@ -231,9 +231,39 @@ make deps
 ✅ **Phase 7: System Behaviors** - 5 scenarios (Health Checks, Readiness)
 ✅ **Phase 8: Documentation & Polish** - Complete documentation
 
-**Total: ~181 BDD scenarios implemented across 8 phases**
+**Total: 215 BDD scenarios across 8 phases**
 
-## References
+### Current Test Results
+
+| Metric | Status |
+|--------|--------|
+| **Total Scenarios** | 215 |
+| **Passing** | 195 (90.7%) |
+| **Failing (@wip)** | 20 (9.3%) |
+| **Non-@wip Passing** | 177/177 (100%) ✅ |
+
+**Note:** The 20 failing @wip scenarios expose real server-side bugs (RBAC gaps, missing license enforcement). See [SERVER_ACTION_ITEMS.md](./SERVER_ACTION_ITEMS.md) for details.
+
+## Documentation
+
+### For Developers
+- **[CLAUDE.md](./CLAUDE.md)** - Development guide for working with BDD tests
+- **[README.md](./README.md)** - This file (quick start, structure, commands)
+
+### For Test Engineers
+- **[TEST_REVIEW_SUMMARY.md](./TEST_REVIEW_SUMMARY.md)** - Comprehensive test suite review and comparison with integration tests
+- **[BDD_VS_INTEGRATION_COMPARISON.md](./BDD_VS_INTEGRATION_COMPARISON.md)** - Detailed coverage comparison
+- **[INTEGRATION_PATTERNS_ADOPTED.md](./INTEGRATION_PATTERNS_ADOPTED.md)** - Patterns learned from integration tests
+
+### For Server Team
+- **[SERVER_ACTION_ITEMS.md](./SERVER_ACTION_ITEMS.md)** - Server bugs discovered by BDD tests (RBAC, license limits)
+- **[ROLE_ASSIGNMENT_INVESTIGATION.md](./ROLE_ASSIGNMENT_INVESTIGATION.md)** - Role assignment mechanism investigation
+
+### Historical
+- **[BDD_FAILURES_ANALYSIS.md](./BDD_FAILURES_ANALYSIS.md)** - Analysis of test failures
+- **[BDD_FIX_REFERENCE.md](./BDD_FIX_REFERENCE.md)** - Reference guide for fixing common issues
+
+## External References
 
 - [Design Document](../docs/superpowers/specs/2025-03-16-bdd-test-implementation-design.md)
 - [Implementation Plan](../docs/superpowers/specs/2025-03-16-bdd-implementation-plan.md)

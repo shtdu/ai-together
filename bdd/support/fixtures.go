@@ -134,3 +134,21 @@ func GetStandardFixtureData() (*FixtureData, error) {
 
 	return &fixtures, nil
 }
+
+// LoadLicensePEM loads a license PEM file from testdata/licenses
+func LoadLicensePEM(fixtureName string) (string, error) {
+	// Get the directory of this file (support package)
+	_, currentFilePath, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("failed to get caller information")
+	}
+	supportDir := filepath.Dir(currentFilePath)
+	// Navigate from bdd/support/ to bdd/testdata/licenses/
+	licensePath := filepath.Join(supportDir, "..", "testdata", "licenses", fixtureName+".pem")
+
+	pemContent, err := os.ReadFile(licensePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read license fixture %s: %w", licensePath, err)
+	}
+	return string(pemContent), nil
+}

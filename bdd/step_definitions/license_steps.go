@@ -82,13 +82,23 @@ func RegisterLicenseSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 // GIVENS - Setup context
 
 func (ctx *ScenarioContext) iHaveAValidCommercialLicenseKey() error {
-	ctx.TrackCreatedResource("license_key", "commercial-valid-key")
+	licensePEM, err := support.LoadLicensePEM("commercial")
+	if err != nil {
+		return fmt.Errorf("failed to load commercial license: %w", err)
+	}
+
+	ctx.TrackCreatedResource("license_key", licensePEM)
 	ctx.TrackCreatedResource("license_tier", "professional")
 	return nil
 }
 
 func (ctx *ScenarioContext) iHaveAValidOpenSourceLicenseKey() error {
-	ctx.TrackCreatedResource("license_key", "opensource-valid-key")
+	licensePEM, err := support.LoadLicensePEM("opensource")
+	if err != nil {
+		return fmt.Errorf("failed to load open-source license: %w", err)
+	}
+
+	ctx.TrackCreatedResource("license_key", licensePEM)
 	ctx.TrackCreatedResource("license_tier", "trial")
 	return nil
 }
@@ -252,15 +262,12 @@ func (ctx *ScenarioContext) iActivateTheLicense() error {
 	// Store response for assertions
 	ctx.SetLastResponse(resp.StatusCode(), body, "")
 
-	// Handle API response errors
-	if resp.StatusCode() >= 400 {
+	// Only return errors for 5xx server errors or network issues
+	// 4xx errors are expected for permission testing and should be handled by Then steps
+	if resp.StatusCode() >= 500 {
 		errMsg := ""
-		if resp.JSON400 != nil {
-			errMsg = fmt.Sprintf("validation error: %s", resp.JSON400.Error)
-		} else if resp.JSON401 != nil {
-			errMsg = fmt.Sprintf("unauthorized: %s", resp.JSON401.Error)
-		} else if resp.JSON403 != nil {
-			errMsg = fmt.Sprintf("forbidden: %s", resp.JSON403.Error)
+		if resp.JSON500 != nil {
+			errMsg = fmt.Sprintf("server error: %s", resp.JSON500.Error)
 		} else if len(resp.Body) > 0 {
 			errMsg = string(resp.Body)
 		} else {

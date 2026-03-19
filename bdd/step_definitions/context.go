@@ -2,6 +2,7 @@
 package step_definitions
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/code-together/bdd/support"
@@ -17,6 +18,7 @@ type ScenarioContext struct {
 // ResetScenarioState resets all scenario state before execution
 func (ctx *ScenarioContext) ResetScenarioState() {
 	ctx.Reset()
+	ctx.ManagerClient = nil // Clear manager client so it gets recreated with new token
 	log.Printf("Scenario state reset")
 }
 
@@ -61,4 +63,29 @@ func (ctx *ScenarioContext) LoginAsMember() error {
 	// This will be implemented when auth steps are added
 	log.Printf("TODO: Login as member")
 	return nil
+}
+
+// GetAuthenticatedManagerClient returns a manager client with automatic token injection
+// Creates or reuses the manager client for the current scenario
+func (ctx *ScenarioContext) GetAuthenticatedManagerClient() (*integration_manager.ClientWithResponses, error) {
+	// Get current token
+	token, err := ctx.GetAuthToken()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create manager client without token: %w", err)
+	}
+
+	// Create or reuse manager client
+	if ctx.ManagerClient == nil {
+		client, err := integration_manager.NewAuthenticatedClient(
+			ctx.ServerURL,
+			integration_manager.TokenGetter(func() (string, error) { return token, nil }),
+			ctx.Logger,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create manager client: %w", err)
+		}
+		ctx.ManagerClient = client
+	}
+
+	return ctx.ManagerClient, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/code-together/bdd/support"
+	integration_manager "github.com/code-together/integration_manager"
 	"github.com/code-together/shared/integration"
 )
 
@@ -76,6 +77,18 @@ func RegisterDashboardSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) 
 	suite.Then(`^top user should be listed first$`, ctx.topUserShouldBeListedFirst)
 	suite.Then(`^I should see provider statistics$`, ctx.iShouldSeeProviderStatistics)
 	suite.Then(`^I should see success rates$`, ctx.iShouldSeeSuccessRates)
+
+	// New team scenarios
+	suite.When(`^I create a team with name "([^"]*)" and no description$`, ctx.iCreateATeamWithNameNoDescription)
+	suite.Then(`^the team description should be empty$`, ctx.teamDescriptionShouldBeEmpty)
+	suite.When(`^I get team settings$`, ctx.iGetTeamSettings)
+	suite.Then(`^I should receive team settings$`, ctx.iShouldReceiveTeamSettings)
+	suite.Then(`^settings should have team ID$`, ctx.settingsShouldHaveTeamID)
+	suite.When(`^I attempt to get team with ID (\d+)$`, ctx.iAttemptToGetTeamWithID)
+	suite.Then(`^I should receive a 404 error$`, ctx.iShouldReceive404Error)
+	suite.When(`^I attempt to delete team with ID (\d+)$`, ctx.iAttemptToDeleteTeamWithID)
+	suite.When(`^I attempt to remove member with ID (\d+)$`, ctx.iAttemptToRemoveMemberWithID)
+	suite.Then(`^the operation should succeed$`, ctx.theOperationShouldSucceed)
 }
 
 // Implementations
@@ -493,5 +506,227 @@ func (ctx *ScenarioContext) iShouldSeeProviderStatistics() error {
 }
 
 func (ctx *ScenarioContext) iShouldSeeSuccessRates() error {
+	return nil
+}
+
+// ============================================================================
+// New Team Scenario Implementations
+// ============================================================================
+
+func (ctx *ScenarioContext) iCreateATeamWithNameNoDescription(name string) error {
+	managerClient, err := ctx.GetAuthenticatedManagerClient()
+	if err != nil || managerClient == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	teamName := support.GenerateUniqueTeamName(name)
+	req := integration_manager.PostApiV1TeamsJSONRequestBody{
+		Name: teamName,
+	}
+
+	resp, err := managerClient.PostApiV1TeamsWithResponse(context.Background(), req)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON201 != nil:
+		ctx.LastTeamID = resp.JSON201.Id
+		ctx.TrackTeam(resp.JSON201.Id)
+		ctx.TrackCreatedResource("team_name", teamName)
+		ctx.TrackCreatedResource("team_description", "")
+		ctx.SetLastResponse(201, resp.JSON201, "")
+	case resp.JSON400 != nil:
+		ctx.SetLastResponse(400, resp.JSON400, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON403 != nil:
+		ctx.SetLastResponse(403, resp.JSON403, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
+	return nil
+}
+
+func (ctx *ScenarioContext) teamDescriptionShouldBeEmpty() error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 201 {
+		return fmt.Errorf("expected status 201, got %d", statusCode)
+	}
+
+	if respMap, ok := resp.(map[string]interface{}); ok {
+		if desc, hasDesc := respMap["description"]; hasDesc && desc != nil {
+			return fmt.Errorf("expected empty description, got %v", desc)
+		}
+	}
+	return nil
+}
+
+func (ctx *ScenarioContext) iGetTeamSettings() error {
+	managerClient, err := ctx.GetAuthenticatedManagerClient()
+	if err != nil || managerClient == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// Use the last created team or default team ID 1
+	teamID := ctx.LastTeamID
+	if teamID == 0 {
+		teamID = 1
+	}
+
+	resp, err := managerClient.GetApiV1TeamsTeamIdSettingsWithResponse(context.Background(), teamID)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON404 != nil:
+		ctx.SetLastResponse(404, resp.JSON404, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
+	return nil
+}
+
+func (ctx *ScenarioContext) iShouldReceiveTeamSettings() error {
+	statusCode, _, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+	return nil
+}
+
+func (ctx *ScenarioContext) settingsShouldHaveTeamID() error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+
+	if respMap, ok := resp.(map[string]interface{}); ok {
+		if _, hasTeamID := respMap["team_id"]; !hasTeamID {
+			return fmt.Errorf("settings should have team_id")
+		}
+	}
+	return nil
+}
+
+func (ctx *ScenarioContext) iAttemptToGetTeamWithID(teamID int64) error {
+	managerClient, err := ctx.GetAuthenticatedManagerClient()
+	if err != nil || managerClient == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	resp, err := managerClient.GetApiV1TeamsTeamIdWithResponse(context.Background(), teamID)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.JSON200 != nil:
+		ctx.SetLastResponse(200, resp.JSON200, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON404 != nil:
+		ctx.SetLastResponse(404, resp.JSON404, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
+	return nil
+}
+
+func (ctx *ScenarioContext) iShouldReceive404Error() error {
+	statusCode, _, _ := ctx.GetLastResponse()
+	if statusCode != 404 {
+		return fmt.Errorf("expected status 404, got %d", statusCode)
+	}
+	return nil
+}
+
+func (ctx *ScenarioContext) iAttemptToDeleteTeamWithID(teamID int64) error {
+	managerClient, err := ctx.GetAuthenticatedManagerClient()
+	if err != nil || managerClient == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	resp, err := managerClient.DeleteApiV1TeamsTeamIdWithResponse(context.Background(), teamID)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.StatusCode() == 200:
+		ctx.SetLastResponse(200, nil, "")
+	case resp.StatusCode() == 204:
+		ctx.SetLastResponse(204, nil, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON403 != nil:
+		ctx.SetLastResponse(403, resp.JSON403, "")
+	case resp.JSON404 != nil:
+		ctx.SetLastResponse(404, resp.JSON404, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
+	return nil
+}
+
+func (ctx *ScenarioContext) iAttemptToRemoveMemberWithID(memberID int64) error {
+	managerClient, err := ctx.GetAuthenticatedManagerClient()
+	if err != nil || managerClient == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// Use the last created team or default team ID 1
+	teamID := ctx.LastTeamID
+	if teamID == 0 {
+		teamID = 1
+	}
+
+	resp, err := managerClient.DeleteApiV1TeamsTeamIdMembersMemberIdWithResponse(context.Background(), teamID, memberID)
+	if err != nil {
+		ctx.SetLastResponse(500, nil, fmt.Sprintf("API request failed: %v", err))
+		return nil
+	}
+
+	switch {
+	case resp.StatusCode() == 200:
+		ctx.SetLastResponse(200, nil, "")
+	case resp.StatusCode() == 204:
+		ctx.SetLastResponse(204, nil, "")
+	case resp.JSON401 != nil:
+		ctx.SetLastResponse(401, resp.JSON401, "")
+	case resp.JSON403 != nil:
+		ctx.SetLastResponse(403, resp.JSON403, "")
+	case resp.JSON404 != nil:
+		ctx.SetLastResponse(404, resp.JSON404, "")
+	default:
+		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
+	}
+
+	return nil
+}
+
+func (ctx *ScenarioContext) theOperationShouldSucceed() error {
+	statusCode, _, _ := ctx.GetLastResponse()
+	if statusCode != 200 && statusCode != 204 && statusCode != 201 {
+		return fmt.Errorf("expected success status (200/201/204), got %d", statusCode)
+	}
 	return nil
 }
