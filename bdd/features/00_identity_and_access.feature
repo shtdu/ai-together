@@ -591,3 +591,25 @@ Feature: Identity and Access Management
       Given I am logged in as a member
       When I attempt to send a team invitation
       Then I should receive a 403 error
+
+  Rule: Last Manager Protection
+
+    Scenario: Last manager cannot demote themselves
+      Given I am logged in as the only manager
+      When I attempt to change my role to member
+      Then I should receive a 403 error
+      And the error message should contain "last manager"
+
+    Scenario: Last manager cannot be deactivated by another manager
+      Given I am logged in as a manager
+      And there is only one other manager
+      When I attempt to deactivate the other manager
+      Then I should receive a 403 error
+      And the error message should contain "last manager"
+
+    Scenario: Manager can be demoted when other managers exist
+      Given I am logged in as a manager
+      And there are at least 2 managers in the organization
+      When I demote another manager to member
+      Then the operation should succeed
+      And the user should have the Member role
