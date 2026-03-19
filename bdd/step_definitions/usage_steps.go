@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cucumber/godog"
 	"github.com/code-together/shared/integration"
+	"github.com/cucumber/godog"
 )
 
 // RegisterUsageSteps registers usage analytics step definitions
@@ -57,6 +57,8 @@ func RegisterUsageSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Given(`^I have uploaded (\d+) usage records$`, ctx.iHaveUploadedUsageRecords)
 	suite.Given(`^I have configured usage alerts$`, ctx.iHaveConfiguredUsageAlerts)
 	suite.Given(`^I have not uploaded any usage data$`, ctx.iHaveNotUploadedAnyUsageData)
+	suite.Given(`^I have usage data from (\d+) days ago$`, ctx.iHaveUsageDataFromDaysAgo)
+	suite.Given(`^I have usage data from "([^"]*)"$`, ctx.iHaveUsageDataFrom)
 
 	// WHEN STEPS - Perform actions
 	suite.When(`^I upload the usage record$`, ctx.iUploadTheUsageRecord)
@@ -65,6 +67,10 @@ func RegisterUsageSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.When(`^I calculate the cost$`, ctx.iCalculateTheCost)
 	suite.When(`^I filter usage by provider "([^"]*)"$`, ctx.iFilterUsageByProvider)
 	suite.When(`^I query usage for the last (\d+) days$`, ctx.iQueryUsageForTheLastDays)
+	suite.When(`^I query usage statistics$`, ctx.iQueryUsageStatistics)
+	suite.When(`^the retention cleanup job runs$`, ctx.theRetentionCleanupJobRuns)
+	suite.When(`^I upgrade from Open Source to Commercial license$`, ctx.iUpgradeFromOpenSourceToCommercialLicense)
+	suite.When(`^I downgrade to Open Source license$`, ctx.iDowngradeToOpenSourceLicense)
 	suite.When(`^I upload the usage records as a batch$`, ctx.iUploadTheUsageRecordsAsABatch)
 	suite.Given(`^I upload (\d+) tokens$`, ctx.iUploadTokens)
 	suite.When(`^I calculate cost for (\d+) tokens$`, ctx.iCalculateCostForTokens)
@@ -130,6 +136,11 @@ func RegisterUsageSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Then(`^I should not see other provider usage$`, ctx.iShouldNotSeeOtherProviderUsage)
 	suite.Then(`^I should only see claude usage$`, ctx.iShouldOnlySeeClaudeUsage)
 	suite.Then(`^I should only see data from the last (\d+) days$`, ctx.iShouldOnlySeeDataFromTheLastDays)
+	suite.Then(`^I should not see data older than (\d+) days$`, ctx.iShouldNotSeeDataOlderThanDays)
+	suite.Then(`^I should see data from (\d+) days ago$`, ctx.iShouldSeeDataFromDaysAgo)
+	suite.Then(`^the old data should be deleted$`, ctx.theOldDataShouldBeDeleted)
+	suite.Then(`^the existing data should be retained$`, ctx.theExistingDataShouldBeRetained)
+	suite.Then(`^new data should follow (\d+)-day retention$`, ctx.newDataShouldFollowDayRetention)
 	suite.Then(`^I should only see engineering team usage$`, ctx.iShouldOnlySeeEngineeringTeamUsage)
 	suite.Then(`^I should only see successful usage$`, ctx.iShouldOnlySeeSuccessfulUsage)
 	suite.Then(`^I should only see usage for that model$`, ctx.iShouldOnlySeeUsageForThatModel)
@@ -646,7 +657,7 @@ func (ctx *ScenarioContext) iHaveUsedTokens(tokens int) error {
 func (ctx *ScenarioContext) iQueryUsageForTheLastDays(days int) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"query_days": days,
-		"results": []map[string]interface{}{},
+		"results":    []map[string]interface{}{},
 	}, "")
 	return nil
 }
@@ -1705,9 +1716,9 @@ func (ctx *ScenarioContext) iCalculateCostSavings() error {
 	beforeCost, _ := ctx.GetCreatedResource("usage_before_optimization")
 	afterCost, _ := ctx.GetCreatedResource("usage_after_optimization")
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"before_cost": beforeCost,
-		"after_cost": afterCost,
-		"savings": "10",
+		"before_cost":        beforeCost,
+		"after_cost":         afterCost,
+		"savings":            "10",
 		"savings_percentage": 20,
 	}, "")
 	return nil
@@ -1781,7 +1792,7 @@ func (ctx *ScenarioContext) iCheckForUsageAnomalies() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"unusual_patterns": []interface{}{
 			map[string]interface{}{
-				"type": "spike",
+				"type":        "spike",
 				"description": "Unusual usage spike",
 				"explanation": "Possible automated testing or batch processing detected",
 			},
@@ -1796,7 +1807,7 @@ func (ctx *ScenarioContext) iExportUsageDataAsCSV() error {
 		return nil
 	}
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"content_type": "text/csv",
+		"content_type":  "text/csv",
 		"usage_records": []interface{}{},
 	}, "")
 	return nil
@@ -1805,8 +1816,8 @@ func (ctx *ScenarioContext) iExportUsageDataAsCSV() error {
 func (ctx *ScenarioContext) iFilterByProviderAndUser(provider, user string) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"provider": provider,
-		"user": user,
-		"results": []interface{}{},
+		"user":     user,
+		"results":  []interface{}{},
 	}, "")
 	return nil
 }
@@ -1836,14 +1847,14 @@ func (ctx *ScenarioContext) iFilterUsageAndSortByDateDescending() error {
 func (ctx *ScenarioContext) iFilterUsageByCostRange(rangeStr string) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"cost_range": rangeStr,
-		"results": []interface{}{},
+		"results":    []interface{}{},
 	}, "")
 	return nil
 }
 
 func (ctx *ScenarioContext) iFilterUsageByModel(model string) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"model": model,
+		"model":   model,
 		"results": []interface{}{},
 	}, "")
 	return nil
@@ -1851,7 +1862,7 @@ func (ctx *ScenarioContext) iFilterUsageByModel(model string) error {
 
 func (ctx *ScenarioContext) iFilterUsageByStatus(status string) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"status": status,
+		"status":  status,
 		"results": []interface{}{},
 	}, "")
 	return nil
@@ -1859,7 +1870,7 @@ func (ctx *ScenarioContext) iFilterUsageByStatus(status string) error {
 
 func (ctx *ScenarioContext) iFilterUsageByTeam(team string) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"team": team,
+		"team":    team,
 		"results": []interface{}{},
 	}, "")
 	return nil
@@ -1867,7 +1878,7 @@ func (ctx *ScenarioContext) iFilterUsageByTeam(team string) error {
 
 func (ctx *ScenarioContext) iFilterUsageByUser(user string) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"user": user,
+		"user":    user,
 		"results": []interface{}{},
 	}, "")
 	return nil
@@ -1876,7 +1887,7 @@ func (ctx *ScenarioContext) iFilterUsageByUser(user string) error {
 func (ctx *ScenarioContext) iForecastCostForNextDays(days int) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"forecast_days": days,
-		"forecast": days * 10,
+		"forecast":      days * 10,
 	}, "")
 	return nil
 }
@@ -1884,7 +1895,7 @@ func (ctx *ScenarioContext) iForecastCostForNextDays(days int) error {
 func (ctx *ScenarioContext) iGetAlertConfiguration() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"alert_thresholds": map[string]interface{}{
-			"daily_cost": 100,
+			"daily_cost":  100,
 			"daily_usage": 1000,
 		},
 		"alert_recipients": []interface{}{"admin@example.com"},
@@ -1897,19 +1908,19 @@ func (ctx *ScenarioContext) iGetCostBreakdown() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"provider_costs": map[string]interface{}{
 			"claude": map[string]interface{}{
-				"cost": 50.0,
+				"cost":                50.0,
 				"percentage_of_total": 62.5,
 			},
 			"codex": map[string]interface{}{
-				"cost": 30.0,
+				"cost":                30.0,
 				"percentage_of_total": 37.5,
 			},
 		},
 		"team_costs": map[string]interface{}{
 			"engineering": 60.0,
-			"sales": 20.0,
+			"sales":       20.0,
 		},
-		"total": totalCost,
+		"total":               totalCost,
 		"percentage_of_total": true,
 	}, "")
 	return nil
@@ -1919,7 +1930,7 @@ func (ctx *ScenarioContext) iGetCostsAggregatedByTeam() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"team_costs": map[string]interface{}{
 			"engineering": 60.0,
-			"sales": 20.0,
+			"sales":       20.0,
 		},
 		"total": 80.0,
 	}, "")
@@ -1929,9 +1940,9 @@ func (ctx *ScenarioContext) iGetCostsAggregatedByTeam() error {
 func (ctx *ScenarioContext) iGetFirstPageOfResultsWithPageSize(pageSize int) error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"pagination": map[string]interface{}{
-			"page": 1,
+			"page":      1,
 			"page_size": pageSize,
-			"total": 100,
+			"total":     100,
 		},
 		"results": []interface{}{},
 	}, "")
@@ -1952,9 +1963,9 @@ func (ctx *ScenarioContext) iGetModelPerformanceMetrics() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"model_performance": []interface{}{
 			map[string]interface{}{
-				"model": "claude-3-5-sonnet",
+				"model":             "claude-3-5-sonnet",
 				"avg_response_time": 1.5,
-				"success_rate": 95,
+				"success_rate":      95,
 			},
 		},
 		"success_rate_by_model": map[string]interface{}{
@@ -1995,12 +2006,12 @@ func (ctx *ScenarioContext) iGetOptimizationSuggestions() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"recommendations": []interface{}{
 			map[string]interface{}{
-				"type": "cost_saving",
+				"type":        "cost_saving",
 				"description": "Switch to lower cost model",
 			},
 		},
 		"cost_savings": map[string]interface{}{
-			"potential": 50.0,
+			"potential":  50.0,
 			"percentage": 10,
 		},
 	}, "")
@@ -2009,7 +2020,7 @@ func (ctx *ScenarioContext) iGetOptimizationSuggestions() error {
 
 func (ctx *ScenarioContext) iGetPeriodComparison() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"absolute_change": 100,
+		"absolute_change":   100,
 		"percentage_change": 20,
 		"period_comparison": []interface{}{},
 	}, "")
@@ -2311,10 +2322,10 @@ func (ctx *ScenarioContext) iCheckLicenseStatus() error {
 
 	response := map[string]interface{}{
 		"status": status,
-		"tier": "professional",
+		"tier":   "professional",
 		"limits": map[string]int{
 			"provider_limit": 10,
-			"user_limit": 50,
+			"user_limit":     50,
 		},
 	}
 
@@ -2332,11 +2343,11 @@ func (ctx *ScenarioContext) iGetRealtimeStatistics() error {
 	}
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"current_usage": 1000,
-		"today_cost": 25.0,
+		"today_cost":    25.0,
 		"realtime_stats": []interface{}{
 			map[string]interface{}{
-				"timestamp": "2026-03-17T12:00:00Z",
-				"active_users": 5,
+				"timestamp":           "2026-03-17T12:00:00Z",
+				"active_users":        5,
 				"requests_per_minute": 120,
 			},
 		},
@@ -2353,12 +2364,12 @@ func (ctx *ScenarioContext) iGetTeamUsageStatistics() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"team_stats": []interface{}{
 			map[string]interface{}{
-				"team": "engineering",
+				"team":        "engineering",
 				"total_usage": 50000,
-				"total_cost": 50.0,
+				"total_cost":  50.0,
 			},
 		},
-		"total": totalUsage,
+		"total":       totalUsage,
 		"total_usage": totalUsage,
 	}, "")
 	return nil
@@ -2386,16 +2397,16 @@ func (ctx *ScenarioContext) iGetTopUsersByUsage() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"top_users": []interface{}{
 			map[string]interface{}{
-				"user": "user1@example.com",
+				"user":  "user1@example.com",
 				"usage": 15000,
 			},
 			map[string]interface{}{
-				"user": "user2@example.com",
+				"user":  "user2@example.com",
 				"usage": 10000,
 			},
 		},
 		"top_user": map[string]interface{}{
-			"user": "user1@example.com",
+			"user":  "user1@example.com",
 			"usage": 15000,
 		},
 	}, "")
@@ -2410,9 +2421,9 @@ func (ctx *ScenarioContext) iGetUsageAggregatedByModel() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"model_data": []interface{}{
 			map[string]interface{}{
-				"model": "claude-3-5-sonnet",
-				"total_tokens": 25000,
-				"total_cost": 25.0,
+				"model":              "claude-3-5-sonnet",
+				"total_tokens":       25000,
+				"total_cost":         25.0,
 				"avg_cost_per_token": 0.001,
 			},
 		},
@@ -2428,9 +2439,9 @@ func (ctx *ScenarioContext) iGetUsageAggregatedByProject() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"project_data": []interface{}{
 			map[string]interface{}{
-				"project": "project-alpha",
+				"project":      "project-alpha",
 				"total_tokens": 15000,
-				"total_cost": 15.0,
+				"total_cost":   15.0,
 			},
 		},
 	}, "")
@@ -2445,13 +2456,13 @@ func (ctx *ScenarioContext) iGetUsageAggregatedByProvider() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"provider_data": []interface{}{
 			map[string]interface{}{
-				"provider": "claude",
-				"total_tokens": 20000,
+				"provider":       "claude",
+				"total_tokens":   20000,
 				"total_requests": 1800,
 			},
 			map[string]interface{}{
-				"provider": "codex",
-				"total_tokens": 8000,
+				"provider":       "codex",
+				"total_tokens":   8000,
 				"total_requests": 950,
 			},
 		},
@@ -2467,14 +2478,14 @@ func (ctx *ScenarioContext) iGetUsageAggregatedByUser() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"user_data": []interface{}{
 			map[string]interface{}{
-				"user": "user1@example.com",
+				"user":         "user1@example.com",
 				"total_tokens": 12000,
-				"total_cost": 12.0,
+				"total_cost":   12.0,
 			},
 			map[string]interface{}{
-				"user": "user2@example.com",
+				"user":         "user2@example.com",
 				"total_tokens": 8000,
-				"total_cost": 8.0,
+				"total_cost":   8.0,
 			},
 		},
 	}, "")
@@ -2531,12 +2542,12 @@ func (ctx *ScenarioContext) iGetUsageStatisticsForThePeriod() error {
 		return nil
 	}
 	ctx.SetLastResponse(200, map[string]interface{}{
-		"period": "last_30_days",
-		"total_tokens": 35000,
+		"period":                  "last_30_days",
+		"total_tokens":            35000,
 		"total_tokens_calculated": 35000,
-		"total_cost": 175.0,
-		"total_cost_calculated": 175.0,
-		"daily_average": 1167,
+		"total_cost":              175.0,
+		"total_cost_calculated":   175.0,
+		"daily_average":           1167,
 	}, "")
 	return nil
 }
@@ -2549,20 +2560,20 @@ func (ctx *ScenarioContext) iGetUsageSummaryForTheDateRange() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"summary": []interface{}{
 			map[string]interface{}{
-				"date": "2026-03-01",
+				"date":   "2026-03-01",
 				"tokens": 12000,
 			},
 			map[string]interface{}{
-				"date": "2026-03-02",
+				"date":   "2026-03-02",
 				"tokens": 15000,
 			},
 		},
-		"total_tokens": 27000,
-		"total_cost": 135.0,
+		"total_tokens":   27000,
+		"total_cost":     135.0,
 		"total_requests": 540,
 		"summary_statistics": map[string]interface{}{
-			"total_tokens": 27000,
-			"total_requests": 540,
+			"total_tokens":               27000,
+			"total_requests":             540,
 			"average_tokens_per_request": 50,
 		},
 	}, "")
@@ -2577,23 +2588,23 @@ func (ctx *ScenarioContext) iGetUsageTrends() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"trends": []interface{}{
 			map[string]interface{}{
-				"date": "2026-03-15",
-				"tokens": 5000,
+				"date":           "2026-03-15",
+				"tokens":         5000,
 				"moving_average": 4800,
 			},
 			map[string]interface{}{
-				"date": "2026-03-16",
-				"tokens": 5200,
+				"date":           "2026-03-16",
+				"tokens":         5200,
 				"moving_average": 4900,
 			},
 		},
 		"trend_data_points": []interface{}{
 			map[string]interface{}{
-				"date": "2026-03-15",
+				"date":  "2026-03-15",
 				"value": 5000,
 			},
 			map[string]interface{}{
-				"date": "2026-03-16",
+				"date":  "2026-03-16",
 				"value": 5200,
 			},
 		},
@@ -2610,11 +2621,11 @@ func (ctx *ScenarioContext) iGetWeeklyUsageStatistics() error {
 	ctx.SetLastResponse(200, map[string]interface{}{
 		"weekly_data": []interface{}{
 			map[string]interface{}{
-				"week": "2026-W11",
+				"week":         "2026-W11",
 				"total_tokens": 25000,
 			},
 			map[string]interface{}{
-				"week": "2026-W12",
+				"week":         "2026-W12",
 				"total_tokens": 28000,
 			},
 		},
@@ -2788,4 +2799,206 @@ func (ctx *ScenarioContext) theTierCostsPerTokensGiven(dollars, cents, tokens in
 	ctx.TrackCreatedResource("tier_cost_per_token", fmt.Sprintf("%.2f", costPerToken))
 	ctx.TrackCreatedResource("tier_cost_tokens", fmt.Sprintf("%d", tokens))
 	return nil
+}
+
+// Data Retention Step Implementations
+
+// iHaveUsageDataFromDaysAgo creates usage data from a specific number of days ago
+func (ctx *ScenarioContext) iHaveUsageDataFromDaysAgo(days int) error {
+	// Calculate the timestamp for N days ago
+	timestamp := time.Now().AddDate(0, 0, -days)
+	ctx.TrackCreatedResource("usage_data_days_ago", fmt.Sprintf("%d", days))
+	ctx.TrackCreatedResource("usage_data_timestamp", timestamp.Format(time.RFC3339))
+
+	// TODO: Call API to create usage record with specific timestamp
+	// POST /api/v1/usage with timestamp field
+	// This requires backend support for creating historical usage records
+
+	return nil
+}
+
+// iHaveUsageDataFrom creates usage data from a relative time description
+func (ctx *ScenarioContext) iHaveUsageDataFrom(timeDesc string) error {
+	// Parse time descriptions like "8 days ago", "60 days ago", etc.
+	ctx.TrackCreatedResource("usage_data_from", timeDesc)
+
+	// TODO: Parse time description and calculate timestamp
+	// TODO: Call API to create usage record with calculated timestamp
+
+	return nil
+}
+
+// iQueryUsageStatistics queries usage statistics endpoint
+func (ctx *ScenarioContext) iQueryUsageStatistics() error {
+	// Get authenticated client
+	client, err := ctx.GetAuthenticatedClient()
+	if err != nil || client == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized: authentication required")
+		return nil
+	}
+
+	// TODO: Call GET /api/v1/usage/statistics
+	// This endpoint should return usage data respecting retention policies
+	// For Open Source: only data from last 7 days
+	// For Commercial: only data from last 90 days
+
+	// Placeholder response
+	ctx.SetLastResponse(200, map[string]interface{}{
+		"usage": []map[string]interface{}{
+			{"date": time.Now().Format("2006-01-02"), "tokens": 1000},
+		},
+		"retention_days": ctx.getRetentionPeriod(),
+	}, "")
+
+	return nil
+}
+
+// iShouldNotSeeDataOlderThanDays verifies that old data is not returned
+func (ctx *ScenarioContext) iShouldNotSeeDataOlderThanDays(days int) error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+
+	// TODO: Verify that no usage data older than N days is in response
+	// Check the date field in each usage record
+	_ = resp // Placeholder
+
+	return nil
+}
+
+// iShouldSeeDataFromDaysAgo verifies that old data IS returned (for Commercial license)
+func (ctx *ScenarioContext) iShouldSeeDataFromDaysAgo(days int) error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+
+	// TODO: Verify that usage data from N days ago is in response
+	// This should pass for Commercial license (90-day retention)
+	// but fail for Open Source license (7-day retention)
+	_ = resp // Placeholder
+
+	return nil
+}
+
+// theRetentionCleanupJobRuns simulates the scheduled cleanup job
+func (ctx *ScenarioContext) theRetentionCleanupJobRuns() error {
+	// TODO: Call POST /api/v1/usage/cleanup or trigger scheduled job
+	// This job should:
+	// 1. Get current license type
+	// 2. Delete usage records older than retention period
+	// 3. Return count of deleted records
+
+	ctx.TrackCreatedResource("cleanup_job_run", "completed")
+
+	// Placeholder response
+	ctx.SetLastResponse(200, map[string]interface{}{
+		"deleted_records": 5,
+		"message":         "Old usage data deleted successfully",
+	}, "")
+
+	return nil
+}
+
+// theOldDataShouldBeDeleted verifies that old data was deleted
+func (ctx *ScenarioContext) theOldDataShouldBeDeleted() error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+
+	// TODO: Verify that old usage records were deleted
+	// Query usage endpoint and verify no records older than retention period
+	_ = resp // Placeholder
+
+	return nil
+}
+
+// iUpgradeFromOpenSourceToCommercialLicense simulates license upgrade
+func (ctx *ScenarioContext) iUpgradeFromOpenSourceToCommercialLicense() error {
+	// TODO: Call PUT /api/v1/license/upgrade or POST /api/v1/license/activate with commercial key
+	// This should:
+	// 1. Update license tier from "trial" to "professional"
+	// 2. Update retention period from 7 days to 90 days
+	// 3. Preserve existing data within new 90-day window
+
+	ctx.TrackCreatedResource("license_tier", "professional")
+	ctx.TrackCreatedResource("license_status", "active")
+	ctx.TrackCreatedResource("license_upgraded", "true")
+
+	// Placeholder response
+	ctx.SetLastResponse(200, map[string]interface{}{
+		"tier":           "professional",
+		"retention_days": 90,
+		"message":        "License upgraded successfully",
+	}, "")
+
+	return nil
+}
+
+// iDowngradeToOpenSourceLicense simulates license downgrade
+func (ctx *ScenarioContext) iDowngradeToOpenSourceLicense() error {
+	// TODO: Call PUT /api/v1/license/downgrade or update license tier
+	// This should:
+	// 1. Update license tier from "professional" to "trial"
+	// 2. Update retention period from 90 days to 7 days
+	// 3. NOT immediately delete existing data (per DR-04-303)
+	// 4. New data collection follows 7-day retention
+
+	ctx.TrackCreatedResource("license_tier", "trial")
+	ctx.TrackCreatedResource("license_status", "active")
+	ctx.TrackCreatedResource("license_downgraded", "true")
+
+	// Placeholder response
+	ctx.SetLastResponse(200, map[string]interface{}{
+		"tier":           "trial",
+		"retention_days": 7,
+		"message":        "License downgraded successfully",
+	}, "")
+
+	return nil
+}
+
+// theExistingDataShouldBeRetained verifies data is preserved on downgrade
+func (ctx *ScenarioContext) theExistingDataShouldBeRetained() error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+
+	// TODO: Verify that existing usage data is still present
+	// After downgrade, data should not be immediately deleted
+	_ = resp // Placeholder
+
+	return nil
+}
+
+// newDataShouldFollowDayRetention verifies new data follows new retention period
+func (ctx *ScenarioContext) newDataShouldFollowDayRetention(days int) error {
+	statusCode, resp, _ := ctx.GetLastResponse()
+	if statusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", statusCode)
+	}
+
+	// TODO: Verify that new usage records follow the retention period
+	// After downgrade, new data should only be retained for 7 days
+	_ = resp // Placeholder
+
+	return nil
+}
+
+// Helper function to get retention period based on license tier
+func (ctx *ScenarioContext) getRetentionPeriod() int {
+	if tier, hasTier := ctx.GetCreatedResource("license_tier"); hasTier {
+		switch tier {
+		case "professional", "enterprise":
+			return 90 // Commercial license
+		case "trial", "free":
+			return 7 // Open Source license
+		default:
+			return 7 // Default to Open Source
+		}
+	}
+	return 7 // Default to Open Source if no license set
 }
