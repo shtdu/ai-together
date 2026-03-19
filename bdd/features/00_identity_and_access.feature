@@ -84,6 +84,61 @@ Feature: Identity and Access Management
       Then I should receive an "token_expired" error
       And the response status code should be 401
 
+  Rule: User Registration
+
+    Scenario: Register new organization successfully
+      Given I am not authenticated
+      And I have a unique email "newuser@example.com"
+      And I have a strong password "StrongPass123!"
+      When I register a new account
+      Then the response status code should be 201
+      And a new organization should be created
+      And I should receive a valid authentication token
+      And I should be granted the Manager role
+
+    Scenario: Registration creates unique organization name
+      Given I am not authenticated
+      And I have a unique email "orgtest@example.com"
+      When I register a new account
+      Then the organization name should be auto-generated
+
+    Scenario: Registration validates password requirements
+      Given I am not authenticated
+      And I have a unique email "weakpass@example.com"
+      And I have a weak password "short"
+      When I register a new account
+      Then I should receive a 400 error
+      And the error message should contain "password"
+
+    Scenario Outline: Registration password requirements
+      Given I am not authenticated
+      And I have a unique email "passtest@example.com"
+      And I have password "<password>"
+      When I register a new account
+      Then I should receive a 400 error
+
+      Examples:
+        | password |
+        | short |
+        | nouppercase123! |
+        | NOLOWERCASE123! |
+        | NoNumbers! |
+        | NoSpecial123 |
+
+    Scenario: Registration rejects duplicate email
+      Given a user exists with email "existing@example.com"
+      And I am not authenticated
+      When I register with email "existing@example.com"
+      Then I should receive a 400 error
+      And the error message should contain "email already exists"
+
+    Scenario: Registration auto-logs in new user
+      Given I am not authenticated
+      And I have a unique email "autologin@example.com"
+      And I have a strong password "StrongPass123!"
+      When I register a new account
+      Then I should be able to access protected endpoints
+
   Rule: User Profiles
 
     Scenario: Get own profile as manager
