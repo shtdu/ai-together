@@ -575,7 +575,7 @@ Feature: Identity and Access Management
 
     Scenario: Duplicate email in organization
       Given I am logged in as a manager
-      And a user exists with email "duplicate@example.com" and password "TestPassword123!"
+      And a user exists with email "duplicate@example.com"
       When I invite "duplicate@example.com"
       Then I should receive a 400 error
       And the error message should contain "already exists"
