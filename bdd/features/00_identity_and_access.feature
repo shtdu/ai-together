@@ -154,11 +154,11 @@ Feature: Identity and Access Management
         | NoSpecial123 |
 
     Scenario: Registration rejects duplicate email
-      Given a user exists with email "existing@example.com"
+      Given a user exists with email "existing@example.com" and password "TestPassword123!"
       And I am not authenticated
       And I have a unique email "existing@example.com"
       When I register a new account
-      Then I should receive a 400 error
+      And the response status code should be 400
       And the error message should contain "email already exists"
 
     Scenario: Registration auto-logs in new user
