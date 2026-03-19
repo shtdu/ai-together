@@ -169,6 +169,35 @@ Feature: Identity and Access Management
       Then I should receive a valid authentication token
       And I should be able to access my user profile
 
+  Rule: Password Reset
+
+    Scenario: Request password reset email
+      Given a user exists with email "reset@example.com" and password "TestPassword123!"
+      When I request a password reset
+      Then the response status code should be 200
+      And a reset token should be generated
+      And the reset token should expire in 1 hour
+
+    Scenario: Reset password with valid token
+      Given a user exists with email "validreset@example.com" and password "TestPassword123!"
+      And I have a valid reset token
+      When I reset password to "NewPassword123!"
+      Then the response status code should be 200
+      And I can login with the new password
+
+    Scenario: Reset password with expired token
+      Given a user exists with email "expired@example.com" and password "TestPassword123!"
+      And I have an expired reset token
+      When I attempt to reset password
+      Then I should receive a 400 error
+      And the error message should contain "expired"
+
+    Scenario: Reset password with invalid token
+      Given I have an invalid reset token
+      When I attempt to reset password
+      Then I should receive a 400 error
+      And the error message should contain "invalid"
+
   Rule: User Profiles
 
     Scenario: Get own profile as manager
