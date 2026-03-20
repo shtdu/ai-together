@@ -144,6 +144,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Validate password strength
+	if err := ValidatePasswordStrength(req.Password); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Password must contain at least 8 characters, including uppercase, lowercase, number, and special character",
+			Code:  models.ErrCodeInvalidPassword,
+		})
+		return
+	}
+
 	// For now, assume a default tenant_id of 1 for new users
 	// In a real application, you'd either create a new tenant or assign to an appropriate one
 	tenantID := int64(1)

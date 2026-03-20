@@ -69,6 +69,7 @@ const (
 	ErrCodeBusinessRule       = "BUSINESS_RULE_VIOLATION"
 	ErrCodeInternal           = "INTERNAL_ERROR"
 	ErrCodeServiceUnavailable = "SERVICE_UNAVAILABLE"
+	ErrCodeInvalidPassword    = "invalid_password"
 )
 
 // Common error responses

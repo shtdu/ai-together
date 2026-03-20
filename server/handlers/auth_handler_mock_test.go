@@ -483,7 +483,7 @@ func TestRegisterHandler_Success(t *testing.T) {
 	mockService := new(MockUserService)
 
 	testUser := createTestUser(1, "newuser@example.com", "New User", "member", 1)
-	mockService.On("CreateUser", "newuser@example.com", "password123", "New User", "member", int64(1)).
+	mockService.On("CreateUser", "newuser@example.com", "Password123!", "New User", "member", int64(1)).
 		Return(testUser, nil)
 
 	handler := NewAuthHandler(mockService, nil)
@@ -491,7 +491,7 @@ func TestRegisterHandler_Success(t *testing.T) {
 
 	reqBody := map[string]interface{}{
 		"email":    "newuser@example.com",
-		"password": "password123",
+		"password": "Password123!",
 		"name":     "New User",
 	}
 	body, _ := json.Marshal(reqBody)
@@ -517,7 +517,7 @@ func TestRegisterHandler_Success(t *testing.T) {
 func TestRegisterHandler_UserExists(t *testing.T) {
 	mockService := new(MockUserService)
 
-	mockService.On("CreateUser", "existing@example.com", "password123", "Existing User", "member", int64(1)).
+	mockService.On("CreateUser", "existing@example.com", "Password123!", "Existing User", "member", int64(1)).
 		Return(nil, assert.AnError)
 
 	handler := NewAuthHandler(mockService, nil)
@@ -525,7 +525,7 @@ func TestRegisterHandler_UserExists(t *testing.T) {
 
 	reqBody := map[string]interface{}{
 		"email":    "existing@example.com",
-		"password": "password123",
+		"password": "Password123!",
 		"name":     "Existing User",
 	}
 	body, _ := json.Marshal(reqBody)
