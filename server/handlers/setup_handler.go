@@ -22,8 +22,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"switch-server/models"
 	"golang.org/x/crypto/bcrypt"
+	"switch-server/models"
 )
 
 type SetupHandler struct {
