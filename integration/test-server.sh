@@ -75,7 +75,7 @@ mkdir -p covdata
 go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover .
 # Run the test binary with coverage collection to a file
 # Use process ID to create unique coverage file name
-TEST_COVERAGE_SERVER=1 ./bin/codetogether_test.cover -test.v -test.run TestCoverageServer -test.coverprofile=covdata/coverage.$$ &
+TEST_COVERAGE_SERVER=1 PORT=8088 ./bin/codetogether_test.cover -test.v -test.run TestCoverageServer -test.coverprofile=covdata/coverage.$$ &
 SERVER_PID=$!
 popd
 

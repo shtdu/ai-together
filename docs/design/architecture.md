@@ -1647,7 +1647,7 @@ p = member, usage, read
 ---
 
 ## Related Documentation
-- **License Types:** `vibe_doc/01_identity_and_access/04_licensing/` - Open Source and Commercial license features
+- **License Types:** `docs/ears/01_identity_and_access/04_licensing/` - Open Source and Commercial license features
 - **Database Schema:** `docs/production/database_schema.md` - ERD and table structures
 
 ### Implementation

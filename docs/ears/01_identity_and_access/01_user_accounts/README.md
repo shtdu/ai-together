@@ -47,12 +47,13 @@ Allow users to securely access the system with appropriate permissions based on 
 #### Event-Driven Requirements (Invitation Workflow)
 
 - **UA-01-201:** `When a manager enters a team member's email address, the system shall send an invitation email.`
-- **UA-01-202:** `When a manager sends an invitation, the system shall create an invitation link.`
-- **UA-01-203:** `When a manager sends an invitation, the system shall set the invitation to expire after 7 days.`
-- **UA-01-204:** `When an invited user clicks the invitation link, the system shall display the password setup form.`
-- **UA-01-205:** `When an invited user sets their password, the system shall add the user to the organization with Member role.`
-- **UA-01-206:** `When an invited user completes setup, the system shall allow the user to log in.`
-- **UA-01-207:** `When a manager requests to cancel a pending invitation, the system shall invalidate the invitation link.`
+- **UA-01-202:** `When a manager sends an invitation, the system shall deliver the invitation email within 30 seconds.`
+- **UA-01-203:** `When a manager sends an invitation, the system shall create an invitation link.`
+- **UA-01-204:** `When a manager sends an invitation, the system shall set the invitation to expire after 7 days.`
+- **UA-01-205:** `When an invited user clicks the invitation link, the system shall display the password setup form.`
+- **UA-01-206:** `When an invited user sets their password, the system shall add the user to the organization with Member role.`
+- **UA-01-207:** `When an invited user completes setup, the system shall allow the user to log in.`
+- **UA-01-208:** `When a manager requests to cancel a pending invitation, the system shall invalidate the invitation link.`
 
 #### Unwanted Behaviour Requirements (Invitation Errors)
 
