@@ -16,7 +16,8 @@ The `go.mod` file uses local module replacements to import sibling modules durin
 
 ```go
 replace github.com/code-together/shared => ../shared
-replace github.com/code-together/integration => ../integration
+replace github.com/code-together/integration => ../shared/integration
+replace github.com/code-together/integration_manager => ../shared/integration_manager
 ```
 
 **Important:** These replacements assume a specific directory structure relative to the main monorepo. When working in this worktree, the relative paths point to the parent directories.
@@ -369,7 +370,7 @@ make integration-setup    # Recreate test database
 
 ## Implementation Status
 
-**All 8 phases complete** (202 scenarios):
+**All 8 phases complete** (212 scenarios):
 - ✅ Phase 1: Foundation Setup (2 scenarios)
 - ✅ Phase 2: Authentication & Users (79 scenarios)
   - Registration workflows (6 scenarios)
@@ -386,27 +387,31 @@ make integration-setup    # Recreate test database
 - ✅ Phase 7: System Behaviors (6 scenarios)
 - ✅ Phase 8: Documentation & Polish
 
-**New Step Definition Files:**
+**Step Definition Files:**
 - `invitation_steps.go` - Team invitation workflows
 - `password_reset_steps.go` - Password reset flows
-- Enhanced `auth_steps.go` - Registration and lockout scenarios
-- Enhanced `license_steps.go` - Team limit enforcement
-- Enhanced `usage_steps.go` - Data retention by license
-- Enhanced `user_steps.go` - Last manager protection
+- `auth_steps.go` - Registration, login, and lockout scenarios
+- `license_steps.go` - License and team limit enforcement
+- `usage_steps.go` - Usage analytics and data retention
+- `user_steps.go` - User management and last manager protection
+- `provider_steps.go` - Provider CRUD operations
+- `permission_steps.go` - RBAC and permission checks
+- `dashboard_steps.go` - Dashboard operations
+- `health_steps.go` - System health checks
 
 **Current Status:**
-- Total scenarios: 202
-- Passing: ~179 (88.6%)
-- @wip (pending backend): ~23 (11.4%)
+- Total scenarios: 212
+- Passing: 198 (93.4%)
+- Failing: 13 (6.6%) - backend implementation gaps
+- @wip (skipped): 24 - requires commercial license or backend features
 
-**Note:** @wip scenarios require backend API implementations:
-- Registration endpoint
-- Account lockout tracking
-- Password reset token generation
-- Team invitation email sending
-- Last manager protection validation
-- Team limit enforcement
-- Data retention cleanup jobs
+**Note:** Failing scenarios require backend API implementations:
+- Account lockout tracking (4 scenarios)
+- Password validation on registration (5 scenarios)
+- Password reset token validation (1 scenario)
+- Invitation expiration handling (1 scenario)
+- Member invitation permission check (1 scenario)
+- Last manager protection validation (1 scenario)
 
 ## Dependencies
 
@@ -425,5 +430,4 @@ make integration-setup    # Recreate test database
 
 - [BDD Test Suite README](README.md) - User-facing documentation
 - [Integration Test Setup](../integration/INTEGRATION_TEST_SETUP.md) - Test database and server setup
-- [BDD Implementation Design](../docs/superpowers/specs/2025-03-16-bdd-test-implementation-design.md) - Design document
 - [Godog Framework](https://github.com/cucumber/godog) - Official documentation
