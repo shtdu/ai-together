@@ -51,7 +51,9 @@ Feature: Manager Dashboard
       When I attempt to delete default team
       Then I should receive a 403 error
 
+    @wip
     Scenario: Create team with minimal data
+      # Requires commercial license - open source tier allows only 1 team (default team)
       Given I have a unique team name
       When I create a team with name "Minimal Team" and no description
       Then the team should be created

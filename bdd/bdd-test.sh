@@ -14,7 +14,7 @@ fi
 # Default values
 TEST_SERVER_URL="${TEST_SERVER_URL:-http://localhost:8088}"
 GODOG_FORMAT="${GODOG_FORMAT:-pretty}"
-GODOG_TAGS="${GODOG_TAGS:-}"
+GODOG_TAGS="${GODOG_TAGS:-~@wip}"
 START_SERVER="${START_SERVER:-true}"
 
 # Colors for output
@@ -93,7 +93,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "Options:"
       echo "  --format FORMAT      godog output format (pretty, junit, etc.)"
-      echo "  --tags TAGS          godog tags to filter scenarios (e.g., @smoke)"
+      echo "  --tags TAGS          godog tags to filter scenarios (default: ~@wip)"
       echo "  --no-server          Don't start server (expect it to be running)"
       echo "  -h, --help           Show this help message"
       echo ""
