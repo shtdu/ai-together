@@ -31,32 +31,32 @@ The constitution captures the foundational principles that govern all technical 
 
 ## Product Requirements (Single Source of Truth)
 
-**IMPORTANT:** All product requirements, user stories, and feature specifications are maintained in **`vibe_doc/`**.
+**IMPORTANT:** All product requirements, user stories, and feature specifications are maintained in **`docs/ears/`**.
 
-The `vibe_doc/` directory contains MECE-structured (Mutually Exclusive, Collectively Exhaustive) product documentation organized by domain. This is the **single source of truth** for:
+The `docs/ears/` directory contains EARS syntax requirements (Easy Approach to Requirements Syntax) organized using MECE principles (Mutually Exclusive, Collectively Exhaustive) by domain. This is the **single source of truth** for:
 - What features the system should have
 - User personas and use cases
 - Functional requirements and acceptance criteria
 - Business rules and constraints
 - Privacy, security, and compliance requirements
 
-### Product Domains (`vibe_doc/`)
+### Product Domains (`docs/ears/`)
 
 | ID | Domain | Folder | Key Topics |
 |----|--------|--------|------------|
-| 00 | Product Overview | `vibe_doc/00_overview/` | Value proposition, user personas, capabilities overview |
-| 01 | Identity & Access | `vibe_doc/01_identity_and_access/` | User accounts, roles/permissions, multi-tenancy, licensing |
-| 02 | Provider Management | `vibe_doc/02_provider_management/` | Provider configuration, request routing, model mapping |
-| 03 | Configuration Sync | `vibe_doc/03_configuration_sync/` | Distribution to members, teams, offline mode |
-| 04 | Usage Insights | `vibe_doc/04_usage_insights/` | Data collection, personal/team analytics, cost tracking, retention |
-| 05 | User Interfaces | `vibe_doc/05_user_interfaces/` | Member desktop app, manager dashboard, accessibility |
-| 06 | System Behaviors | `vibe_doc/06_system_behaviors/` | Privacy, security, performance, compliance |
+| 00 | Product Overview | `docs/ears/00_overview/` | Value proposition, user personas, capabilities overview |
+| 01 | Identity & Access | `docs/ears/01_identity_and_access/` | User accounts, roles/permissions, multi-tenancy, licensing |
+| 02 | Provider Management | `docs/ears/02_provider_management/` | Provider configuration, request routing, model mapping |
+| 03 | Configuration Sync | `docs/ears/03_configuration_sync/` | Distribution to members, teams, offline mode |
+| 04 | Usage Insights | `docs/ears/04_usage_insights/` | Data collection, personal/team analytics, cost tracking, retention |
+| 05 | User Interfaces | `docs/ears/05_user_interfaces/` | Member desktop app, manager dashboard, accessibility |
+| 06 | System Behaviors | `docs/ears/06_system_behaviors/` | Privacy, security, performance, compliance |
 
-**See:** [`vibe_doc/README.md`](vibe_doc/README.md) for complete documentation map.
+**See:** [`docs/ears/spec.md`](docs/ears/spec.md) for complete documentation map.
 
-### When to Reference `vibe_doc/`
+### When to Reference `docs/ears/`
 
-- **Before implementing features:** Check `vibe_doc/` for functional requirements and acceptance criteria
+- **Before implementing features:** Check `docs/ears/` for functional requirements and acceptance criteria
 - **When defining user stories:** Reference user persona definitions in `00_overview/`
 - **For permission checks:** See `01_identity_and_access/02_roles_permissions/`
 - **For license-dependent features:** See `01_identity_and_access/04_licensing/`
@@ -68,11 +68,11 @@ This project uses a three-tier documentation structure:
 
 | Tier | Location | Purpose | Audience |
 |------|----------|---------|----------|
-| **Product Requirements** | `vibe_doc/` | WHAT to build (features, user stories, acceptance criteria) | PMs, stakeholders, engineers |
+| **Product Requirements** | `docs/ears/` | WHAT to build (features, user stories, acceptance criteria) | PMs, stakeholders, engineers |
 | **Technical Design** | `docs/design/` | HOW to architect (principles, patterns, system design) | Engineers, architects |
 | **Implementation Guides** | `*/CLAUDE.md` | HOW to code (module-specific patterns, workflows) | Engineers |
 
-**Workflow:** When implementing features, start with product requirements (`vibe_doc/`), reference technical design (`docs/design/`) for architectural guidance, and consult module guides (`*/CLAUDE.md`) for implementation specifics.
+**Workflow:** When implementing features, start with product requirements (`docs/ears/`), reference technical design (`docs/design/`) for architectural guidance, and consult module guides (`*/CLAUDE.md`) for implementation specifics.
 
 ## Project Overview
 
@@ -310,14 +310,14 @@ cd manager && pnpm lint  # Lint TypeScript
 - `server/README.md` - Server RBAC permissions and setup
 
 ### Product Requirements
-- `vibe_doc/README.md` - **Product documentation index (single source of truth)**
-- `vibe_doc/00_overview/` - Product overview, user personas, value proposition
-- `vibe_doc/01_identity_and_access/` - User accounts, roles, multi-tenancy, licensing
-- `vibe_doc/02_provider_management/` - Provider configuration and routing
-- `vibe_doc/03_configuration_sync/` - Configuration distribution and teams
-- `vibe_doc/04_usage_insights/` - Analytics and cost tracking
-- `vibe_doc/05_user_interfaces/` - Member app and manager dashboard specs
-- `vibe_doc/06_system_behaviors/` - Privacy, security, performance, compliance
+- `docs/ears/spec.md` - **EARS specification index (single source of truth)**
+- `docs/ears/00_overview/` - Product overview, user personas, value proposition
+- `docs/ears/01_identity_and_access/` - User accounts, roles, multi-tenancy, licensing
+- `docs/ears/02_provider_management/` - Provider configuration and routing
+- `docs/ears/03_configuration_sync/` - Configuration distribution and teams
+- `docs/ears/04_usage_insights/` - Analytics and cost tracking
+- `docs/ears/05_user_interfaces/` - Member app and manager dashboard specs
+- `docs/ears/06_system_behaviors/` - Privacy, security, performance, compliance
 
 ### Technical Design (Architecture & Constitution)
 

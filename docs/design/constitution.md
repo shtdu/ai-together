@@ -197,7 +197,7 @@ When making architectural decisions:
 ## Related Documents
 
 - **Architecture:** `docs/design/architecture.md` - Detailed system design
-- **License Types:** `vibe_doc/01_identity_and_access/04_licensing/` - Open Source and Commercial license features
+- **License Types:** `docs/ears/01_identity_and_access/04_licensing/` - Open Source and Commercial license features
 - **API Spec:** `docs/client_api/server_api.yaml` - OpenAPI specification
 - **Module Docs:** `server/CLAUDE.md`, `member/CLAUDE.md`, `manager/CLAUDE.md`
 
