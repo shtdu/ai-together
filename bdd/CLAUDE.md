@@ -98,6 +98,36 @@ go mod download       # Download dependencies
 go mod tidy           # Tidy dependencies
 ```
 
+### Fast Test Cycles with @wip
+
+The test suite excludes `@wip` tagged scenarios by default for faster iteration:
+
+```bash
+# Default: runs all scenarios EXCEPT @wip (faster)
+./bdd-test.sh                          # Excludes @wip by default
+
+# Include @wip scenarios (for testing work-in-progress)
+./bdd-test.sh --tags ""                # Run ALL scenarios including @wip
+
+# Run ONLY @wip scenarios (for focused testing)
+./bdd-test.sh --tags "@wip"            # Run just @wip scenarios
+```
+
+**When to use @wip:**
+- Scenarios requiring commercial license (team creation beyond 1 team)
+- Scenarios requiring backend features not yet implemented
+- Scenarios under active development
+
+**To mark a scenario as @wip:**
+```gherkin
+@wip
+Scenario: Create additional team
+  # Requires commercial license - open source tier allows only 1 team
+  Given I am logged in as a manager
+  When I create a team with name "Second Team"
+  Then the team should be created
+```
+
 ## Core Architecture Patterns
 
 ### 1. Test Context Hierarchy

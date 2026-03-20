@@ -8,9 +8,8 @@ This BDD test suite converts existing integration tests into Gherkin scenarios t
 
 ## Prerequisites
 
-- Go 1.24+
+- Go 1.25+
 - PostgreSQL 14+ (for test database)
-- Access to AI Together codebase
 - Test server running or auto-start capability
 
 ## Quick Start
@@ -221,86 +220,26 @@ make integration-setup
 make deps
 ```
 
-## Implementation Status
+## Test Coverage
 
-**All 8 Phases Complete! ✅**
+| Domain | Scenarios |
+|--------|-----------|
+| Authentication & Users | 79 |
+| Provider Management | 24 |
+| Usage Analytics | 63 |
+| Dashboard & Permissions | 28 |
+| System Behaviors | 6 |
+| Infrastructure | 2 |
+| **Total** | **212** |
 
-✅ **Phase 1: Foundation Setup** - Module, test context, server lifecycle, first scenario (2 scenarios)
-✅ **Phase 2: Authentication & Users** - 79 scenarios (Auth, Registration, Lockout, Password Reset, Invitations, Last Manager, Team Limits)
-✅ **Phase 3: Provider Management** - 24 scenarios (CRUD, Limits, Connectivity)
-✅ **Phase 4: License Management** - Included in Phase 2 (team limits)
-✅ **Phase 5: Usage Analytics** - 63 scenarios (Upload, Aggregation, Filtering, Costs, Data Retention)
-✅ **Phase 6: Dashboard & Permissions** - 28 scenarios (Teams, Users, Dashboard, RBAC)
-✅ **Phase 7: System Behaviors** - 6 scenarios (Health Checks, Readiness)
-✅ **Phase 8: Documentation & Polish** - Complete documentation
-
-**Total: 202 BDD scenarios across 8 phases**
-
-### New Scenarios Added (Latest Implementation)
-
-Added ~30 new scenarios addressing critical EARS requirements gaps:
-
-| Domain | Feature | Scenarios | Status |
-|--------|---------|-----------|--------|
-| Identity & Access | User Registration | 6 | ✅ Complete |
-| Identity & Access | Account Lockout | 4 | ✅ Complete |
-| Identity & Access | Password Reset | 4 | ✅ Complete |
-| Identity & Access | Team Invitations | 8 | ✅ Complete |
-| Identity & Access | Last Manager Protection | 3 | ✅ Complete |
-| License | Team Limits | 3 | ✅ Complete |
-| Usage Insights | Data Retention | 5 | ✅ Complete |
-
-### Current Test Results
-
-| Metric | Status |
-|--------|--------|
-| **Total Scenarios** | 202 |
-| **Passing** | ~179 (88.6%) |
-| **Pending (@wip)** | ~23 (11.4%) |
-| **Non-@wip Passing** | ~179/179 (100%) ✅ |
-
-**Note:** The 23 @wip scenarios require backend API implementations:
-- User registration endpoint
-- Account lockout tracking and enforcement
-- Password reset token generation and validation
-- Team invitation email delivery
-- Last manager protection validation
-- Team limit enforcement by license tier
-- Data retention cleanup jobs
-
-See [BDD_VS_EARS_REQUIREMENTS_REVIEW.md](./docs/BDD_VS_EARS_REQUIREMENTS_REVIEW.md) for detailed coverage analysis.
+**Current Status:** 198 passing (93%), 13 failing (backend gaps), 24 skipped (@wip)
 
 ## Documentation
 
-### For Developers
-- **[CLAUDE.md](./CLAUDE.md)** - Development guide for working with BDD tests
-- **[README.md](./README.md)** - This file (quick start, structure, commands)
-
-### For Test Engineers
-- **[TEST_REVIEW_SUMMARY.md](./TEST_REVIEW_SUMMARY.md)** - Comprehensive test suite review and comparison with integration tests
-- **[BDD_VS_INTEGRATION_COMPARISON.md](./BDD_VS_INTEGRATION_COMPARISON.md)** - Detailed coverage comparison
-- **[INTEGRATION_PATTERNS_ADOPTED.md](./INTEGRATION_PATTERNS_ADOPTED.md)** - Patterns learned from integration tests
-
-### For Server Team
-- **[SERVER_ACTION_ITEMS.md](./SERVER_ACTION_ITEMS.md)** - Server bugs discovered by BDD tests (RBAC, license limits)
-- **[ROLE_ASSIGNMENT_INVESTIGATION.md](./ROLE_ASSIGNMENT_INVESTIGATION.md)** - Role assignment mechanism investigation
-
-### Historical
-- **[BDD_FAILURES_ANALYSIS.md](./BDD_FAILURES_ANALYSIS.md)** - Analysis of test failures
-- **[BDD_FIX_REFERENCE.md](./BDD_FIX_REFERENCE.md)** - Reference guide for fixing common issues
+- **[CLAUDE.md](./CLAUDE.md)** - Development guide for extending the test suite
+- **[Integration Tests](../integration/)** - Related integration test module
 
 ## External References
 
-- [Design Document](../docs/superpowers/specs/2025-03-16-bdd-test-implementation-design.md)
-- [Implementation Plan](../docs/superpowers/specs/2025-03-16-bdd-implementation-plan.md)
 - [Godog Framework](https://github.com/cucumber/godog)
 - [Gherkin Syntax](https://cucumber.io/docs/gherkin/)
-- [Integration Tests](../integration/)
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for BDD contribution guidelines.
-
-## License
-
-[Add license information]
