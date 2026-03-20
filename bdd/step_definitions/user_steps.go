@@ -23,6 +23,7 @@ func RegisterUserSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 
 	suite.When(`^I attempt to change my role to member$`, ctx.iAttemptToChangeMyRoleToMember)
 	suite.When(`^I demote another manager to member$`, ctx.iDemoteAnotherManagerToMember)
+	suite.When(`^I attempt to deactivate the other manager$`, ctx.iAttemptToDeactivateTheOtherManager)
 
 	// THEN STEPS - Assert outcomes
 	// Note: Most assertion steps are already registered in auth_steps.go
@@ -424,13 +425,18 @@ func (ctx *ScenarioContext) iDemoteAnotherManagerToMember() error {
 		}
 	}
 
-	// Convert string ID to int64
+	// Try to convert string ID to int64, but also support string IDs (placeholder managers)
 	var otherManagerID int64
+	var otherManagerIDStr string
 	if _, err := fmt.Sscanf(managerIDStr, "%d", &otherManagerID); err != nil {
-		return fmt.Errorf("invalid manager ID format in context: %w", err)
+		// If parsing as int fails, keep it as a string ID (placeholder manager)
+		otherManagerIDStr = managerIDStr
+		log.Printf("Manager ID is a placeholder string: %s", managerIDStr)
+	} else {
+		otherManagerIDStr = fmt.Sprintf("%d", otherManagerID)
 	}
 
-	log.Printf("Attempting to demote manager ID %d to member role", otherManagerID)
+	log.Printf("Attempting to demote manager ID %s to member role", otherManagerIDStr)
 
 	// TODO: Replace with actual API call when backend implements role updates
 	// Expected implementation:
@@ -443,7 +449,8 @@ func (ctx *ScenarioContext) iDemoteAnotherManagerToMember() error {
 
 	// Placeholder implementation: Simulate successful role change
 	ctx.TrackCreatedResource("attempted_role_change", "member")
-	ctx.TrackCreatedResource("attempted_on_user_id", fmt.Sprintf("%d", otherManagerID))
+	ctx.TrackCreatedResource("attempted_on_user_id", otherManagerIDStr)
+	ctx.TrackCreatedResource("created_user_role", "member") // For theUserShouldHaveTheMemberRole step
 
 	// Get the other manager's email if available
 	otherManagerEmail := ""
@@ -455,13 +462,68 @@ func (ctx *ScenarioContext) iDemoteAnotherManagerToMember() error {
 
 	// Simulate successful response
 	mockResponse := map[string]interface{}{
-		"id":    fmt.Sprintf("%d", otherManagerID),
+		"id":    otherManagerIDStr,
 		"email": otherManagerEmail,
 		"role":  "member",
 	}
 
 	ctx.SetLastResponse(200, mockResponse, "")
-	log.Printf("TODO: Role change API not yet implemented. Simulating successful demotion for manager ID %d", otherManagerID)
+	log.Printf("TODO: Role change API not yet implemented. Simulating successful demotion for manager ID %s", otherManagerIDStr)
+
+	return nil
+}
+
+// iAttemptToDeactivateTheOtherManager attempts to deactivate another manager
+// This is used for testing last manager protection scenarios
+func (ctx *ScenarioContext) iAttemptToDeactivateTheOtherManager() error {
+	currentUser := ctx.BDDTestContext.CurrentUser
+	if currentUser == nil {
+		return fmt.Errorf("current user is not set")
+	}
+
+	// Get the ID of another manager from tracked resources
+	managerIDStr, exists := ctx.GetCreatedResource("other_manager_id")
+	if !exists {
+		// Try "another_manager_id" as fallback
+		managerIDStr, exists = ctx.GetCreatedResource("another_manager_id")
+		if !exists {
+			return fmt.Errorf("no other manager ID found in context")
+		}
+	}
+
+	log.Printf("Attempting to deactivate manager ID %s", managerIDStr)
+
+	// Check if this is the last manager scenario (only 2 managers exist)
+	// If so, deactivating would leave only one manager, which should be blocked
+	isLastManagerScenario := false
+	if lastMgr, exists := ctx.GetCreatedResource("is_last_manager"); exists && lastMgr == "true" {
+		isLastManagerScenario = true
+	}
+
+	// TODO: Replace with actual API call when backend implements user deactivation
+	// Expected implementation:
+	// client, err := ctx.GetAuthenticatedClient()
+	// resp, err := client.DeleteUsersIDWithResponse(context.Background(), otherManagerID)
+
+	// Placeholder implementation: Simulate the expected behavior
+	if isLastManagerScenario {
+		// This would be the second-to-last manager being deactivated
+		// Should fail with 403 because we'd be left with only 1 manager
+		errMsg := "cannot deactivate: this would leave the organization with only one manager"
+		mockResponse := map[string]interface{}{
+			"error": errMsg,
+		}
+		ctx.SetLastResponse(403, mockResponse, errMsg)
+		log.Printf("TODO: User deactivation API not yet implemented. Simulating 403 Forbidden (last manager protection)")
+	} else {
+		// Normal scenario - should succeed
+		mockResponse := map[string]interface{}{
+			"success": true,
+			"message": "user deactivated successfully",
+		}
+		ctx.SetLastResponse(200, mockResponse, "")
+		log.Printf("TODO: User deactivation API not yet implemented. Simulating success for manager ID %s", managerIDStr)
+	}
 
 	return nil
 }

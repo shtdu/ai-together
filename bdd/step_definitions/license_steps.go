@@ -59,6 +59,7 @@ func RegisterLicenseSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.When(`^I attempt to create another team$`, ctx.iAttemptToCreateAnotherTeam)
 	suite.When(`^I create another team$`, ctx.iCreateAnotherTeam)
 	suite.When(`^I attempt to create a new team$`, ctx.iAttemptToCreateAnotherTeam)
+	suite.When(`^I upgrade from Open Source to Commercial license$`, ctx.iUpgradeFromOpenSourceToCommercialLicense)
 
 	// THEN STEPS - Assert outcomes
 
@@ -470,8 +471,14 @@ func (ctx *ScenarioContext) iRenewTheLicense() error {
 }
 
 func (ctx *ScenarioContext) iAttemptToCreateAUser() error {
-	// Check permission - only admins can create users
-	if ctx.BDDTestContext.CurrentUser == nil || ctx.BDDTestContext.CurrentUser.Role != support.RoleAdmin {
+	// Check permission - admins and managers can create users
+	if ctx.BDDTestContext.CurrentUser == nil {
+		ctx.SetLastResponse(401, nil, "unauthorized")
+		return nil
+	}
+
+	userRole := ctx.BDDTestContext.CurrentUser.Role
+	if userRole != support.RoleAdmin && userRole != "manager" {
 		ctx.SetLastResponse(403, nil, "permission denied")
 		return nil
 	}
