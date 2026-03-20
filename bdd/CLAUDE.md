@@ -128,6 +128,80 @@ Scenario: Create additional team
   Then the team should be created
 ```
 
+## EARS Metadata Tagging
+
+BDD scenarios are annotated with metadata tags for better test organization and CI/CD filtering.
+
+### Tag Format
+
+| Tag | Format | Example |
+|-----|--------|---------|
+| Requirement ID | `@requirement:ID` | `@requirement:IA-01-001` |
+| Priority | `@p0` / `@p1` / `@p2` / `@p3` | `@p0` (critical) |
+| Work in Progress | `@wip` | (existing) |
+| License required | `@license:commercial` | `@license:commercial` |
+
+### Priority Levels
+
+- **@p0** - Critical/Blocker: Must pass for any release (smoke tests)
+- **@p1** - High: Core functionality
+- **@p2** - Medium: Standard features
+- **@p3** - Low: Edge cases, nice-to-have
+
+### EARS Requirement ID Format
+
+Requirement IDs follow the pattern: `[Domain]-[Subdomain]-[Number]`
+
+| Domain | Prefix | Subdomains |
+|--------|--------|------------|
+| Identity & Access | `IA` | 01-User Accounts, 02-Roles, 03-Multi-Tenancy, 04-Licensing, 05-Teams, 06-Protection |
+| Provider Management | `PM` | 02-Connectivity, 02-CRUD |
+| Usage Insights | `UI` | 03-Data Collection, 03-Aggregation, 03-Analytics |
+| System Behaviors | `SB` | 05-Health, 05-Security |
+
+Examples:
+- `IA-01-001` - Identity & Access, User Accounts, req 001 (Login)
+- `PM-02-001` - Provider Management, Connectivity, req 001 (Create provider)
+- `UI-03-001` - Usage Insights, Data Collection, req 001 (Upload usage)
+
+### Annotating Scenarios
+
+Add tags above scenarios:
+
+```gherkin
+@p0 @requirement:IA-01-001
+Scenario: Login with valid credentials
+  Given a user exists with email "manager@example.com"
+  When I login with email "manager@example.com"
+  Then I should receive a valid authentication token
+
+@wip @p1 @requirement:PM-02-003 @license:commercial
+Scenario: Create additional provider beyond limit
+  # Requires commercial license
+  Given I am logged in as a manager
+  When I create a provider
+  Then the operation should succeed
+```
+
+### Running Tests by Tag
+
+```bash
+# Run critical smoke tests (p0)
+./bdd-test.sh --tags "@p0"
+
+# Run p0 and p1 (recommended for CI)
+./bdd-test.sh --tags "@p0 or @p1"
+
+# Run specific requirement
+./bdd-test.sh --tags "@requirement:IA-01-001"
+
+# Run all except @wip (default)
+./bdd-test.sh
+
+# Run including @wip scenarios
+./bdd-test.sh --tags ""
+```
+
 ## Core Architecture Patterns
 
 ### 1. Test Context Hierarchy

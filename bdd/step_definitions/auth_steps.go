@@ -1687,11 +1687,11 @@ func (ctx *ScenarioContext) iHaveFailedToLoginTimes(times int) error {
 	}
 
 	// Get or create test credentials for this scenario
-	testEmail, testPassword := ctx.GetTestCredentials()
+	testEmail, _ := ctx.GetTestCredentials()
 	if testEmail == "" {
 		// No credentials set yet, create a test user
 		testEmail = support.GenerateUniqueEmail("partial-fail-user")
-		testPassword = "TestPassword123!"
+		testPassword := "TestPassword123!"
 
 		client := ctx.GetAnonymousClient()
 		if client == nil {
