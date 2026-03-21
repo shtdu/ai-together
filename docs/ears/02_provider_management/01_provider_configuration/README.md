@@ -182,4 +182,4 @@ Allow managers to set up AI providers for each tool (Claude, Codex, OpenCode), w
 
 ---
 
-**Related:** [02.02 Request Routing](../02_request_routing/) | [02.03 Model Mapping](../03_model_mapping/) | [01.04 Licensing](../../01_identity_and_access/04_licensing/) | [Domain 02 Overview](../README.md)
+**Related:** [02.02 Request Routing](../02_request_routing/) | [02.03 Model Mapping](../03_model_mapping/) | [02.04 Server Relay](../04_server_relay/) | [01.04 Licensing](../../01_identity_and_access/04_licensing/) | [Domain 02 Overview](../README.md)

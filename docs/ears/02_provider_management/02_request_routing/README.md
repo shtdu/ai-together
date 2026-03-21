@@ -192,4 +192,4 @@ A provider is considered to have failed if:
 
 ---
 
-**Related:** [02.01 Provider Configuration](../01_provider_configuration/) | [02.03 Model Mapping](../03_model_mapping/) | [06.03 Performance](../../06_system_behaviors/03_performance/) | [Domain 02 Overview](../README.md)
+**Related:** [02.01 Provider Configuration](../01_provider_configuration/) | [02.03 Model Mapping](../03_model_mapping/) | [02.04 Server Relay](../04_server_relay/) | [06.03 Performance](../../06_system_behaviors/03_performance/) | [Domain 02 Overview](../README.md)
