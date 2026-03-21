@@ -178,9 +178,9 @@ The `.github/workflows/release.yml` workflow handles:
 
 | Platform | Architecture | Output |
 |----------|--------------|--------|
-| macOS | arm64 (Apple Silicon) | `codeswitch-macos-arm64.zip` |
-| macOS | amd64 (Intel) | `codeswitch-macos-amd64.zip` |
-| Windows | amd64 | `CodeSwitch-amd64-installer.exe`, `CodeSwitch.exe` |
+| macOS | arm64 (Apple Silicon) | `codetogether-macos-arm64.zip` |
+| macOS | amd64 (Intel) | `codetogether-macos-amd64.zip` |
+| Windows | amd64 | `CodeTogether-amd64-installer.exe`, `CodeTogether.exe` |
 
 ### Build Steps (per platform)
 1. Checkout code
