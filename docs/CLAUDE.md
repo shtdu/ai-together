@@ -7,9 +7,8 @@ This directory contains all project documentation, organized into distinct categ
 ```
 docs/
 ├── ears/           # Single Source of Truth for REQUIREMENTS
-├── spec/           # (Legacy) MECE product documentation
 ├── design/         # Technical architecture and design principles
-└── review_summary.md
+└── QMD.md          # QMD knowledge base setup
 ```
 
 ## Single Source of Truth for Requirements: `ears/`
@@ -61,14 +60,6 @@ See `ears/CLAUDE.md` for detailed EARS syntax and writing guidelines.
 | `architecture.md` | System architecture, data flows, security, deployment |
 
 Read `design/constitution.md` **before** making architectural decisions.
-
-### `spec/` - Legacy Product Documentation
-
-The `spec/` directory contains older MECE-structured documentation. **This is superseded by `ears/`.**
-
-- Use `spec/` only for historical reference
-- Do not add new requirements to `spec/`
-- Migrate content to `ears/` when updating requirements
 
 ## Quick Reference
 
