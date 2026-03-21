@@ -196,4 +196,4 @@ Managers can define wildcard mappings using `*` to match multiple model names:
 
 ---
 
-**Related:** [02.01 Provider Configuration](../01_provider_configuration/) | [02.02 Request Routing](../02_request_routing/) | [03.01 Configuration Distribution](../../03_configuration_sync/01_distribution/)
+**Related:** [02.01 Provider Configuration](../01_provider_configuration/) | [02.02 Request Routing](../02_request_routing/) | [02.04 Server Relay](../04_server_relay/) | [03.01 Configuration Distribution](../../03_configuration_sync/01_distribution/)

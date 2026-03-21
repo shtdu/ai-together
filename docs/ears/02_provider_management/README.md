@@ -13,6 +13,7 @@ Enable teams to configure multiple AI service providers with automatic routing a
 | **Provider Configuration** | ✅ Implemented | Adding, testing, and managing providers |
 | **Request Routing** | ✅ Implemented | How requests are routed to providers |
 | **Model Mapping** | ✅ Implemented | Mapping model names to provider-specific models |
+| **Server Relay** | ✅ Implemented | Centralized HTTP relay with failover and usage tracking |
 | **Provider Health** | 🚧 Planned | Real-time health monitoring and performance metrics |
 
 ## Quick Facts
@@ -109,7 +110,8 @@ Enable teams to configure multiple AI service providers with automatic routing a
 - **Provider Configuration:** [`02.01 Provider Configuration`](01_provider_configuration/) - How to set up providers
 - **Request Routing:** [`02.02 Request Routing`](02_request_routing/) - How requests are routed
 - **Model Mapping:** [`02.03 Model Mapping`](03_model_mapping/) - How model names are mapped
-- **Provider Health:** [`02.04 Provider Health`](04_provider_health/) - Health monitoring and alerts
+- **Server Relay:** [`02.04 Server Relay`](04_server_relay/) - Centralized HTTP relay endpoints and behaviors
+- **Provider Health:** [`02.05 Provider Health`](05_provider_health/) - Health monitoring and alerts
 
 ---
 
