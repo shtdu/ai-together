@@ -26,11 +26,11 @@ import (
 	"switch-server/services"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	_ "github.com/swaggo/swag"
 	_ "switch-server/docs" // swagger docs
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 // @title           Code Together API

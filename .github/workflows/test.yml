@@ -27,7 +27,7 @@ jobs:
       - name: Generate coverage report
         working-directory: ./server
         run: |
-          go test $(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration') -coverprofile=coverage.out -covermode=atomic
+          go test $(go list ./... | grep -v -E 'scripts|internal/db|repository|testutil|shared/integration|docs') -coverprofile=coverage.out -covermode=atomic
           go tool cover -func=coverage.out | tail -1
 
       - name: Upload coverage to Codecov
