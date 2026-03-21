@@ -51,6 +51,7 @@ server: ## Show server-specific commands
 	@echo "  make server-cover       Generate coverage report"
 	@echo "  make server-cover-html  Generate HTML coverage report"
 	@echo "  make server-linux       Build for Linux x64"
+	@echo "  make swag-init          Generate OpenAPI/Swagger documentation"
 	@echo ""
 	@echo "For more commands, run: cd server && make help"
 
@@ -119,7 +120,7 @@ release-all: ## Build release for all platforms
 	@echo "All platform releases completed"
 
 # Server targets
-.PHONY: server-build server-production server-dev server-test server-cover server-cover-html server-linux
+.PHONY: server-build server-production server-dev server-test server-cover server-cover-html server-linux swag-init
 server-build:
 	@mkdir -p $(SERVER_BUILD_DIR)
 	@cd $(SERVER_DIR) && go build -o ./bin/$(SERVER_BINARY_NAME) .
@@ -150,6 +151,11 @@ server-linux:
 	@mkdir -p $(SERVER_BUILD_DIR)
 	@cd $(SERVER_DIR) && GOOS=linux GOARCH=amd64 go build -o ./bin/$(SERVER_BINARY_NAME)-linux-amd64 .
 	@echo "✓ Server built: $(SERVER_BUILD_DIR)/$(SERVER_BINARY_NAME)-linux-amd64"
+
+swag-init: ## Generate OpenAPI/Swagger documentation
+	@echo "Generating OpenAPI/Swagger documentation..."
+	@cd $(SERVER_DIR) && $(shell go env GOPATH)/bin/swag init -g server.go -o docs --parseDependency --parseInternal
+	@echo "✓ Swagger documentation generated: $(SERVER_DIR)/docs/"
 
 # Member targets
 .PHONY: member-build member-dev member-test member-release member-win member-lint

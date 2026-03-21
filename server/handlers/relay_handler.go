@@ -45,7 +45,21 @@ func NewRelayHandler(providerService services.ProviderServiceInterface, usageSer
 	}
 }
 
-// RelayMessages handles Anthropic-style /v1/messages endpoint
+// RelayMessages godoc
+// @Summary      Relay Anthropic messages request
+// @Description  Forward Anthropic-style /v1/messages requests to configured providers
+// @Tags         Relay,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        tool path string true "Provider kind (claude, codex, opencode)" Enums(claude, codex, opencode)
+// @Param        request body object true "Request body (forwarded to provider)"
+// @Success      200  {object}  object "Provider response"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/relay/{tool}/v1/messages [post]
 func (h *RelayHandler) RelayMessages(c *gin.Context) {
 	tool := c.Param("tool")
 	if !isValidProviderKind(tool) {
@@ -56,7 +70,21 @@ func (h *RelayHandler) RelayMessages(c *gin.Context) {
 	h.relayForward(c, tool, "/v1/messages")
 }
 
-// RelayChatCompletions handles OpenAI-style /v1/chat/completions endpoint
+// RelayChatCompletions godoc
+// @Summary      Relay OpenAI chat completions request
+// @Description  Forward OpenAI-style /v1/chat/completions requests to configured providers
+// @Tags         Relay,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        tool path string true "Provider kind (claude, codex, opencode)" Enums(claude, codex, opencode)
+// @Param        request body object true "Request body (forwarded to provider)"
+// @Success      200  {object}  object "Provider response"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/relay/{tool}/v1/chat/completions [post]
 func (h *RelayHandler) RelayChatCompletions(c *gin.Context) {
 	tool := c.Param("tool")
 	if !isValidProviderKind(tool) {

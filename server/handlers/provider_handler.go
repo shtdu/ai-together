@@ -76,6 +76,17 @@ type UpdateProviderRequest struct {
 	Level           int               `json:"level"`
 }
 
+// ListProviders godoc
+// @Summary      List providers
+// @Description  Get all AI providers for the authenticated user's team
+// @Tags         Providers,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {array}  models.Provider
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers [get]
 func (h *ProviderHandler) ListProviders(c *gin.Context) {
 	// Get user from context (set by AuthMiddleware)
 	user, exists := c.Get("user")
@@ -124,6 +135,20 @@ func (h *ProviderHandler) ListProviders(c *gin.Context) {
 	c.JSON(http.StatusOK, providers)
 }
 
+// CreateProvider godoc
+// @Summary      Create a provider
+// @Description  Create a new AI provider (managers only)
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body handlers.CreateProviderRequest true "Provider data"
+// @Success      201  {object}  models.Provider
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      409  {object}  models.ErrorResponse "Provider name already exists"
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers [post]
 func (h *ProviderHandler) CreateProvider(c *gin.Context) {
 	var req CreateProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -212,6 +237,23 @@ func (h *ProviderHandler) CreateProvider(c *gin.Context) {
 	c.JSON(http.StatusCreated, provider)
 }
 
+// UpdateProvider godoc
+// @Summary      Update a provider
+// @Description  Update provider configuration (managers only)
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Provider ID"  example(1)
+// @Param        request body handlers.UpdateProviderRequest true "Provider data"
+// @Success      200  {object}  models.Provider
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      409  {object}  models.ErrorResponse "Provider name already exists"
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers/{id} [put]
 func (h *ProviderHandler) UpdateProvider(c *gin.Context) {
 	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -366,6 +408,21 @@ func (h *ProviderHandler) UpdateProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedProvider)
 }
 
+// DeleteProvider godoc
+// @Summary      Delete a provider
+// @Description  Delete a provider (managers only)
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Provider ID"  example(1)
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers/{id} [delete]
 func (h *ProviderHandler) DeleteProvider(c *gin.Context) {
 	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -406,6 +463,21 @@ func (h *ProviderHandler) DeleteProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Provider deleted successfully", "provider_id": providerID})
 }
 
+// TestProvider godoc
+// @Summary      Test provider connectivity
+// @Description  Test if a provider is accessible and working
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Provider ID"  example(1)
+// @Success      200  {object}  map[string]interface{} "Provider test result"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers/{id}/test [post]
 func (h *ProviderHandler) TestProvider(c *gin.Context) {
 	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -456,6 +528,21 @@ func (h *ProviderHandler) TestProvider(c *gin.Context) {
 	})
 }
 
+// EnableProvider godoc
+// @Summary      Enable a provider
+// @Description  Enable a provider (managers only)
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Provider ID"  example(1)
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers/{id}/enable [post]
 func (h *ProviderHandler) EnableProvider(c *gin.Context) {
 	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -517,6 +604,21 @@ func (h *ProviderHandler) EnableProvider(c *gin.Context) {
 	})
 }
 
+// DisableProvider godoc
+// @Summary      Disable a provider
+// @Description  Disable a provider (managers only)
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Provider ID"  example(1)
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers/{id}/disable [post]
 func (h *ProviderHandler) DisableProvider(c *gin.Context) {
 	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -578,6 +680,21 @@ func (h *ProviderHandler) DisableProvider(c *gin.Context) {
 	})
 }
 
+// GetProviderStats godoc
+// @Summary      Get provider statistics
+// @Description  Get usage statistics for a specific provider
+// @Tags         Providers,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Provider ID"  example(1)
+// @Success      200  {object}  map[string]interface{} "Provider statistics"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/providers/{id}/stats [get]
 func (h *ProviderHandler) GetProviderStats(c *gin.Context) {
 	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

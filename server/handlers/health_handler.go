@@ -74,6 +74,15 @@ type DatabaseStatus struct {
 	Error   string `json:"error,omitempty"`
 }
 
+// HealthCheck godoc
+// @Summary      Health check endpoint
+// @Description  Check if the API server is healthy and the database is reachable
+// @Tags         Health
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  handlers.HealthResponse
+// @Failure      503  {object}  handlers.HealthResponse
+// @Router       /health [get]
 func (h *HealthHandler) HealthCheck(c *gin.Context) {
 	response := HealthResponse{
 		Version:   h.version,

@@ -56,6 +56,17 @@ type AddMemberRequest struct {
 	Role  string `json:"role" binding:"oneof=manager member"`
 }
 
+// ListTeams godoc
+// @Summary      List teams
+// @Description  Get all teams for the authenticated user
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {array}  models.Team
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams [get]
 func (h *TeamHandler) ListTeams(c *gin.Context) {
 	// Get user from context
 	user, exists := c.Get("user")
@@ -78,6 +89,20 @@ func (h *TeamHandler) ListTeams(c *gin.Context) {
 	c.JSON(http.StatusOK, teams)
 }
 
+// CreateTeam godoc
+// @Summary      Create a team
+// @Description  Create a new team for the authenticated user
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body handlers.CreateTeamRequest true "Team data"
+// @Success      201  {object}  models.Team
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams [post]
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	var req CreateTeamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -123,6 +148,22 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	c.JSON(http.StatusCreated, team)
 }
 
+// UpdateTeam godoc
+// @Summary      Update a team
+// @Description  Update team information (only team owner can update)
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Param        request body handlers.UpdateTeamRequest true "Team data"
+// @Success      200  {object}  models.Team
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id} [put]
 func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -190,6 +231,21 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedTeam)
 }
 
+// DeleteTeam godoc
+// @Summary      Delete a team
+// @Description  Delete a team (only team owner can delete)
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id} [delete]
 func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -241,6 +297,18 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully", "team_id": teamID})
 }
 
+// ListTeamMembers godoc
+// @Summary      List team members
+// @Description  Get all members of a specific team
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Success      200  {object}  map[string]interface{} "team_id and members array"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id}/members [get]
 func (h *TeamHandler) ListTeamMembers(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -261,6 +329,22 @@ func (h *TeamHandler) ListTeamMembers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"team_id": teamID, "members": members})
 }
 
+// AddTeamMember godoc
+// @Summary      Add team member
+// @Description  Add a member to a team (creates user account if doesn't exist)
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Param        request body handlers.AddMemberRequest true "Member data"
+// @Success      201  {object}  map[string]interface{} "User and role info"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id}/members [post]
 func (h *TeamHandler) AddTeamMember(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -396,6 +480,22 @@ func (h *TeamHandler) generateToken(userID int64, email, role string, tenantID i
 	return tokenString, expirationTime, nil
 }
 
+// RemoveTeamMember godoc
+// @Summary      Remove team member
+// @Description  Remove a member from a team (only team owner can remove)
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Param        memberId path int true "Member User ID" example(2)
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id}/members/{memberId} [delete]
 func (h *TeamHandler) RemoveTeamMember(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -459,6 +559,19 @@ func (h *TeamHandler) RemoveTeamMember(c *gin.Context) {
 	})
 }
 
+// GetTeamSettings godoc
+// @Summary      Get team settings
+// @Description  Get settings for a specific team
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Success      200  {object}  map[string]interface{} "team_id and settings"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id}/settings [get]
 func (h *TeamHandler) GetTeamSettings(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -475,6 +588,22 @@ func (h *TeamHandler) GetTeamSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"team_id": teamID, "settings": settings})
 }
 
+// UpdateTeamSettings godoc
+// @Summary      Update team settings
+// @Description  Update settings for a specific team (only team owner can update)
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Team ID"  example(1)
+// @Param        settings body map[string]string true "Settings object"
+// @Success      200  {object}  map[string]interface{} "team_id and settings"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/teams/{id}/settings [put]
 func (h *TeamHandler) UpdateTeamSettings(c *gin.Context) {
 	teamID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

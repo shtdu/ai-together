@@ -1,0 +1,2288 @@
+basePath: /api/v1
+definitions:
+  handlers.ActivateLicenseRequest:
+    properties:
+      license_key:
+        type: string
+    required:
+    - license_key
+    type: object
+  handlers.AddMemberRequest:
+    properties:
+      email:
+        type: string
+      role:
+        enum:
+        - manager
+        - member
+        type: string
+    required:
+    - email
+    type: object
+  handlers.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  handlers.BatchUsageResponse:
+    properties:
+      errors:
+        items:
+          type: string
+        type: array
+      synced_count:
+        type: integer
+    type: object
+  handlers.CreateProviderRequest:
+    properties:
+      api_key:
+        type: string
+      api_url:
+        type: string
+      enabled:
+        type: boolean
+      kind:
+        type: string
+      level:
+        type: integer
+      model_mapping:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      supported_models:
+        items:
+          type: string
+        type: array
+    required:
+    - api_key
+    - api_url
+    - name
+    type: object
+  handlers.CreateTeamRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      settings:
+        additionalProperties:
+          type: string
+        type: object
+    required:
+    - name
+    type: object
+  handlers.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - manager
+        - member
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - role
+    type: object
+  handlers.DashboardMembersResponse:
+    properties:
+      members:
+        items:
+          $ref: '#/definitions/handlers.MemberStats'
+        type: array
+    type: object
+  handlers.DashboardMetricsResponse:
+    properties:
+      data_points:
+        items:
+          $ref: '#/definitions/handlers.MetricDataPoint'
+        type: array
+      interval:
+        type: string
+      period:
+        properties:
+          end:
+            type: string
+          start:
+            type: string
+        type: object
+      summary:
+        properties:
+          estimated_cost:
+            type: number
+          total_active_time_hours:
+            type: number
+          total_requests:
+            type: integer
+          total_tokens:
+            type: integer
+        type: object
+    type: object
+  handlers.DashboardRankingsResponse:
+    properties:
+      period:
+        type: string
+      rankings:
+        items:
+          $ref: '#/definitions/handlers.ProviderRanking'
+        type: array
+    type: object
+  handlers.DatabaseStatus:
+    properties:
+      error:
+        type: string
+      latency:
+        type: string
+      status:
+        type: string
+    type: object
+  handlers.HealthResponse:
+    properties:
+      database:
+        $ref: '#/definitions/handlers.DatabaseStatus'
+      status:
+        type: string
+      timestamp:
+        type: string
+      version:
+        type: string
+    type: object
+  handlers.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.MemberStats:
+    properties:
+      active_time_hours:
+        type: number
+      avg_tokens_per_day:
+        type: number
+      email:
+        type: string
+      last_active:
+        type: string
+      name:
+        type: string
+      total_tokens:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  handlers.MetricDataPoint:
+    properties:
+      active_time_seconds:
+        type: number
+      input_tokens:
+        type: integer
+      output_tokens:
+        type: integer
+      request_count:
+        type: integer
+      timestamp:
+        type: string
+      total_tokens:
+        type: integer
+    type: object
+  handlers.ProviderRanking:
+    properties:
+      percentage:
+        type: number
+      provider:
+        type: string
+      rank:
+        type: integer
+      request_count:
+        type: integer
+      total_tokens:
+        type: integer
+    type: object
+  handlers.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  handlers.SetupAdminRequest:
+    properties:
+      admin_email:
+        type: string
+      admin_name:
+        type: string
+      admin_password:
+        minLength: 8
+        type: string
+      organization_name:
+        type: string
+    required:
+    - admin_email
+    - admin_name
+    - admin_password
+    - organization_name
+    type: object
+  handlers.SetupAdminResponse:
+    properties:
+      message:
+        type: string
+      team:
+        additionalProperties: true
+        type: object
+      tenant:
+        additionalProperties: true
+        type: object
+      user:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.SetupStatusResponse:
+    properties:
+      setup_required:
+        type: boolean
+    type: object
+  handlers.UpdateProviderRequest:
+    properties:
+      api_key:
+        type: string
+      api_url:
+        type: string
+      enabled:
+        type: boolean
+      kind:
+        type: string
+      level:
+        type: integer
+      model_mapping:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      supported_models:
+        items:
+          type: string
+        type: array
+    type: object
+  handlers.UpdateTeamRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      settings:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - manager
+        - member
+        type: string
+    type: object
+  handlers.VerifyRequest:
+    properties:
+      access_token:
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      code:
+        description: Machine-readable error code
+        type: string
+      details:
+        description: Additional context (debug mode only)
+        type: string
+      error:
+        description: User-friendly error message
+        type: string
+      request:
+        description: Request ID for support tracking
+        type: string
+    type: object
+  models.Provider:
+    properties:
+      api_key:
+        description: Authentication key for the provider API
+        type: string
+      api_url:
+        description: Base URL for the provider's API
+        type: string
+      created_at:
+        description: Timestamp when the provider was added
+        type: string
+      enabled:
+        description: Whether this provider is currently enabled
+        type: boolean
+      id:
+        description: Unique identifier for the provider
+        type: integer
+      kind:
+        description: 'Provider kind: "claude", "codex", or "opencode"'
+        type: string
+      level:
+        description: Priority level for provider selection
+        type: integer
+      model_mapping:
+        additionalProperties:
+          type: string
+        description: Mapping of local model names to provider model names
+        type: object
+      name:
+        description: Display name for the provider
+        type: string
+      supported_models:
+        description: Models supported by this provider
+        items:
+          type: string
+        type: array
+      team_id:
+        description: ID of the team that owns this provider
+        type: integer
+      updated_at:
+        description: Timestamp when the provider was last updated
+        type: string
+    type: object
+  models.Team:
+    properties:
+      created_at:
+        description: Timestamp when the team was created
+        type: string
+      description:
+        description: Optional description of the team
+        type: string
+      id:
+        description: Unique identifier for the team
+        type: integer
+      name:
+        description: Name of the team
+        type: string
+      owner_id:
+        description: ID of the user who owns/created the team
+        type: integer
+      settings:
+        additionalProperties:
+          type: string
+        description: JSON object containing team-specific settings
+        type: object
+      tenant_id:
+        description: ID of the tenant this team belongs to
+        type: integer
+      updated_at:
+        description: Timestamp when the team was last updated
+        type: string
+    type: object
+  models.UsageRecord:
+    properties:
+      cache_create_tokens:
+        description: Number of cache creation tokens (for models that support caching)
+        type: integer
+      cache_read_tokens:
+        description: Number of cache read tokens (for models that support caching)
+        type: integer
+      created_at:
+        description: Timestamp when the request was made
+        type: string
+      duration_sec:
+        description: Duration of the request in seconds
+        type: number
+      http_code:
+        description: HTTP status code returned by the provider
+        type: integer
+      id:
+        description: Unique identifier for the usage record
+        type: integer
+      input_tokens:
+        description: Number of tokens in the input to the model
+        type: integer
+      is_stream:
+        description: Whether the response was streamed
+        type: boolean
+      model:
+        description: The model that was used for the request
+        type: string
+      output_tokens:
+        description: Number of tokens in the output from the model
+        type: integer
+      platform:
+        description: The platform that handled the request (e.g. "openai", "anthropic")
+        type: string
+      provider:
+        description: The provider that fulfilled the request
+        type: string
+      reasoning_tokens:
+        description: Number of tokens used for reasoning (for models that support
+          reasoning)
+        type: integer
+      tenant_id:
+        description: ID of the tenant associated with this usage
+        type: integer
+      user_id:
+        description: ID of the user who made this request
+        type: integer
+    type: object
+  models.User:
+    properties:
+      created_at:
+        description: Timestamp when the user was created
+        type: string
+      email:
+        description: User's email address, used for login
+        type: string
+      id:
+        description: Unique identifier for the user
+        type: integer
+      name:
+        description: User's display name
+        type: string
+      role:
+        description: 'User''s role: "manager" or "member"'
+        type: string
+      tenant_id:
+        description: ID of the tenant the user belongs to
+        type: integer
+      updated_at:
+        description: Timestamp when the user was last updated
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@ai-together.com
+    name: API Support
+    url: https://github.com/code-together/ai-together/issues
+  description: AI Together team collaboration platform API for managing AI coding
+    tools (Claude Code, Codex, OpenCode). Provides centralized provider management,
+    team-level settings, usage statistics, and automatic configuration distribution.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Code Together API
+  version: "1.0"
+paths:
+  /api/v1/analytics/filters:
+    get:
+      consumes:
+      - application/json
+      description: Get available filter options for analytics (providers, models,
+        users)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Filter options
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get filter options
+      tags:
+      - Analytics
+      - Member
+  /api/v1/analytics/history:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated request logs with filtering options (managers only)
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        example: "2025-01-01"
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        example: "2025-01-31"
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Comma-separated user IDs
+        example: 1,2,3
+        in: query
+        name: user_ids
+        type: string
+      - description: Comma-separated provider names
+        example: claude,codex
+        in: query
+        name: providers
+        type: string
+      - description: Comma-separated model names
+        example: claude-3-5-sonnet,gpt-4
+        in: query
+        name: models
+        type: string
+      - default: created_at
+        description: Sort field
+        enum:
+        - created_at
+        - model
+        - provider
+        in: query
+        name: sort_by
+        type: string
+      - default: desc
+        description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated history data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get request history
+      tags:
+      - Analytics
+      - Manager
+  /api/v1/analytics/providers:
+    get:
+      consumes:
+      - application/json
+      description: Get analytics data for providers with filtering options (managers
+        only)
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        example: "2025-01-01"
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        example: "2025-01-31"
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Comma-separated provider names
+        example: claude,codex
+        in: query
+        name: providers
+        type: string
+      - description: Comma-separated model names
+        example: claude-3-5-sonnet,gpt-4
+        in: query
+        name: models
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Provider analytics data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get provider analytics
+      tags:
+      - Analytics
+      - Manager
+  /api/v1/analytics/users:
+    get:
+      consumes:
+      - application/json
+      description: Get analytics data for users with filtering options (managers only)
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        example: "2025-01-01"
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        example: "2025-01-31"
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Comma-separated user IDs
+        example: 1,2,3
+        in: query
+        name: user_ids
+        type: string
+      - description: Comma-separated provider names
+        example: claude,codex
+        in: query
+        name: providers
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User analytics data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user analytics
+      tags:
+      - Analytics
+      - Manager
+  /api/v1/dashboard/members:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics for all team members (managers only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.DashboardMembersResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get member statistics
+      tags:
+      - Dashboard
+      - Manager
+  /api/v1/dashboard/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get time-series metrics for the dashboard
+      parameters:
+      - default: 7d
+        description: 'Time range: 24h, 7d, 30d'
+        enum:
+        - 24h
+        - 7d
+        - 30d
+        in: query
+        name: range
+        type: string
+      - default: hour
+        description: 'Data interval: hour, day'
+        enum:
+        - hour
+        - day
+        in: query
+        name: interval
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.DashboardMetricsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get dashboard metrics
+      tags:
+      - Dashboard
+      - Member
+  /api/v1/dashboard/rankings:
+    get:
+      consumes:
+      - application/json
+      description: Get provider usage rankings for the last 24 hours
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.DashboardRankingsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get provider rankings
+      tags:
+      - Dashboard
+      - Member
+  /api/v1/license:
+    get:
+      consumes:
+      - application/json
+      description: Get current license information and usage for the tenant
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License status and usage
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get license status
+      tags:
+      - License
+      - Member
+  /api/v1/license/activate:
+    post:
+      consumes:
+      - application/json
+      description: Activate or upgrade a license with a license key
+      parameters:
+      - description: License key
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ActivateLicenseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate license
+      tags:
+      - License
+      - Manager
+  /api/v1/license/tiers:
+    get:
+      consumes:
+      - application/json
+      description: Get information about available license tiers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License tiers information
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get license tiers
+      tags:
+      - License
+      - Member
+  /api/v1/providers:
+    get:
+      consumes:
+      - application/json
+      description: Get all AI providers for the authenticated user's team
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Provider'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List providers
+      tags:
+      - Providers
+      - Member
+    post:
+      consumes:
+      - application/json
+      description: Create a new AI provider (managers only)
+      parameters:
+      - description: Provider data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateProviderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Provider'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Provider name already exists
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a provider
+      tags:
+      - Providers
+      - Manager
+  /api/v1/providers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a provider (managers only)
+      parameters:
+      - description: Provider ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a provider
+      tags:
+      - Providers
+      - Manager
+    put:
+      consumes:
+      - application/json
+      description: Update provider configuration (managers only)
+      parameters:
+      - description: Provider ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Provider data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateProviderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Provider'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Provider name already exists
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a provider
+      tags:
+      - Providers
+      - Manager
+  /api/v1/providers/{id}/disable:
+    post:
+      consumes:
+      - application/json
+      description: Disable a provider (managers only)
+      parameters:
+      - description: Provider ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Disable a provider
+      tags:
+      - Providers
+      - Manager
+  /api/v1/providers/{id}/enable:
+    post:
+      consumes:
+      - application/json
+      description: Enable a provider (managers only)
+      parameters:
+      - description: Provider ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Enable a provider
+      tags:
+      - Providers
+      - Manager
+  /api/v1/providers/{id}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get usage statistics for a specific provider
+      parameters:
+      - description: Provider ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Provider statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get provider statistics
+      tags:
+      - Providers
+      - Manager
+  /api/v1/providers/{id}/test:
+    post:
+      consumes:
+      - application/json
+      description: Test if a provider is accessible and working
+      parameters:
+      - description: Provider ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Provider test result
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Test provider connectivity
+      tags:
+      - Providers
+      - Manager
+  /api/v1/relay/{tool}/v1/chat/completions:
+    post:
+      consumes:
+      - application/json
+      description: Forward OpenAI-style /v1/chat/completions requests to configured
+        providers
+      parameters:
+      - description: Provider kind (claude, codex, opencode)
+        enum:
+        - claude
+        - codex
+        - opencode
+        in: path
+        name: tool
+        required: true
+        type: string
+      - description: Request body (forwarded to provider)
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Provider response
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Relay OpenAI chat completions request
+      tags:
+      - Relay
+      - Member
+  /api/v1/relay/{tool}/v1/messages:
+    post:
+      consumes:
+      - application/json
+      description: Forward Anthropic-style /v1/messages requests to configured providers
+      parameters:
+      - description: Provider kind (claude, codex, opencode)
+        enum:
+        - claude
+        - codex
+        - opencode
+        in: path
+        name: tool
+        required: true
+        type: string
+      - description: Request body (forwarded to provider)
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Provider response
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Relay Anthropic messages request
+      tags:
+      - Relay
+      - Member
+  /api/v1/teams:
+    get:
+      consumes:
+      - application/json
+      description: Get all teams for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Team'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List teams
+      tags:
+      - Teams
+    post:
+      consumes:
+      - application/json
+      description: Create a new team for the authenticated user
+      parameters:
+      - description: Team data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Team'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a team
+      tags:
+      - Teams
+  /api/v1/teams/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a team (only team owner can delete)
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a team
+      tags:
+      - Teams
+    put:
+      consumes:
+      - application/json
+      description: Update team information (only team owner can update)
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Team data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Team'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a team
+      tags:
+      - Teams
+  /api/v1/teams/{id}/members:
+    get:
+      consumes:
+      - application/json
+      description: Get all members of a specific team
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: team_id and members array
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List team members
+      tags:
+      - Teams
+    post:
+      consumes:
+      - application/json
+      description: Add a member to a team (creates user account if doesn't exist)
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Member data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User and role info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add team member
+      tags:
+      - Teams
+  /api/v1/teams/{id}/members/{memberId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a member from a team (only team owner can remove)
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Member User ID
+        example: 2
+        in: path
+        name: memberId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove team member
+      tags:
+      - Teams
+  /api/v1/teams/{id}/settings:
+    get:
+      consumes:
+      - application/json
+      description: Get settings for a specific team
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: team_id and settings
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get team settings
+      tags:
+      - Teams
+    put:
+      consumes:
+      - application/json
+      description: Update settings for a specific team (only team owner can update)
+      parameters:
+      - description: Team ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Settings object
+        in: body
+        name: settings
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: team_id and settings
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update team settings
+      tags:
+      - Teams
+  /api/v1/usage/batch:
+    post:
+      consumes:
+      - application/json
+      description: Upload multiple usage records from member clients
+      parameters:
+      - description: Array of usage records
+        in: body
+        name: records
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.UsageRecord'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.BatchUsageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Batch upload usage records
+      tags:
+      - Usage
+      - Member
+  /api/v1/usage/current:
+    get:
+      consumes:
+      - application/json
+      description: Get current usage statistics for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Current usage data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current usage
+      tags:
+      - Usage
+      - Member
+  /api/v1/usage/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get usage statistics for the authenticated user's tenant
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usage statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get usage statistics
+      tags:
+      - Usage
+      - Manager
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users in the tenant (managers only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Users array
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - Users
+      - Manager
+    post:
+      consumes:
+      - application/json
+      description: Create a new user (managers only)
+      parameters:
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a user
+      tags:
+      - Users
+      - Manager
+  /api/v1/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user (managers only, cannot delete yourself)
+      parameters:
+      - description: User ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a user
+      tags:
+      - Users
+      - Manager
+    put:
+      consumes:
+      - application/json
+      description: Update user information (managers only)
+      parameters:
+      - description: User ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a user
+      tags:
+      - Users
+      - Manager
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password, returns JWT access and
+        refresh tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: User login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout endpoint (client should discard stored tokens)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - Auth
+  /auth/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user's profile information and teams
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile with teams
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a valid refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with email, password, and name
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: User registration
+      tags:
+      - Auth
+  /auth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Validate an access token and return user information
+      parameters:
+      - description: Access token (can also use Authorization header)
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/handlers.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User info with valid flag
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verify access token
+      tags:
+      - Auth
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the API server is healthy and the database is reachable
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HealthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/handlers.HealthResponse'
+      summary: Health check endpoint
+      tags:
+      - Health
+  /setup/admin:
+    post:
+      consumes:
+      - application/json
+      description: Create the initial admin account, tenant, and team (only works
+        when no users exist)
+      parameters:
+      - description: Admin setup data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SetupAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SetupAdminResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Setup already completed
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Create initial admin
+      tags:
+      - Setup
+  /setup/status:
+    get:
+      consumes:
+      - application/json
+      description: Check if initial setup is required (no users exist)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SetupStatusResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get setup status
+      tags:
+      - Setup
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

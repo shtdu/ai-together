@@ -53,7 +53,15 @@ type SetupAdminResponse struct {
 	Team    map[string]interface{} `json:"team"`
 }
 
-// GetSetupStatus checks if setup is needed by counting users
+// GetSetupStatus godoc
+// @Summary      Get setup status
+// @Description  Check if initial setup is required (no users exist)
+// @Tags         Setup
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  handlers.SetupStatusResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /setup/status [get]
 func (h *SetupHandler) GetSetupStatus(c *gin.Context) {
 	ctx := context.Background()
 
@@ -69,7 +77,18 @@ func (h *SetupHandler) GetSetupStatus(c *gin.Context) {
 	})
 }
 
-// CreateInitialAdmin creates the initial admin account, tenant, and team
+// CreateInitialAdmin godoc
+// @Summary      Create initial admin
+// @Description  Create the initial admin account, tenant, and team (only works when no users exist)
+// @Tags         Setup
+// @Accept       json
+// @Produce      json
+// @Param        request body handlers.SetupAdminRequest true "Admin setup data"
+// @Success      200  {object}  handlers.SetupAdminResponse
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      409  {object}  models.ErrorResponse "Setup already completed"
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /setup/admin [post]
 func (h *SetupHandler) CreateInitialAdmin(c *gin.Context) {
 	var req SetupAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
