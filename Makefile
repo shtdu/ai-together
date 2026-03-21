@@ -156,6 +156,9 @@ swag-init: ## Generate OpenAPI/Swagger documentation
 	@echo "Generating OpenAPI/Swagger documentation..."
 	@cd $(SERVER_DIR) && $(shell go env GOPATH)/bin/swag init -g server.go -o docs --parseDependency --parseInternal
 	@echo "✓ Swagger documentation generated: $(SERVER_DIR)/docs/"
+	@echo "Splitting into Member and Manager API specs..."
+	@$(SERVER_DIR)/scripts/split-openapi.sh
+	@echo "✓ OpenAPI specs ready for distribution"
 
 # Member targets
 .PHONY: member-build member-dev member-test member-release member-win member-lint
