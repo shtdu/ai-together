@@ -50,7 +50,6 @@ server/coverage.html
 server/tmp
 server/ui/node_modules
 server/ui/node_modules/*
-server/docs/*
 server/covdata/
 server/coverage_config.out
 server/coverage_handlers.out

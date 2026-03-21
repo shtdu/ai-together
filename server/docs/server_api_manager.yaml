@@ -1,0 +1,1380 @@
+openapi: 3.0.3
+info:
+  title: Code Together Manager API
+  description: |
+    The Code Together Manager API for administrative operations and team management.
+
+    This specification is optimized for manager/admin tools and includes:
+    - Team CRUD operations and member management
+    - User management (admin-only)
+    - Dashboard analytics and metrics
+    - Provider enable/disable operations
+    - Usage statistics and current usage
+    - System health and setup status
+    - License tier information
+
+    ## Authentication
+    Most endpoints require JWT authentication via the `Authorization: Bearer <token>` header.
+
+    ## Authorization
+    The API implements Role-Based Access Control (RBAC) with two roles:
+    - **member**: Read-only access to teams, providers, and usage data
+    - **manager**: Full access including write operations on teams, users, and providers
+
+    This spec is optimized for client-side code generation for management tools.
+  version: 1.0.1
+  contact:
+    name: Code Together Development Team
+    email: support@xxx.com
+    url: https://xxx.com
+
+servers:
+  - url: https://api.codeswitch.com
+    description: Production server
+  - url: https://staging.codeswitch.com
+    description: Staging server
+  - url: http://localhost:8081
+    description: Development server
+
+tags:
+  - name: Health
+    description: System health check endpoints (public, no authentication required)
+  - name: Authentication
+    description: User authentication and token management
+  - name: Teams
+    description: Team management operations (CRUD, members, settings)
+  - name: Users
+    description: User management operations (admin-only CRUD)
+  - name: Dashboard
+    description: Dashboard analytics and metrics
+  - name: Providers
+    description: Provider management operations (enable/disable/stats)
+  - name: Usage
+    description: Usage tracking and statistics
+  - name: License
+    description: License management and tier information
+  - name: Setup
+    description: Initial system setup (public, no authentication required)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - role
+        - tenant_id
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: "john.doe@company.com"
+        name:
+          type: string
+          example: "John Doe"
+        role:
+          type: string
+          enum: [manager, member]
+          example: "manager"
+        tenant_id:
+          type: integer
+          format: int64
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+
+    Team:
+      type: object
+      required:
+        - id
+        - name
+        - owner_id
+        - tenant_id
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Engineering Team"
+        description:
+          type: string
+          example: "Engineering department team"
+        owner_id:
+          type: integer
+          format: int64
+          example: 1
+        tenant_id:
+          type: integer
+          format: int64
+          example: 1
+        settings:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            mcp_server: "http://mcp.example.com"
+          description: Team-specific settings
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+
+    TeamMember:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - role
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: "member@company.com"
+        name:
+          type: string
+          example: "Team Member"
+        role:
+          type: string
+          enum: [manager, member]
+          example: "member"
+
+    Provider:
+      type: object
+      required:
+        - id
+        - name
+        - api_url
+        - team_id
+        - enabled
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "OpenAI GPT-4"
+        api_url:
+          type: string
+          example: "https://api.openai.com"
+        team_id:
+          type: integer
+          format: int64
+          example: 1
+        enabled:
+          type: boolean
+          example: true
+        kind:
+          type: string
+          enum: [claude, codex, opencode]
+          example: claude
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+
+    MetricDataPoint:
+      type: object
+      required:
+        - timestamp
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+        active_time_seconds:
+          type: number
+          format: float
+          example: 3600.5
+        total_tokens:
+          type: integer
+          example: 50000
+        input_tokens:
+          type: integer
+          example: 35000
+        output_tokens:
+          type: integer
+          example: 15000
+        request_count:
+          type: integer
+          example: 150
+
+    DashboardMetricsResponse:
+      type: object
+      required:
+        - period
+        - interval
+        - data_points
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+        interval:
+          type: string
+          enum: [hour, day, week]
+          example: "hour"
+        data_points:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricDataPoint'
+        summary:
+          type: object
+          properties:
+            total_active_time_hours:
+              type: number
+              format: float
+            total_tokens:
+              type: integer
+            total_requests:
+              type: integer
+            estimated_cost:
+              type: number
+              format: float
+
+    ProviderRanking:
+      type: object
+      required:
+        - rank
+        - provider
+      properties:
+        rank:
+          type: integer
+          example: 1
+        provider:
+          type: string
+          example: "OpenAI GPT-4"
+        total_tokens:
+          type: integer
+          example: 50000
+        percentage:
+          type: number
+          format: float
+          example: 75.5
+        request_count:
+          type: integer
+          example: 500
+
+    DashboardRankingsResponse:
+      type: object
+      required:
+        - period
+        - rankings
+      properties:
+        period:
+          type: string
+          example: "24h"
+        rankings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderRanking'
+
+    MemberStats:
+      type: object
+      required:
+        - user_id
+        - name
+        - email
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@company.com"
+        active_time_hours:
+          type: number
+          format: float
+          example: 45.5
+        avg_tokens_per_day:
+          type: number
+          format: float
+          example: 5000
+        total_tokens:
+          type: integer
+          example: 150000
+        last_active:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+
+    DashboardMembersResponse:
+      type: object
+      required:
+        - members
+      properties:
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberStats'
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          example: "Invalid request"
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - CONFLICT
+            - BUSINESS_RULE_VIOLATION
+            - INTERNAL_ERROR
+          example: "VALIDATION_ERROR"
+        details:
+          type: string
+          example: "Additional error context"
+
+    LicenseTier:
+      type: object
+      required:
+        - tier
+        - name
+      properties:
+        tier:
+          type: string
+          example: "1.0"
+        name:
+          type: string
+          example: "Standard"
+        max_providers_per_kind:
+          type: integer
+          example: -1
+        features:
+          type: array
+          items:
+            type: string
+          example:
+            - "Unlimited providers"
+            - "Basic analytics"
+
+    HealthResponse:
+      type: object
+      required:
+        - version
+        - status
+        - timestamp
+        - database
+      properties:
+        version:
+          type: string
+          example: "1.0.0"
+        status:
+          type: string
+          enum: [ok, degraded]
+          example: "ok"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-10-20T14:30:00Z"
+        database:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum: [up, down]
+              example: "up"
+            latency:
+              type: string
+              example: "2ms"
+            error:
+              type: string
+              example: "connection refused"
+
+    SetupStatusResponse:
+      type: object
+      required:
+        - setup_required
+      properties:
+        setup_required:
+          type: boolean
+          example: true
+
+  parameters:
+    teamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: Team identifier
+      example: 1
+
+    userId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: User identifier
+      example: 1
+
+    providerId:
+      name: providerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: Provider identifier
+      example: 1
+
+    memberId:
+      name: memberId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: Team member identifier
+      example: 1
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check if the server is running and the database is connected. This endpoint is public and does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      description: Logout the current user. Since JWT is stateless, this primarily confirms the logout request on the client side.
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/teams:
+    get:
+      tags:
+        - Teams
+      summary: List teams
+      description: Get all teams where the user is a member
+      responses:
+        '200':
+          description: List of teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+        - Teams
+      summary: Create team
+      description: Create a new team (manager-only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Engineering Team"
+                description:
+                  type: string
+                  example: "Engineering department team"
+                settings:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  example:
+                    mcp_server: "http://mcp.example.com"
+      responses:
+        '201':
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/teams/{teamId}:
+    get:
+      tags:
+        - Teams
+      summary: Get team details
+      description: Get details for a specific team
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      responses:
+        '200':
+          description: Team details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Teams
+      summary: Update team
+      description: Update team details (manager-only, only team owner can update)
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Updated Team Name"
+                description:
+                  type: string
+                  example: "Updated description"
+                settings:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        '200':
+          description: Team updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Teams
+      summary: Delete team
+      description: Delete a team (manager-only, only team owner can delete)
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      responses:
+        '200':
+          description: Team deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Team deleted successfully"
+                  team_id:
+                    type: integer
+                    format: int64
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/teams/{teamId}/members:
+    get:
+      tags:
+        - Teams
+      summary: List team members
+      description: Get all members of a specific team
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      responses:
+        '200':
+          description: List of team members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team_id:
+                    type: integer
+                    format: int64
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+        - Teams
+      summary: Add team member
+      description: Add a member to a team (manager-only, only team owner can add members)
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "newmember@company.com"
+                role:
+                  type: string
+                  enum: [manager, member]
+                  example: "member"
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  team_id:
+                    type: integer
+                    format: int64
+                  role:
+                    type: string
+                    example: "member"
+                  message:
+                    type: string
+                    example: "Member added to team successfully"
+                  invitation_token:
+                    type: string
+                    description: Token for invited users (if new account was created)
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/teams/{teamId}/members/{memberId}:
+    delete:
+      tags:
+        - Teams
+      summary: Remove team member
+      description: Remove a member from a team (manager-only, only team owner can remove members)
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+        - $ref: '#/components/parameters/memberId'
+      responses:
+        '200':
+          description: Member removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Member removed from team successfully"
+                  team_id:
+                    type: integer
+                    format: int64
+                  member_id:
+                    type: integer
+                    format: int64
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/teams/{teamId}/settings:
+    get:
+      tags:
+        - Teams
+      summary: Get team settings
+      description: Get settings for a specific team
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      responses:
+        '200':
+          description: Team settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team_id:
+                    type: integer
+                    format: int64
+                  settings:
+                    type: object
+                    additionalProperties:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Teams
+      summary: Update team settings
+      description: Update settings for a specific team (manager-only, only team owner can update)
+      parameters:
+        - $ref: '#/components/parameters/teamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                mcp_server: "http://mcp.example.com"
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team_id:
+                    type: integer
+                    format: int64
+                  settings:
+                    type: object
+                    additionalProperties:
+                      type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/users:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: List all users in the tenant (manager-only)
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+        - Users
+      summary: Create user
+      description: Create a new user (manager-only, respects license seat limits)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - name
+                - password
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "newuser@company.com"
+                name:
+                  type: string
+                  example: "New User"
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: "securePassword123"
+                role:
+                  type: string
+                  enum: [manager, member]
+                  example: "member"
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request or seat limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - not a manager or seat limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user details
+      description: Get details for a specific user
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Users
+      summary: Update user
+      description: Update user details (manager-only)
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Updated Name"
+                role:
+                  type: string
+                  enum: [manager, member]
+                  example: "manager"
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: "newSecurePassword123"
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      description: Delete a user (manager-only, cannot delete yourself)
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+        '400':
+          description: Cannot delete yourself
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/dashboard/metrics:
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard metrics
+      description: Get time-series metrics for the dashboard
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [24h, 7d, 30d]
+            default: 7d
+          description: Time range for metrics
+          example: "7d"
+        - name: interval
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week]
+            default: hour
+          description: Data point interval
+          example: "hour"
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetricsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/dashboard/rankings:
+    get:
+      tags:
+        - Dashboard
+      summary: Get provider rankings
+      description: Get provider rankings based on usage
+      responses:
+        '200':
+          description: Provider rankings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardRankingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - only managers can view rankings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/dashboard/members:
+    get:
+      tags:
+        - Dashboard
+      summary: Get member statistics
+      description: Get usage statistics for all team members (manager-only)
+      responses:
+        '200':
+          description: Member statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMembersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/providers/{providerId}/enable:
+    post:
+      tags:
+        - Providers
+      summary: Enable provider
+      description: Enable a specific provider (manager-only)
+      parameters:
+        - $ref: '#/components/parameters/providerId'
+      responses:
+        '200':
+          description: Provider enabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider_id:
+                    type: integer
+                    format: int64
+                  enabled:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Provider enabled successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/providers/{providerId}/disable:
+    delete:
+      tags:
+        - Providers
+      summary: Disable provider
+      description: Disable a specific provider (manager-only)
+      parameters:
+        - $ref: '#/components/parameters/providerId'
+      responses:
+        '200':
+          description: Provider disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider_id:
+                    type: integer
+                    format: int64
+                  enabled:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Provider disabled successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/providers/{providerId}/stats:
+    get:
+      tags:
+        - Providers
+      summary: Get provider statistics
+      description: Get usage statistics for a specific provider
+      parameters:
+        - $ref: '#/components/parameters/providerId'
+      responses:
+        '200':
+          description: Provider statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider_id:
+                    type: integer
+                    format: int64
+                  provider_name:
+                    type: string
+                  total_requests:
+                    type: integer
+                  total_input_tokens:
+                    type: integer
+                  total_output_tokens:
+                    type: integer
+                  period_start:
+                    type: string
+                    format: date-time
+                  period_end:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/usage/current:
+    get:
+      tags:
+        - Usage
+      summary: Get current usage
+      description: Get current usage statistics for the authenticated user or team
+      parameters:
+        - name: period_start
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start of period for usage calculation
+        - name: period_end
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End of period for usage calculation
+      responses:
+        '200':
+          description: Current usage statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team_id:
+                    type: integer
+                    format: int64
+                  period_start:
+                    type: string
+                    format: date-time
+                  period_end:
+                    type: string
+                    format: date-time
+                  total_requests:
+                    type: integer
+                  total_input_tokens:
+                    type: integer
+                  total_output_tokens:
+                    type: integer
+                  total_cost:
+                    type: number
+                    format: float
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/usage/stats:
+    get:
+      tags:
+        - Usage
+      summary: Get usage statistics
+      description: Get aggregated usage statistics for the authenticated user's team
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_requests:
+                    type: integer
+                  total_input_tokens:
+                    type: integer
+                  total_output_tokens:
+                    type: integer
+                  period_start:
+                    type: string
+                    format: date-time
+                  period_end:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tiers:
+    get:
+      tags:
+        - License
+      summary: Get available license tiers
+      description: Returns information about all available license tiers including their names, limits, and features. This endpoint does not require authentication.
+      security: []
+      responses:
+        '200':
+          description: Tier information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tiers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LicenseTier'
+              example:
+                tiers:
+                  - tier: "0.0"
+                    name: "Community"
+                    max_providers_per_kind: 2
+                    features:
+                      - "Basic provider management"
+                  - tier: "1.0"
+                    name: "Standard"
+                    max_providers_per_kind: -1
+                    features:
+                      - "Unlimited providers"
+                      - "Basic analytics"
+                  - tier: "2.0"
+                    name: "Professional"
+                    max_providers_per_kind: -1
+                    features:
+                      - "Unlimited providers"
+                      - "Full analytics"
+                      - "Team management"
+                  - tier: "3.0"
+                    name: "Enterprise"
+                    max_providers_per_kind: -1
+                    features:
+                      - "Unlimited providers"
+                      - "Full analytics"
+                      - "SSO integration"
+                      - "Audit logs"
+
+  /api/v1/setup/status:
+    get:
+      tags:
+        - Setup
+      summary: Get setup status
+      description: Check if initial system setup is required. Returns true if no users exist in the system.
+      security: []
+      responses:
+        '200':
+          description: Setup status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupStatusResponse'
