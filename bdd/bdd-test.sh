@@ -1,6 +1,7 @@
 #!/bin/bash
 # BDD Test Runner
 # Runs all BDD scenarios using godog framework
+# Independent server management - does not depend on integration-test.sh
 
 set -e
 
@@ -13,9 +14,11 @@ fi
 
 # Default values
 TEST_SERVER_URL="${TEST_SERVER_URL:-http://localhost:8088}"
+TEST_SERVER_PORT="${TEST_SERVER_PORT:-8088}"
 GODOG_FORMAT="${GODOG_FORMAT:-pretty}"
 GODOG_TAGS="${GODOG_TAGS:-~@wip}"
 START_SERVER="${START_SERVER:-true}"
+SERVER_LOG_PATH="${SERVER_LOG_PATH:-/tmp/bdd-test-server.log}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -121,36 +124,84 @@ check_server() {
   fi
 }
 
-# Function to start the test server
+# Function to start the test server (independent, like integration-test.sh)
 start_server() {
   echo "Starting test server..."
+  echo "Log file: $SERVER_LOG_PATH"
 
-  # Check if integration test server script exists
-  if [ ! -f "../integration/test-server.sh" ]; then
-    echo "Error: test-server.sh not found in ../integration/"
+  # Get the server directory path
+  SERVER_DIR="../server"
+  if [ ! -d "$SERVER_DIR" ]; then
+    echo "Error: Server directory not found at $SERVER_DIR"
     exit 1
   fi
 
-  # Start the server in background
-  cd ../integration
-  ./test-server.sh > /tmp/test-server.log 2>&1 &
+  # Drop and recreate database (like integration-test.sh)
+  echo "Resetting test database..."
+  dropdb codetogether_test 2>/dev/null || true
+  createdb codetogether_test || {
+    echo "Error: Failed to create test database"
+    echo "Make sure PostgreSQL is running and you have permissions"
+    exit 1
+  }
+
+  # Check if server binary exists, if not build it
+  pushd "$SERVER_DIR" > /dev/null
+
+  # Build test binary if it doesn't exist or is outdated
+  if [ ! -f "bin/codetogether_test.cover" ] || [ "$SERVER_DIR/go.mod" -nt "bin/codetogether_test.cover" ]; then
+    echo "Building test server binary..."
+    mkdir -p bin
+    go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover . 2>&1 | head -20
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+      echo "Error: Failed to build test server binary"
+      popd > /dev/null
+      exit 1
+    fi
+  fi
+
+  # Run the test binary in background
+  echo "Starting test server on port $TEST_SERVER_PORT..."
+  TEST_COVERAGE_SERVER=1 PORT=$TEST_SERVER_PORT ./bin/codetogether_test.cover \
+    -test.v -test.run TestCoverageServer -test.coverprofile=/dev/null \
+    > "$SERVER_LOG_PATH" 2>&1 &
   SERVER_PID=$!
-  cd ../bdd
+  popd > /dev/null
 
   # Wait for server to be ready
-  echo "Waiting for server to start..."
+  echo "Waiting for server to start (PID: $SERVER_PID)..."
   for i in {1..30}; do
     if check_server; then
       SERVER_STARTED_BY_US=true
-      echo "✓ Test server started (PID: $SERVER_PID)"
-      return 0
+      echo -e "${GREEN}✓ Test server started${NC} (PID: $SERVER_PID, Port: $TEST_SERVER_PORT)"
+      break
     fi
     sleep 1
   done
 
-  echo "✗ Failed to start test server"
-  echo "Check logs: tail -100 /tmp/test-server.log"
-  exit 1
+  # Check if server started successfully
+  if ! check_server; then
+    echo -e "${RED}✗ Failed to start test server${NC}"
+    echo "Check logs: tail -100 $SERVER_LOG_PATH"
+    exit 1
+  fi
+
+  # Run initial setup (create admin user/organization)
+  echo "Running initial setup..."
+  SETUP_RESPONSE=$(curl -s -X POST http://localhost:$TEST_SERVER_PORT/api/v1/setup/admin \
+    -H "Content-Type: application/json" \
+    -d '{"organization_name":"BDD Test Org","admin_email":"admin@example.com","admin_name":"BDD Admin","admin_password":"AdminPassword123!"}')
+
+  # Check if setup was successful or already done
+  if echo "$SETUP_RESPONSE" | grep -q "already"; then
+    echo "Setup already completed (database has existing data)"
+  elif echo "$SETUP_RESPONSE" | grep -q "error\|Error\|failed"; then
+    echo "Setup response: $SETUP_RESPONSE"
+  else
+    echo "Initial setup completed"
+  fi
+
+  return 0
 }
 
 # Main execution
@@ -170,8 +221,10 @@ else
   else
     echo "✗ Test server is not running and --no-server was specified"
     echo ""
-    echo "Start the test server:"
-    echo "  cd ../integration && ./test-server.sh"
+    echo "Either:"
+    echo "  1. Omit --no-server to auto-start the server"
+    echo "  2. Start the server manually:"
+    echo "     cd ../server && PORT=$TEST_SERVER_PORT ./bin/codetogether_test.cover -test.run TestCoverageServer"
     echo ""
     exit 1
   fi

@@ -67,8 +67,8 @@ func IsTestServerRunning(serverURL string) bool {
 // GetTestServerLogs retrieves the test server logs from the default location
 // Returns the log file contents or an error
 func GetTestServerLogs() ([]byte, error) {
-	// Default log location for test server
-	logPath := "/tmp/test-server.log"
+	// Default log location for BDD test server
+	logPath := GetTestServerLogPath()
 
 	// Check if file exists
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
@@ -90,25 +90,23 @@ func GetTestServerLogPath() string {
 	if path := os.Getenv("TEST_SERVER_LOG_PATH"); path != "" {
 		return path
 	}
-	return "/tmp/test-server.log"
+	return "/tmp/bdd-test-server.log"
 }
 
-// StartTestServer starts the test server using the integration test script
-// This is typically called from shell scripts, but can be called programmatically
+// StartTestServer is a placeholder for programmatic server startup
+// In practice, the BDD test script (bdd-test.sh) manages server startup independently
+// by building and running the test server binary directly from ../server
 func StartTestServer() error {
-	// The test server is usually started via the integration/test-server.sh script
-	// This function is provided for programmatic control if needed
+	// The test server is typically started by the bdd-test.sh script
+	// which builds and runs the server binary from ../server
 
 	// Check if server is already running
-	serverURL := GetTestServerURL()
+	serverURL := GetDefaultTestServerURL()
 	if IsTestServerRunning(serverURL) {
 		return fmt.Errorf("test server is already running at %s", serverURL)
 	}
 
-	// In most cases, the test server should be started manually:
-	// cd ../integration && ./test-server.sh
-
-	return fmt.Errorf("test server should be started via shell script: cd ../integration && ./test-server.sh")
+	return fmt.Errorf("test server should be started via bdd-test.sh script, which manages the server binary independently")
 }
 
 // StopTestServer stops the test server by PID
