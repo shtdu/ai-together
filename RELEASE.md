@@ -103,7 +103,7 @@ git checkout -b release/vX.Y.Z
 
    ---
 
-   ## Version 0.2.0 (当前版本)
+   ## Version 0.2.0
    ...
    ```
 
@@ -146,7 +146,13 @@ The `.github/workflows/release.yml` will automatically:
 ### Step 6: Verify Release
 
 ```bash
-# Check release was created
+# Wait for CI workflow to complete (check status)
+gh run list --workflow=release.yml --limit 1
+
+# Monitor workflow progress
+gh run watch
+
+# Once workflow completes, check release was created
 gh release view vX.Y.Z
 
 # View release in browser
@@ -222,6 +228,8 @@ make docker-manager-multi DOCKER_TAG=vX.Y.Z
 |-----------|------------|
 | Server | `genewoo/ai-together-server:vX.Y.Z` |
 | Manager | `genewoo/ai-together-manager:vX.Y.Z` |
+
+**Note**: These are the upstream image names. If you are building from a fork, update the image names to match your Docker Hub organization.
 
 ---
 
