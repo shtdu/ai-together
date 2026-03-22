@@ -15,7 +15,7 @@
     "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.3.0",
     "@mui/x-data-grid": "^7.24.0",
-    "@mui/x-date-pickers": "^7.24.0",
+    "@mui/x-date-pickers": "^8.27.2",
     "@tanstack/react-query": "^5.62.8",
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
