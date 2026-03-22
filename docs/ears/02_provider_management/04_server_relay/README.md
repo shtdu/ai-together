@@ -62,46 +62,57 @@ Enable AI tools to send requests through a central server that handles provider 
 
 ---
 
-### 2. Request Forwarding with Failover
+### 2. Multi-Tenant Provider Selection
 
-**Purpose:** Define how the relay forwards requests to providers with automatic failover.
+**Purpose:** Define how the relay isolates provider selection by tenant.
 
-#### Event-Driven Requirements (Provider Selection)
+**See also:** [02.02 Request Routing](../02_request_routing/) for general provider selection, failover, and health management logic.
+
+#### Server-Specific Requirements
+
+The server relay applies the same provider selection and failover logic as the member proxy ([Request Routing](../02_request_routing/)), with the following server-specific differences:
 
 - **SR-02-301:** `When a relay request arrives, the system shall load all providers for the user's tenant_id.`
-- **SR-02-302:** `When a relay request arrives, the system shall filter providers by tool kind (claude, codex, opencode).`
-- **SR-02-303:** `When a relay request arrives, the system shall filter to only enabled providers.`
-- **SR-02-304:** `When a relay request arrives, the system shall validate provider configuration (API URL and API key present).`
-- **SR-02-305:** `When a relay request arrives, the system shall validate provider configuration using provider-specific validation rules.`
-- **SR-02-306:** `When a relay request specifies a model, the system shall filter to providers that support the requested model.`
-- **SR-02-307:** `When a relay request arrives, the system shall sort filtered providers by level (lower number = higher priority).`
+- **SR-02-302:** `When a relay request arrives, the system shall isolate provider selection to the user's tenant (providers from other tenants must not be considered).`
+- **SR-02-303:** `When applying model mapping transformations, the system shall use tenant-specific model mappings.`
+- **SR-02-304:** `When all providers fail, the system shall return HTTP 400 with error message indicating all providers failed, including tenant context for debugging.`
 
-#### Event-Driven Requirements (Request Forwarding)
+#### Referenced Requirements
 
-- **SR-02-308:** `When a relay request arrives, the system shall attempt providers in priority order.`
-- **SR-02-309:** `When a provider successfully responds, the system shall return the response to the client.`
-- **SR-02-310:** `When a provider fails, the system shall attempt the next provider in the list.`
-- **SR-02-311:** `When all providers fail, the system shall return HTTP 400 with error message indicating all providers failed.`
+The following behaviors from [Request Routing](../02_request_routing/) apply to server relay:
 
-#### State-Driven Requirements (Failover Limits)
-
-- **SR-02-401:** `While attempting providers, if all providers have been exhausted, then the system shall stop attempting additional providers.`
+| Behavior | Reference |
+|----------|-----------|
+| Provider filtering by tool kind | RR-02-101 to RR-02-102 |
+| Provider sorting by priority (level) | RR-02-103 |
+| Request forwarding with failover | RR-02-201 to RR-02-207 |
+| Provider health management | RR-02-401 to RR-02-602 |
+| Error handling and user notifications | RR-02-801 to RR-02-902 |
 
 ---
 
-### 3. Model Mapping Transformation
+### 3. Model Mapping
 
-**Purpose:** Define how the relay transforms model names using provider-specific mappings.
+**Purpose:** Define how the relay applies tenant-specific model mappings.
 
-#### Event-Driven Requirements (Model Name Mapping)
+**See also:** [02.03 Model Mapping](../03_model_mapping/) for complete model mapping specification.
 
-- **SR-02-501:** `When a provider has model mappings configured, the system shall check if the requested model matches a mapping key.`
-- **SR-02-502:** `When a requested model matches a mapping key, the system shall replace the model name in the request body with the mapped target model.`
-- **SR-02-503:** `When a provider has no model mappings, the system shall pass the requested model name unchanged.`
+#### Server-Specific Requirements
 
-#### Ubiquitous Requirements
+- **SR-02-401:** `When a provider has model mappings configured, the system shall check if the requested model matches a mapping key.`
+- **SR-02-402:** `When a requested model matches a mapping key, the system shall replace the model name in the request body with the mapped target model.`
+- **SR-02-403:** `When a provider has no model mappings, the system shall pass the requested model name unchanged.`
 
-- **SR-02-504:** `The system shall apply model mapping transformations before forwarding the request to the provider.`
+#### Referenced Requirements
+
+The following behaviors from [Model Mapping](../03_model_mapping/) apply to server relay:
+
+| Behavior | Reference |
+|----------|-----------|
+| Exact match resolution | MM-02-301 to MM-02-303 |
+| Wildcard match resolution | MM-02-304 to MM-02-306 |
+| Passthrough behavior | MM-02-307 to MM-02-308 |
+| Default mappings | MM-02-501 to MM-02-505 |
 
 ---
 
@@ -111,16 +122,16 @@ Enable AI tools to send requests through a central server that handles provider 
 
 #### Event-Driven Requirements (Stream Detection)
 
-- **SR-02-601:** `When a request contains "stream": true, the system shall detect streaming mode.`
-- **SR-02-602:** `When a provider returns a streaming response, the system shall forward streaming chunks to the client.`
+- **SR-02-501:** `When a request contains "stream": true, the system shall detect streaming mode.`
+- **SR-02-502:** `When a provider returns a streaming response, the system shall forward streaming chunks to the client.`
 
 #### State-Driven Requirements (Stream Forwarding)
 
-- **SR-02-603:** `While a streaming response is in progress, the system shall forward each chunk to the client as it arrives.`
+- **SR-02-503:** `While a streaming response is in progress, the system shall forward each chunk to the client as it arrives.`
 
 #### Ubiquitous Requirements
 
-- **SR-02-604:** `The system shall preserve streaming format when forwarding responses.`
+- **SR-02-504:** `The system shall preserve streaming format when forwarding responses.`
 
 ---
 
@@ -128,15 +139,17 @@ Enable AI tools to send requests through a central server that handles provider 
 
 **Purpose:** Define how the relay extracts token usage from streaming responses for tracking.
 
+**See also:** [04.01 Usage Data Collection](../../04_usage_insights/01_data_collection/) for usage tracking specifications.
+
 #### Event-Driven Requirements (Usage Parsing)
 
-- **SR-02-701:** `When a provider returns a streaming response, the system shall parse token usage from the response.`
-- **SR-02-702:** `When streaming chunks contain token usage data, the system shall extract input_tokens, output_tokens, cache_create_tokens, cache_read_tokens, and reasoning_tokens.`
-- **SR-02-703:** `When token usage is extracted, the system shall record the usage with the tenant_id, user_id, provider, model, and token counts.`
+- **SR-02-601:** `When a provider returns a streaming response, the system shall parse token usage from the response.`
+- **SR-02-602:** `When streaming chunks contain token usage data, the system shall extract input_tokens, output_tokens, cache_create_tokens, cache_read_tokens, and reasoning_tokens.`
+- **SR-02-603:** `When token usage is extracted, the system shall record the usage with the tenant_id, user_id, provider, model, and token counts.`
 
 #### Ubiquitous Requirements
 
-- **SR-02-704:** `The system shall use tool-specific parsers for token extraction (Claude, Codex, OpenCode formats).`
+- **SR-02-604:** `The system shall use tool-specific parsers for token extraction (Claude, Codex, OpenCode formats).`
 
 ---
 
@@ -144,15 +157,17 @@ Enable AI tools to send requests through a central server that handles provider 
 
 **Purpose:** Define how the relay tracks usage for analytics and cost management.
 
+**See also:** [04.01 Usage Data Collection](../../04_usage_insights/01_data_collection/) for complete usage tracking specifications.
+
 #### Event-Driven Requirements (Usage Recording)
 
-- **SR-02-801:** `When a relay request completes, the system shall record usage data including platform, model, provider, token counts, duration, tenant_id, and user_id.`
-- **SR-02-802:** `When usage recording fails, the system shall log the error but not affect the response to the client.`
+- **SR-02-701:** `When a relay request completes, the system shall record usage data including platform, model, provider, token counts, duration, tenant_id, and user_id.`
+- **SR-02-702:** `When usage recording fails, the system shall log the error but not affect the response to the client.`
 
 #### Ubiquitous Requirements
 
-- **SR-02-803:** `The system shall extract user_id from the authenticated request context for usage tracking.`
-- **SR-02-804:** `The system shall extract tenant_id from the authenticated user for multi-tenant isolation.`
+- **SR-02-703:** `The system shall extract user_id from the authenticated request context for usage tracking.`
+- **SR-02-704:** `The system shall extract tenant_id from the authenticated user for multi-tenant isolation.`
 
 ---
 
@@ -162,16 +177,16 @@ Enable AI tools to send requests through a central server that handles provider 
 
 #### Event-Driven Requirements (Request Logging)
 
-- **SR-02-901:** `When a relay request arrives, the system shall log request_id, tool, endpoint, model, is_stream, client_ip, and tenant_id.`
-- **SR-02-902:** `When a relay request arrives, the system shall log the available providers and count.`
-- **SR-02-903:** `When attempting a provider, the system shall log the provider name and attempt number.`
-- **SR-02-904:** `When a provider succeeds, the system shall log the provider name, duration, and HTTP status.`
-- **SR-02-905:** `When a provider fails, the system shall log the provider name, error message, and duration.`
-- **SR-02-906:** `When all providers fail, the system shall log the total number of attempts and failure reasons.`
+- **SR-02-801:** `When a relay request arrives, the system shall log request_id, tool, endpoint, model, is_stream, client_ip, and tenant_id.`
+- **SR-02-802:** `When a relay request arrives, the system shall log the available providers and count.`
+- **SR-02-803:** `When attempting a provider, the system shall log the provider name and attempt number.`
+- **SR-02-804:** `When a provider succeeds, the system shall log the provider name, duration, and HTTP status.`
+- **SR-02-805:** `When a provider fails, the system shall log the provider name, error message, and duration.`
+- **SR-02-806:** `When all providers fail, the system shall log the total number of attempts and failure reasons.`
 
 #### Ubiquitous Requirements
 
-- **SR-02-907:** `The system shall generate a unique request_id using Unix nanoseconds for each relay request.`
+- **SR-02-807:** `The system shall generate a unique request_id using Unix nanoseconds for each relay request.`
 
 ---
 
@@ -181,10 +196,10 @@ Enable AI tools to send requests through a central server that handles provider 
 
 #### Ubiquitous Requirements
 
-- **SR-02-1001:** `The system shall forward request headers to the provider, except for Authorization which is replaced with the provider's API key.`
-- **SR-02-1002:** `The system shall set the Authorization header to "Bearer <provider_api_key>" when forwarding to the provider.`
-- **SR-02-1003:** `The system shall set the Accept header to "application/json" if not already present.`
-- **SR-02-1004:** `The system shall forward query parameters to the provider.`
+- **SR-02-901:** `The system shall forward request headers to the provider, except for Authorization which is replaced with the provider's API key.`
+- **SR-02-902:** `The system shall set the Authorization header to "Bearer <provider_api_key>" when forwarding to the provider.`
+- **SR-02-903:** `The system shall set the Accept header to "application/json" if not already present.`
+- **SR-02-904:** `The system shall forward query parameters to the provider.`
 
 ---
 
@@ -194,15 +209,15 @@ Enable AI tools to send requests through a central server that handles provider 
 
 #### Event-Driven Requirements (Provider Errors)
 
-- **SR-02-1101:** `When a provider returns HTTP 4xx or 5xx error, the system shall consider the provider failed and attempt the next provider.`
-- **SR-02-1102:** `When a provider returns HTTP 429 (rate limit), the system shall mark the provider as failed and attempt the next provider.`
-- **SR-02-1103:** `When a provider connection times out or has a network error, the system shall mark the provider as failed and attempt the next provider.`
+- **SR-02-1001:** `When a provider returns HTTP 4xx or 5xx error, the system shall consider the provider failed and attempt the next provider.`
+- **SR-02-1002:** `When a provider returns HTTP 429 (rate limit), the system shall mark the provider as failed and attempt the next provider.`
+- **SR-02-1003:** `When a provider connection times out or has a network error, the system shall mark the provider as failed and attempt the next provider.`
 
 #### Unwanted Behaviour Requirements (Context Validation)
 
-- **SR-02-1201:** `If the user context is missing from the request, then the system shall return HTTP 500 with error "User not found in context".`
-- **SR-02-1202:** `If the provider service fails to load providers, then the system shall return HTTP 500 with error "failed to load providers".`
-- **SR-02-1203:** `If the request body is invalid or cannot be read, then the system shall return HTTP 400 with error "invalid request body".`
+- **SR-02-1101:** `If the user context is missing from the request, then the system shall return HTTP 500 with error "User not found in context".`
+- **SR-02-1102:** `If the provider service fails to load providers, then the system shall return HTTP 500 with error "failed to load providers".`
+- **SR-02-1103:** `If the request body is invalid or cannot be read, then the system shall return HTTP 400 with error "invalid request body".`
 
 ---
 
@@ -244,12 +259,13 @@ Enable AI tools to send requests through a central server that handles provider 
 ## Business Rules
 
 - **BR-02-001:** Relay endpoints require valid JWT authentication
-- **BR-02-002:** Provider selection uses level field (lower = higher priority)
-- **BR-02-003:** Only enabled providers are used for relaying
-- **BR-02-004:** Providers with missing API URL or API key are automatically skipped
-- **BR-02-005:** Providers failing configuration validation are automatically skipped
-- **BR-02-006:** Usage is tracked per-tenant for multi-tenant isolation
-- **BR-02-007:** Token usage is extracted from streaming responses for cost tracking
+- **BR-02-002:** Provider selection is isolated by tenant_id (multi-tenant)
+- **BR-02-003:** Provider selection uses level field (lower = higher priority)
+- **BR-02-004:** Only enabled providers are used for relaying
+- **BR-02-005:** Providers with missing API URL or API key are automatically skipped
+- **BR-02-006:** Providers failing configuration validation are automatically skipped
+- **BR-02-007:** Usage is tracked per-tenant for multi-tenant isolation
+- **BR-02-008:** Token usage is extracted from streaming responses for cost tracking
 
 ---
 
@@ -272,11 +288,10 @@ Enable AI tools to send requests through a central server that handles provider 
 ## Success Criteria
 
 - Relay endpoints accept requests for all three tool types
+- Multi-tenant data isolation is maintained (tenant_id from JWT)
 - Provider failover works automatically on failures
 - Token usage is extracted and recorded accurately
-- Multi-tenant data isolation is maintained
 - Streaming responses are forwarded correctly
-- Model mapping transformations are applied
 - All errors are logged with sufficient context
 
 ---
