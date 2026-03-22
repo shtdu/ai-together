@@ -19,6 +19,8 @@ GODOG_FORMAT="${GODOG_FORMAT:-pretty}"
 GODOG_TAGS="${GODOG_TAGS:-~@wip}"
 START_SERVER="${START_SERVER:-true}"
 SERVER_LOG_PATH="${SERVER_LOG_PATH:-/tmp/bdd-test-server.log}"
+COVERAGE_DIR="${COVERAGE_DIR:-../server/covdata}"
+GENERATE_COVERAGE="${GENERATE_COVERAGE:-true}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -160,10 +162,16 @@ start_server() {
     fi
   fi
 
-  # Run the test binary in background
+  # Setup coverage directory and clean old BDD coverage files
+  mkdir -p "$COVERAGE_DIR"
+  rm -f covdata/coverage.bdd.* 2>/dev/null
+  rm -f coverage.bdd.out coverage.bdd.html 2>/dev/null
+  COVERAGE_FILE="$COVERAGE_DIR/coverage.bdd.$$"
+
+  # Run the test binary in background with coverage collection
   echo "Starting test server on port $TEST_SERVER_PORT..."
   TEST_COVERAGE_SERVER=1 PORT=$TEST_SERVER_PORT ./bin/codetogether_test.cover \
-    -test.v -test.run TestCoverageServer -test.coverprofile=/dev/null \
+    -test.v -test.run TestCoverageServer -test.coverprofile="$COVERAGE_FILE" \
     > "$SERVER_LOG_PATH" 2>&1 &
   SERVER_PID=$!
   popd > /dev/null
@@ -263,7 +271,55 @@ echo "================================"
 # Cleanup if we started the server
 if [ "$SERVER_STARTED_BY_US" = "true" ]; then
   stop_server
+
+  # Generate coverage report if we started the server and coverage is enabled
+  if [ "$GENERATE_COVERAGE" = "true" ]; then
+    echo ""
+    echo "================================"
+    echo "Generating coverage report..."
+    echo "================================"
+
+    # Wait a moment for coverage data to be written
+    sleep 1
+
+    cd ../server
+    if [ -d "covdata" ] && [ "$(ls -A covdata/coverage.bdd.* 2>/dev/null)" ]; then
+      # Find and concatenate BDD coverage files
+      coverage_files=$(ls covdata/coverage.bdd.* 2>/dev/null)
+      if [ -n "$coverage_files" ]; then
+        # Merge BDD coverage files - keep first file's header, skip headers in rest
+        first_file=true
+        for f in $coverage_files; do
+          if [ "$first_file" = "true" ]; then
+            cat "$f" > coverage.bdd.out
+            first_file=false
+          else
+            grep -v "^mode:" "$f" >> coverage.bdd.out
+          fi
+        done
+
+        # Display coverage percentage
+        echo ""
+        echo -e "${GREEN}Server Coverage (BDD Tests):${NC}"
+        go tool cover -func=coverage.bdd.out | tail -1
+
+        # Generate HTML report
+        go tool cover -html=coverage.bdd.out -o=coverage.bdd.html
+        echo ""
+        echo "Coverage report generated: server/coverage.bdd.html"
+
+        # Show total coverage
+        echo ""
+        echo "Breakdown by module:"
+        go tool cover -func=coverage.bdd.out | grep -E "^github.com/code-together/server/" | head -20
+      fi
+    else
+      echo "No BDD coverage files found in covdata/"
+    fi
+    cd ../bdd
+  fi
 fi
 
+echo ""
 exit $TEST_EXIT_CODE
 
