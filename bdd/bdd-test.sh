@@ -313,7 +313,7 @@ if [ "$SERVER_STARTED_BY_US" = "true" ]; then
         # Show total coverage
         echo ""
         echo "Breakdown by module:"
-        go tool cover -func=coverage.bdd.out | grep -E "^github.com/code-together/server/" | head -20
+        go tool cover -func=coverage.bdd.out | grep -E "^switch-server/" | head -20
       fi
     else
       echo "No BDD coverage files found in covdata/"
