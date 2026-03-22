@@ -253,9 +253,11 @@ cd godog
 export GODOG_FORMAT="$GODOG_FORMAT"
 export GODOG_TAGS="$GODOG_TAGS"
 
-# Run tests
+# Run tests (allow failures so we can generate coverage)
+set +e
 go test -v ./...
 TEST_EXIT_CODE=$?
+set -e
 
 cd ..
 
