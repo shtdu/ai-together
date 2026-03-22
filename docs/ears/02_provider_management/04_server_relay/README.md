@@ -6,6 +6,8 @@ The server relay is a centralized HTTP proxy that forwards AI tool requests to c
 
 Enable AI tools to send requests through a central server that handles provider routing, failover, model mapping, and usage tracking for team analytics and cost management.
 
+**Key Design Principle:** The server relay is **tool-agnostic** and supports arbitrary AI tools, not just the predefined tools (Claude Code, Codex, OpenCode). Unlike the member proxy which integrates directly with specific tools, the server relay acts as a generic HTTP proxy that can forward requests for any tool identifier.
+
 ## Relay vs Proxy Distinction
 
 | Aspect | Member Proxy | Server Relay |
@@ -17,6 +19,7 @@ Enable AI tools to send requests through a central server that handles provider 
 | **Usage Tracking** | Batches uploads to server | Tracks in real-time |
 | **Multi-tenancy** | Single user | Isolates by tenant_id |
 | **Configuration** | Receives from server | Source of truth |
+| **Tool Support** | Hardcoded for Claude Code, Codex, OpenCode | Tool-agnostic (supports arbitrary tools) |
 
 ## User Personas
 
@@ -31,33 +34,28 @@ Enable AI tools to send requests through a central server that handles provider 
 
 #### Ubiquitous Requirements
 
-- **SR-02-001:** `The system shall provide relay endpoints for three tool types: claude, codex, and opencode.`
+- **SR-02-001:** `The system shall provide relay endpoints that accept any tool identifier as a URL parameter.`
 - **SR-02-002:** `The system shall require JWT authentication for all relay endpoints.`
 - **SR-02-003:** `The system shall route requests based on the tool parameter in the URL path.`
 - **SR-02-004:** `The system shall extract the user's tenant_id from the JWT token for multi-tenant isolation.`
 
 #### Event-Driven Requirements (Anthropic-Style Messages)
 
-- **SR-02-101:** `When a client sends POST to /api/v1/relay/:tool/v1/messages, the system shall validate the tool parameter.`
-- **SR-02-102:** `When a client sends POST to /api/v1/relay/:tool/v1/messages with an invalid tool, the system shall return HTTP 400 with error message "invalid tool kind".`
-- **SR-02-103:** `When a client sends POST to /api/v1/relay/:tool/v1/messages with a valid tool, the system shall forward the request to configured providers.`
-- **SR-02-104:** `When a client sends POST to /api/v1/relay/claude/v1/messages, the system shall use Anthropic-style message format.`
-- **SR-02-105:** `When a client sends POST to /api/v1/relay/codex/v1/messages, the system shall use Codex message format.`
-- **SR-02-106:** `When a client sends POST to /api/v1/relay/opencode/v1/messages, the system shall use OpenCode message format.`
+- **SR-02-101:** `When a client sends POST to /api/v1/relay/:tool/v1/messages, the system shall accept any tool identifier in the :tool parameter.`
+- **SR-02-102:** `When a client sends POST to /api/v1/relay/:tool/v1/messages, the system shall forward the request to configured providers without validating the tool parameter against a predefined list.`
+- **SR-02-103:** `When a client sends POST to /api/v1/relay/:tool/v1/messages, the system shall forward the request body to the provider without modification.`
 
 #### Event-Driven Requirements (OpenAI-Style Chat Completions)
 
-- **SR-02-107:** `When a client sends POST to /api/v1/relay/:tool/v1/chat/completions, the system shall validate the tool parameter.`
-- **SR-02-108:** `When a client sends POST to /api/v1/relay/:tool/v1/chat/completions with an invalid tool, the system shall return HTTP 400 with error message "invalid tool kind".`
-- **SR-02-109:** `When a client sends POST to /api/v1/relay/:tool/v1/chat/completions with a valid tool, the system shall forward the request to configured providers.`
-- **SR-02-110:** `When a client sends POST to /api/v1/relay/codex/v1/chat/completions, the system shall use OpenAI-style chat completions format.`
-- **SR-02-111:** `When a client sends POST to /api/v1/relay/opencode/v1/chat/completions, the system shall use OpenAI-style chat completions format.`
+- **SR-02-104:** `When a client sends POST to /api/v1/relay/:tool/v1/chat/completions, the system shall accept any tool identifier in the :tool parameter.`
+- **SR-02-105:** `When a client sends POST to /api/v1/relay/:tool/v1/chat/completions, the system shall forward the request to configured providers without validating the tool parameter against a predefined list.`
+- **SR-02-106:** `When a client sends POST to /api/v1/relay/:tool/v1/chat/completions, the system shall forward the request body to the provider without modification.`
 
 #### Unwanted Behaviour Requirements (Invalid Requests)
 
 - **SR-02-201:** `If a client sends a request without JWT authentication, then the system shall return HTTP 401 Unauthorized.`
 - **SR-02-202:** `If a client sends a request with an expired JWT token, then the system shall return HTTP 401 Unauthorized.`
-- **SR-02-203:** `If a client sends a request for a tool with no configured providers, then the system shall return HTTP 404 with error "no providers available".`
+- **SR-02-203:** `If a client sends a request for a tool identifier with no configured providers, then the system shall return HTTP 404 with error "no providers available for tool '<tool>'".`
 - **SR-02-204:** `If a client sends a request for a model that no provider supports, then the system shall return HTTP 404 with error "no available provider supports model '<model>'".`
 
 ---
@@ -149,7 +147,7 @@ The following behaviors from [Model Mapping](../03_model_mapping/) apply to serv
 
 #### Ubiquitous Requirements
 
-- **SR-02-604:** `The system shall use tool-specific parsers for token extraction (Claude, Codex, OpenCode formats).`
+- **SR-02-604:** `The system shall use provider-specific parsers for token extraction based on the provider's API format.`
 
 ---
 
@@ -227,11 +225,11 @@ The following behaviors from [Model Mapping](../03_model_mapping/) apply to serv
 
 | Endpoint | Method | Description | Tool Types |
 |----------|--------|-------------|------------|
-| `/api/v1/relay/:tool/v1/messages` | POST | Anthropic-style messages endpoint | claude, codex, opencode |
-| `/api/v1/relay/:tool/v1/chat/completions` | POST | OpenAI-style chat completions | codex, opencode |
+| `/api/v1/relay/:tool/v1/messages` | POST | Anthropic-style messages endpoint | Any tool identifier |
+| `/api/v1/relay/:tool/v1/chat/completions` | POST | OpenAI-style chat completions | Any tool identifier |
 
 **URL Parameters:**
-- `:tool` - Tool type (claude, codex, or opencode)
+- `:tool` - Tool identifier (arbitrary string, validated by provider configuration)
 
 **Authentication:**
 - JWT Bearer token required
@@ -246,10 +244,9 @@ The following behaviors from [Model Mapping](../03_model_mapping/) apply to serv
 **Error Responses:**
 | HTTP Code | Error Message | Condition |
 |-----------|---------------|-----------|
-| 400 | `invalid tool kind: <tool>` | Invalid tool parameter |
 | 400 | `invalid request body` | Malformed request body |
+| 404 | `no providers available for tool '<tool>'` | No providers configured for the specified tool |
 | 404 | `no available provider supports model '<model>'` | No provider supports requested model |
-| 404 | `no providers available` | No providers configured |
 | 500 | `User not found in context` | Missing user context |
 | 500 | `failed to load providers` | Provider service error |
 | 400 | `all <n> providers failed (<attempts> attempts total): <details>` | All providers failed |
@@ -259,13 +256,14 @@ The following behaviors from [Model Mapping](../03_model_mapping/) apply to serv
 ## Business Rules
 
 - **BR-02-001:** Relay endpoints require valid JWT authentication
-- **BR-02-002:** Provider selection is isolated by tenant_id (multi-tenant)
-- **BR-02-003:** Provider selection uses level field (lower = higher priority)
-- **BR-02-004:** Only enabled providers are used for relaying
-- **BR-02-005:** Providers with missing API URL or API key are automatically skipped
-- **BR-02-006:** Providers failing configuration validation are automatically skipped
-- **BR-02-007:** Usage is tracked per-tenant for multi-tenant isolation
-- **BR-02-008:** Token usage is extracted from streaming responses for cost tracking
+- **BR-02-002:** Relay is tool-agnostic and accepts any tool identifier (does not validate against a predefined list)
+- **BR-02-003:** Provider selection is isolated by tenant_id (multi-tenant)
+- **BR-02-004:** Provider selection uses level field (lower = higher priority)
+- **BR-02-005:** Only enabled providers are used for relaying
+- **BR-02-006:** Providers with missing API URL or API key are automatically skipped
+- **BR-02-007:** Providers failing configuration validation are automatically skipped
+- **BR-02-008:** Usage is tracked per-tenant for multi-tenant isolation
+- **BR-02-009:** Token usage is extracted from streaming responses for cost tracking
 
 ---
 
@@ -273,8 +271,8 @@ The following behaviors from [Model Mapping](../03_model_mapping/) apply to serv
 
 | Scenario | System Behavior |
 |----------|----------------|
-| Invalid tool kind | Return 400: "invalid tool kind: <tool>" |
-| No providers configured | Return 404: "no providers available" |
+| Unknown tool identifier | Attempt to route to configured providers; return 404 if no providers configured |
+| No providers configured for tool | Return 404: "no providers available for tool '<tool>'" |
 | No provider supports model | Return 404: "no available provider supports model '<model>'" |
 | All providers fail | Return 400: "all <n> providers failed (<attempts> attempts total)" |
 | User context missing | Return 500: "User not found in context" |
@@ -287,12 +285,13 @@ The following behaviors from [Model Mapping](../03_model_mapping/) apply to serv
 
 ## Success Criteria
 
-- Relay endpoints accept requests for all three tool types
+- Relay endpoints accept requests for any tool identifier (tool-agnostic)
 - Multi-tenant data isolation is maintained (tenant_id from JWT)
 - Provider failover works automatically on failures
 - Token usage is extracted and recorded accurately
 - Streaming responses are forwarded correctly
 - All errors are logged with sufficient context
+- New tools can be supported through provider configuration without code changes
 
 ---
 
