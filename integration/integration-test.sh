@@ -103,7 +103,15 @@ generate_coverage() {
       # Show breakdown by module (excluding 0% coverage files)
       echo ""
       echo "Breakdown by module (with coverage):"
-      go tool cover -func=coverage.integration.out | grep -E "^switch-server/" | grep -v "0.0%" | head -20
+      awk '
+        /^switch-server\// && $NF != "0.0%" {
+          print
+          count++
+          if (count == 20) {
+            exit
+          }
+        }
+      ' coverage.integration.out
     else
       echo "No coverage files found in covdata/"
     fi
@@ -148,12 +156,15 @@ cd ../server
 if [ ! -f "bin/codetogether_test.cover" ] || [ "../server/go.mod" -nt "bin/codetogether_test.cover" ]; then
   echo "Building test server binary..."
   mkdir -p bin
-  go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover . 2>&1 | head -20
-  if [ ${PIPESTATUS[0]} -ne 0 ]; then
+  BUILD_LOG=$(mktemp)
+  if ! GOWORK=off go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover . >"$BUILD_LOG" 2>&1; then
     echo -e "${RED}✗ Error: Failed to build test server binary${NC}"
+    sed -n '1,200p' "$BUILD_LOG"
+    rm -f "$BUILD_LOG"
     popd
     exit 1
   fi
+  rm -f "$BUILD_LOG"
   echo -e "${GREEN}✓ Test server built${NC}"
 fi
 
