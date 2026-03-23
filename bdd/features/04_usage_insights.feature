@@ -801,14 +801,6 @@ Feature: Usage Insights and Analytics
 
   Rule: Usage Statistics Extended
 
-    @p1 @requirement:UI-03-101
-    Scenario: Get usage statistics multiple times
-      Given I am logged in as a manager
-      When I get usage statistics
-      And I get usage statistics
-      And I get usage statistics
-      Then all operations should succeed
-
     @p1 @requirement:UI-03-102
     Scenario: Get current usage after statistics
       Given I am logged in as a manager
@@ -822,14 +814,6 @@ Feature: Usage Insights and Analytics
       And I have uploaded 10 usage records
       When I list all usage records
       Then I should see at least 10 usage records
-
-    @p2 @requirement:UI-03-104
-    Scenario: Get provider analytics multiple times
-      Given I am logged in as a manager
-      And I have created a provider
-      When I get provider analytics
-      And I get provider analytics
-      Then both operations should succeed
 
     @p2 @requirement:UI-03-105
     Scenario: Upload usage record then verify statistics
@@ -919,33 +903,10 @@ Feature: Usage Insights and Analytics
 
   Rule: Usage Statistics Extended
 
-    @p1 @requirement:UI-03-117
-    Scenario: Get usage statistics multiple times
-      Given I am logged in as a manager
-      When I get usage statistics
-      And I get usage statistics
-      And I get usage statistics
-      Then all operations should succeed
-
-    @p1 @requirement:UI-03-118
-    Scenario: Get current usage multiple times
-      Given I am logged in as a manager
-      When I get current usage statistics
-      And I get current usage statistics
-      And I get current usage statistics
-      Then all operations should succeed
-
     @p1 @requirement:UI-03-119
     Scenario: Usage endpoints together
       Given I am logged in as a manager
       When I get usage statistics
-      And I get current usage statistics
-      Then both operations should succeed
-
-    @p2 @requirement:UI-03-120
-    Scenario: Get usage as member multiple times
-      Given I am logged in as a member
-      When I get current usage statistics
       And I get current usage statistics
       Then both operations should succeed
 
@@ -965,14 +926,5 @@ Feature: Usage Insights and Analytics
       When I get usage statistics
       And I get current usage statistics
       And I list all usage records
-      Then all operations should succeed
-
-    @p2 @requirement:UI-03-123
-    Scenario: Usage operations repeated
-      Given I am logged in as a manager
-      When I get usage statistics
-      And I get current usage statistics
-      And I get usage statistics
-      And I get current usage statistics
       Then all operations should succeed
 

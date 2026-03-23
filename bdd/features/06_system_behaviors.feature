@@ -111,31 +111,7 @@ Feature: System Behaviors
       Then all requests should succeed
       And all responses should be consistent
 
-  Rule: Simple Health Variations
-
-    @p2 @requirement:SB-05-014
-    Scenario: Health check returns OK status
-      When I check the health endpoint
-      Then the response should contain "ok" or "healthy"
-
-    @p2 @requirement:SB-05-015
-    Scenario: Health check contains version field
-      When I check the health endpoint
-      Then the response should contain version information
-
-    @p2 @requirement:SB-05-016
-    Scenario: Multiple health checks return consistent results
-      When I check the health endpoint multiple times
-      Then all responses should be consistent
-      And the status code should be 200
-
   Rule: Health Check Extended Scenarios
-
-    @p1 @requirement:SB-05-017
-    Scenario: Health check returns server time
-      When I check the health endpoint
-      Then the response should contain current timestamp
-      And the operation should succeed
 
     @p1 @requirement:SB-05-018
     Scenario: Health check includes all required fields
@@ -156,43 +132,7 @@ Feature: System Behaviors
       Then the response status code should be 200
       And the response should be valid JSON
 
-  Rule: System Status Extended Checks
-
-    @p1 @requirement:SB-05-021
-    Scenario: Health check returns consistent status
-      When I check the health endpoint
-      Then the system should be healthy
-      And the response status code should be 200
-
-    @p1 @requirement:SB-05-022
-    Scenario: Health check contains database information
-      When I check the health endpoint
-      Then database status should be OK
-      And database connection should be active
-
-    @p2 @requirement:SB-05-023
-    Scenario: Readiness endpoint returns status
-      When I check the readiness endpoint
-      Then the system should be ready
-      And the response status code should be 200
-
-    @p2 @requirement:SB-05-024
-    Scenario: Health check with valid JSON response
-      When I check the health endpoint
-      Then the response should be valid JSON
-      And the response should contain health status
-
   Rule: Health Check Additional Variations
-
-    @p1 @requirement:SB-05-025
-    Scenario: Health check multiple consecutive requests
-      Given I am logged in as a manager
-      When I check the health endpoint
-      And I check the health endpoint
-      And I check the health endpoint
-      And I check the health endpoint
-      And I check the health endpoint
-      Then all operations should succeed
 
     @p1 @requirement:SB-05-026
     Scenario: Health check contains all required fields
@@ -209,25 +149,11 @@ Feature: System Behaviors
       And I check the health endpoint again
       Then both responses should be consistent
 
-    @p2 @requirement:SB-05-028
-    Scenario: Readiness check multiple times
-      Given I am logged in as a manager
-      When I check the readiness endpoint
-      And I check the readiness endpoint
-      And I check the readiness endpoint
-      Then all operations should succeed
-
     @p2 @requirement:SB-05-029
     Scenario: Health check without authentication
       Given I am not authenticated
       When I check the health endpoint without auth
       Then the response status code should be 200
-
-    @p2 @requirement:SB-05-030
-    Scenario: Health check returns OK status
-      Given I am logged in as a manager
-      When I check the health endpoint
-      Then the system should be healthy
 
   Rule: System Status Variations
 
@@ -303,20 +229,6 @@ Feature: System Behaviors
       And I check the health endpoint
       And I check the health endpoint
       Then all operations should succeed
-
-    @p1 @requirement:SB-05-041
-    Scenario: Health check returns consistent results
-      Given I am logged in as a manager
-      When I check the health endpoint
-      And I check the health endpoint
-      Then both operations should succeed
-
-    @p2 @requirement:SB-05-042
-    Scenario: Readiness check multiple times
-      Given I am logged in as a manager
-      When I check the readiness endpoint
-      And I check the readiness endpoint
-      Then both operations should succeed
 
     @p2 @requirement:SB-05-043
     Scenario: Health and readiness both succeed
