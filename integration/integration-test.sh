@@ -103,7 +103,15 @@ generate_coverage() {
       # Show breakdown by module (excluding 0% coverage files)
       echo ""
       echo "Breakdown by module (with coverage):"
-      go tool cover -func=coverage.integration.out | grep -E "^switch-server/" | grep -v "0.0%" | head -20
+      awk '
+        /^switch-server\// && $NF != "0.0%" {
+          print
+          count++
+          if (count == 20) {
+            exit
+          }
+        }
+      ' coverage.integration.out
     else
       echo "No coverage files found in covdata/"
     fi
