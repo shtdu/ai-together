@@ -39,8 +39,8 @@ func setupTestDB(logger *slog.Logger) string {
 	}
 
 	// Connect to postgres database to create test database
-	adminDBURL := fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=disable",
-		connConfig.User, connConfig.Host, connConfig.Port, "postgres")
+	adminDBURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		connConfig.User, connConfig.Password, connConfig.Host, connConfig.Port, "postgres")
 
 	ctx := context.Background()
 	conn, err := pgx.Connect(ctx, adminDBURL)
