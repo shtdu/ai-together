@@ -1,0 +1,20 @@
+{
+  "trial": {
+    "id": "license-tier-0",
+    "key": "tier_0.pem",
+    "tier": "trial",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  "professional": {
+    "id": "license-tier-1",
+    "key": "tier_1.pem",
+    "tier": "professional",
+    "expires_at": "2025-12-31T23:59:59Z"
+  },
+  "enterprise": {
+    "id": "license-tier-2",
+    "key": "tier_2.pem",
+    "tier": "enterprise",
+    "expires_at": "2025-12-31T23:59:59Z"
+  }
+}

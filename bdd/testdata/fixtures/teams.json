@@ -1,0 +1,8 @@
+{
+  "default": {
+    "id": 1,
+    "name": "Default Team",
+    "description": "Default team for BDD testing",
+    "tenant_id": 1
+  }
+}
