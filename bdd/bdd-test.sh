@@ -34,23 +34,7 @@ SERVER_PID=""
 
 # Cleanup function to stop server on exit (for signal handling)
 cleanup() {
-  echo ""
-  echo "Stopping server..."
-  if [ -n "$SERVER_PID" ]; then
-    # Send SIGTERM for graceful shutdown
-    kill -TERM $SERVER_PID 2>/dev/null || true
-    # Wait up to 5 seconds for graceful shutdown
-    for i in {1..10}; do
-      if ! kill -0 $SERVER_PID 2>/dev/null; then
-        break
-      fi
-      sleep 0.5
-    done
-    # Force kill if still running
-    kill -9 $SERVER_PID 2>/dev/null || true
-    wait $SERVER_PID 2>/dev/null || true
-  fi
-  echo "Server stopped"
+  stop_server
   exit 0
 }
 
@@ -155,7 +139,7 @@ start_server() {
     echo "Building test server binary..."
     mkdir -p bin
     go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover . 2>&1 | head -20
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
       echo "Error: Failed to build test server binary"
       popd > /dev/null
       exit 1
