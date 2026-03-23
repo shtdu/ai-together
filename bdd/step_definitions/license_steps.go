@@ -142,7 +142,6 @@ func RegisterLicenseSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Then(`^features should still be available$`, ctx.featuresShouldStillBeAvailable)
 	suite.Then(`^features should be disabled$`, ctx.featuresShouldBeDisabled)
 	suite.Then(`^the license should have expiration date$`, ctx.licenseShouldHaveExpirationDate)
-	suite.Then(`^the license tier should be "([^"]*)"$`, ctx.theLicenseTierShouldBe)
 
 	// Additional license scenario step registrations
 	suite.Given(`^I have a license expiring soon$`, ctx.iHaveALicenseExpiringSoon)
