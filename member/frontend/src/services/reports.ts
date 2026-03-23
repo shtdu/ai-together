@@ -1,40 +1,19 @@
 import { GenerateDailyReport } from '../../bindings/codeswitch/services/reportservice'
-import type { DailyReport, SessionInfo } from '../../bindings/codeswitch/services/models'
+import type {
+  DailyReport,
+  SessionInfo,
+  ToolReport,
+  DayDetails,
+  SessionStats,
+  ToolUsageItem,
+  PromptStats
+} from '../../bindings/codeswitch/services/models'
 
 // Data retention window in days (includes today)
 export const RETENTION_DAYS = 14
 
 // Re-export types for convenience
-export type { DailyReport, SessionInfo }
-export type ToolReport = {
-  tool_name: string
-  details: DayDetails
-}
-
-export type DayDetails = {
-  session_stats: SessionStats
-  event_type_counts: Record<string, number>
-  tool_usage_stats: ToolUsageItem[]
-  prompt_stats: PromptStats
-}
-
-export type SessionStats = {
-  session_count: number
-  event_count: number
-  unique_sessions: SessionInfo[]
-}
-
-export type ToolUsageItem = {
-  tool_name: string
-  count: number
-}
-
-export type PromptStats = {
-  total_prompts: number
-  average_prompt_length: number
-  longest_prompt: number
-  shortest_prompt: number
-}
+export type { DailyReport, SessionInfo, ToolReport, DayDetails, SessionStats, ToolUsageItem, PromptStats }
 
 export interface ReportQuery {
   date: string          // YYYY-MM-DD format
