@@ -74,7 +74,7 @@ mkdir -p covdata
 # Build test binary with coverage instrumentation
 go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover .
 # Run the test binary with coverage collection to a file
-# Use process ID to create unique coverage file name
+# Use process ID to create unique coverage file name, override port to 8088
 TEST_COVERAGE_SERVER=1 PORT=8088 ./bin/codetogether_test.cover -test.v -test.run TestCoverageServer -test.coverprofile=covdata/coverage.$$ &
 SERVER_PID=$!
 popd
@@ -87,13 +87,16 @@ sleep 3
 echo "Running initial setup..."
 curl -s -X POST http://localhost:8088/api/v1/setup/admin \
   -H "Content-Type: application/json" \
-  -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Test Admin","admin_password":"AdminPassword123!"}' | jq .
+  -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Admin","admin_password":"AdminPassword123!"}' | jq .
 
 echo "Test server is ready with admin user: admin@example.com / AdminPassword123!"
 echo ""
 echo "Press Ctrl+C to stop the server"
 
 # run integration tests
+go test -count=1 -v github.com/code-together/integration
 
-# Wait for server process
-wait $SERVER_PID
+sleep 3
+
+# kill $SERVER_PID
+kill $SERVER_PID

@@ -1,6 +1,7 @@
 #!/bin/bash
 # BDD Test Runner
 # Runs all BDD scenarios using godog framework
+# Independent server management - does not depend on integration-test.sh
 
 set -e
 
@@ -13,9 +14,13 @@ fi
 
 # Default values
 TEST_SERVER_URL="${TEST_SERVER_URL:-http://localhost:8088}"
+TEST_SERVER_PORT="${TEST_SERVER_PORT:-8088}"
 GODOG_FORMAT="${GODOG_FORMAT:-pretty}"
 GODOG_TAGS="${GODOG_TAGS:-~@wip}"
 START_SERVER="${START_SERVER:-true}"
+SERVER_LOG_PATH="${SERVER_LOG_PATH:-/tmp/bdd-test-server.log}"
+COVERAGE_DIR="${COVERAGE_DIR:-../server/covdata}"
+GENERATE_COVERAGE="${GENERATE_COVERAGE:-true}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -29,23 +34,7 @@ SERVER_PID=""
 
 # Cleanup function to stop server on exit (for signal handling)
 cleanup() {
-  echo ""
-  echo "Stopping server..."
-  if [ -n "$SERVER_PID" ]; then
-    # Send SIGTERM for graceful shutdown
-    kill -TERM $SERVER_PID 2>/dev/null || true
-    # Wait up to 5 seconds for graceful shutdown
-    for i in {1..10}; do
-      if ! kill -0 $SERVER_PID 2>/dev/null; then
-        break
-      fi
-      sleep 0.5
-    done
-    # Force kill if still running
-    kill -9 $SERVER_PID 2>/dev/null || true
-    wait $SERVER_PID 2>/dev/null || true
-  fi
-  echo "Server stopped"
+  stop_server
   exit 0
 }
 
@@ -121,36 +110,90 @@ check_server() {
   fi
 }
 
-# Function to start the test server
+# Function to start the test server (independent, like integration-test.sh)
 start_server() {
   echo "Starting test server..."
+  echo "Log file: $SERVER_LOG_PATH"
 
-  # Check if integration test server script exists
-  if [ ! -f "../integration/test-server.sh" ]; then
-    echo "Error: test-server.sh not found in ../integration/"
+  # Get the server directory path
+  SERVER_DIR="../server"
+  if [ ! -d "$SERVER_DIR" ]; then
+    echo "Error: Server directory not found at $SERVER_DIR"
     exit 1
   fi
 
-  # Start the server in background
-  cd ../integration
-  ./test-server.sh > /tmp/test-server.log 2>&1 &
+  # Drop and recreate database (like integration-test.sh)
+  echo "Resetting test database..."
+  dropdb codetogether_test 2>/dev/null || true
+  createdb codetogether_test || {
+    echo "Error: Failed to create test database"
+    echo "Make sure PostgreSQL is running and you have permissions"
+    exit 1
+  }
+
+  # Check if server binary exists, if not build it
+  pushd "$SERVER_DIR" > /dev/null
+
+  # Build test binary if it doesn't exist or is outdated
+  if [ ! -f "bin/codetogether_test.cover" ] || [ "$SERVER_DIR/go.mod" -nt "bin/codetogether_test.cover" ]; then
+    echo "Building test server binary..."
+    mkdir -p bin
+    go test -c -cover -covermode=set -coverpkg=./... -o bin/codetogether_test.cover . 2>&1 | head -20
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+      echo "Error: Failed to build test server binary"
+      popd > /dev/null
+      exit 1
+    fi
+  fi
+
+  # Setup coverage directory and clean old BDD coverage files
+  mkdir -p "$COVERAGE_DIR"
+  rm -f covdata/coverage.bdd.* 2>/dev/null
+  rm -f coverage.bdd.out coverage.bdd.html 2>/dev/null
+  COVERAGE_FILE="$COVERAGE_DIR/coverage.bdd.$$"
+
+  # Run the test binary in background with coverage collection
+  echo "Starting test server on port $TEST_SERVER_PORT..."
+  TEST_COVERAGE_SERVER=1 PORT=$TEST_SERVER_PORT ./bin/codetogether_test.cover \
+    -test.v -test.run TestCoverageServer -test.coverprofile="$COVERAGE_FILE" \
+    > "$SERVER_LOG_PATH" 2>&1 &
   SERVER_PID=$!
-  cd ../bdd
+  popd > /dev/null
 
   # Wait for server to be ready
-  echo "Waiting for server to start..."
+  echo "Waiting for server to start (PID: $SERVER_PID)..."
   for i in {1..30}; do
     if check_server; then
       SERVER_STARTED_BY_US=true
-      echo "✓ Test server started (PID: $SERVER_PID)"
-      return 0
+      echo -e "${GREEN}✓ Test server started${NC} (PID: $SERVER_PID, Port: $TEST_SERVER_PORT)"
+      break
     fi
     sleep 1
   done
 
-  echo "✗ Failed to start test server"
-  echo "Check logs: tail -100 /tmp/test-server.log"
-  exit 1
+  # Check if server started successfully
+  if ! check_server; then
+    echo -e "${RED}✗ Failed to start test server${NC}"
+    echo "Check logs: tail -100 $SERVER_LOG_PATH"
+    exit 1
+  fi
+
+  # Run initial setup (create admin user/organization)
+  echo "Running initial setup..."
+  SETUP_RESPONSE=$(curl -s -X POST http://localhost:$TEST_SERVER_PORT/api/v1/setup/admin \
+    -H "Content-Type: application/json" \
+    -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Test Admin","admin_password":"AdminPassword123!"}')
+
+  # Check if setup was successful or already done
+  if echo "$SETUP_RESPONSE" | grep -q "already"; then
+    echo "Setup already completed (database has existing data)"
+  elif echo "$SETUP_RESPONSE" | grep -q "error\|Error\|failed"; then
+    echo "Setup response: $SETUP_RESPONSE"
+  else
+    echo "Initial setup completed"
+  fi
+
+  return 0
 }
 
 # Main execution
@@ -170,8 +213,10 @@ else
   else
     echo "✗ Test server is not running and --no-server was specified"
     echo ""
-    echo "Start the test server:"
-    echo "  cd ../integration && ./test-server.sh"
+    echo "Either:"
+    echo "  1. Omit --no-server to auto-start the server"
+    echo "  2. Start the server manually:"
+    echo "     cd ../server && PORT=$TEST_SERVER_PORT ./bin/codetogether_test.cover -test.run TestCoverageServer"
     echo ""
     exit 1
   fi
@@ -192,9 +237,11 @@ cd godog
 export GODOG_FORMAT="$GODOG_FORMAT"
 export GODOG_TAGS="$GODOG_TAGS"
 
-# Run tests
+# Run tests (allow failures so we can generate coverage)
+set +e
 go test -v ./...
 TEST_EXIT_CODE=$?
+set -e
 
 cd ..
 
@@ -210,7 +257,55 @@ echo "================================"
 # Cleanup if we started the server
 if [ "$SERVER_STARTED_BY_US" = "true" ]; then
   stop_server
+
+  # Generate coverage report if we started the server and coverage is enabled
+  if [ "$GENERATE_COVERAGE" = "true" ]; then
+    echo ""
+    echo "================================"
+    echo "Generating coverage report..."
+    echo "================================"
+
+    # Wait a moment for coverage data to be written
+    sleep 1
+
+    cd ../server
+    if [ -d "covdata" ] && [ "$(ls -A covdata/coverage.bdd.* 2>/dev/null)" ]; then
+      # Find and concatenate BDD coverage files
+      coverage_files=$(ls covdata/coverage.bdd.* 2>/dev/null)
+      if [ -n "$coverage_files" ]; then
+        # Merge BDD coverage files - keep first file's header, skip headers in rest
+        first_file=true
+        for f in $coverage_files; do
+          if [ "$first_file" = "true" ]; then
+            cat "$f" > coverage.bdd.out
+            first_file=false
+          else
+            grep -v "^mode:" "$f" >> coverage.bdd.out
+          fi
+        done
+
+        # Display coverage percentage
+        echo ""
+        echo -e "${GREEN}Server Coverage (BDD Tests):${NC}"
+        go tool cover -func=coverage.bdd.out | tail -1
+
+        # Generate HTML report
+        go tool cover -html=coverage.bdd.out -o=coverage.bdd.html
+        echo ""
+        echo "Coverage report generated: server/coverage.bdd.html"
+
+        # Show total coverage
+        echo ""
+        echo "Breakdown by module (with coverage):"
+        go tool cover -func=coverage.bdd.out | grep -E "^switch-server/" | grep -v "0.0%" | head -20
+      fi
+    else
+      echo "No BDD coverage files found in covdata/"
+    fi
+    cd ../bdd
+  fi
 fi
 
+echo ""
 exit $TEST_EXIT_CODE
 

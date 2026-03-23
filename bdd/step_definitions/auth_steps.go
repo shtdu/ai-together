@@ -127,10 +127,10 @@ func (ctx *ScenarioContext) iAmLoggedInAsAManager() error {
 		return fmt.Errorf("no users found in fixtures")
 	}
 
-	// Get admin/manager user (first user should be manager or admin)
-	adminUser := fixtures.Users[0]
-	if adminUser.Role != "admin" && adminUser.Role != "manager" {
-		return fmt.Errorf("first user in fixtures is not admin or manager, got role: %s", adminUser.Role)
+	// Get admin/manager user (use "admin" key from fixtures map)
+	adminUser, exists := fixtures.Users["admin"]
+	if !exists {
+		return fmt.Errorf("admin user not found in fixtures")
 	}
 
 	// Ensure user exists first (create via public API if needed)
@@ -150,14 +150,10 @@ func (ctx *ScenarioContext) iAmLoggedInAsAMember() error {
 		return fmt.Errorf("failed to load fixtures: %w", err)
 	}
 
-	if len(fixtures.Users) < 2 {
-		return fmt.Errorf("not enough users in fixtures (need at least 2)")
-	}
-
-	// Get member user (second user should be member)
-	memberUser := fixtures.Users[1]
-	if memberUser.Role != "member" {
-		return fmt.Errorf("second user in fixtures is not member, got role: %s", memberUser.Role)
+	// Get member user (use "member" key from fixtures map)
+	memberUser, exists := fixtures.Users["member"]
+	if !exists {
+		return fmt.Errorf("member user not found in fixtures")
 	}
 
 	// Use public registration approach (integration test pattern)

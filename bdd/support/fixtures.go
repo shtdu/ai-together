@@ -9,35 +9,32 @@ import (
 	"runtime"
 )
 
-// FixtureData holds test fixture data loaded from integration/testdata
+// FixtureData holds test fixture data loaded from testdata/fixtures
 type FixtureData struct {
-	Users     []UserFixture     `json:"users"`
-	Providers []ProviderFixture `json:"providers"`
-	Teams     []TeamFixture     `json:"teams"`
-	Licenses  []LicenseFixture  `json:"licenses"`
+	Users     map[string]UserFixture     `json:"users"`
+	Providers map[string]ProviderFixture `json:"providers"`
+	Teams     map[string]TeamFixture     `json:"teams"`
+	Licenses  map[string]LicenseFixture  `json:"licenses"`
 }
 
-// UserFixture represents a user test fixture
+// UserFixture represents a user test fixture (matches integration format)
+// BDD extension: includes Role for convenience (not in integration JSON)
 type UserFixture struct {
-	ID             string `json:"id"`
-	Email          string `json:"email"`
-	Name           string `json:"name"`
-	Password       string `json:"password"`
-	Role           string `json:"role"`
-	TenantID       int64  `json:"tenant_id"`
-	ProviderUserID string `json:"provider_user_id,omitempty"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Name     string `json:"name"`
+	Role     string `json:"role,omitempty"` // Optional: defaults inferred from fixture key
 }
 
-// ProviderFixture represents a provider test fixture
+// ProviderFixture represents a provider test fixture (matches integration format)
 type ProviderFixture struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	Kind      string `json:"kind"`
-	APIKey    string `json:"api_key"`
-	Priority  int    `json:"priority"`
-	Enabled   bool   `json:"enabled"`
-	TenantID  int64  `json:"tenant_id"`
-	CreatedAt string `json:"created_at,omitempty"`
+	Name            string   `json:"name"`
+	Kind            string   `json:"kind"`
+	APIKey          string   `json:"api_key"`
+	APIURL          string   `json:"api_url"`
+	Enabled         bool     `json:"enabled"`
+	Level           int      `json:"level"`
+	SupportedModels []string `json:"supported_models"`
 }
 
 // TeamFixture represents a team test fixture
@@ -46,7 +43,6 @@ type TeamFixture struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	TenantID    int64  `json:"tenant_id"`
-	CreatedAt   string `json:"created_at,omitempty"`
 }
 
 // LicenseFixture represents a license test fixture
@@ -55,84 +51,82 @@ type LicenseFixture struct {
 	Key       string `json:"key"`
 	Tier      string `json:"tier"`
 	ExpiresAt string `json:"expires_at,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
 }
 
-// LoadFixtureData loads test fixture data from JSON files
-// Priority: 1) local fixtures.json, 2) integration testdata, 3) error
-// Note: Falls back to integration testdata for compatibility during transition
+// LoadFixtureData loads all fixture data from JSON files in testdata/fixtures
+// Matches integration test format: separate files for users, providers, teams, licenses
 func LoadFixtureData() (*FixtureData, error) {
+	fixtures := &FixtureData{
+		Users:     make(map[string]UserFixture),
+		Providers: make(map[string]ProviderFixture),
+		Teams:     make(map[string]TeamFixture),
+		Licenses:  make(map[string]LicenseFixture),
+	}
+
 	// Get the directory of this file (support package)
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	supportDir := filepath.Dir(currentFilePath)
+	fixturesDir := filepath.Join(supportDir, "..", "testdata", "fixtures")
 
-	// First, try local fixtures.json (in bdd/support/)
-	localFixturePath := filepath.Join(supportDir, "fixtures.json")
-
-	if data, err := os.ReadFile(localFixturePath); err == nil {
-		var fixtures FixtureData
-		if err := json.Unmarshal(data, &fixtures); err != nil {
-			return nil, fmt.Errorf("failed to parse local fixture JSON: %w", err)
+	// Load users fixture
+	usersFile := filepath.Join(fixturesDir, "users.json")
+	if data, err := os.ReadFile(usersFile); err == nil {
+		if err := json.Unmarshal(data, &fixtures.Users); err != nil {
+			return nil, fmt.Errorf("failed to parse users.json: %w", err)
 		}
-		return &fixtures, nil
+		// Infer roles from fixture key names if not explicitly set
+		for key, user := range fixtures.Users {
+			if user.Role == "" {
+				user.Role = key // "admin" -> Role: "admin", "member" -> Role: "member"
+				fixtures.Users[key] = user
+			}
+		}
+	} else {
+		return nil, fmt.Errorf("failed to read users.json: %w", err)
 	}
 
-	// Fall back to integration testdata (for compatibility)
-	integrationFixturePath := filepath.Join(supportDir, "..", "..", "integration", "testdata", "fixtures.json")
-
-	if _, err := os.Stat(integrationFixturePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("no fixtures file found: tried %s and %s", localFixturePath, integrationFixturePath)
+	// Load providers fixture
+	providersFile := filepath.Join(fixturesDir, "providers.json")
+	if data, err := os.ReadFile(providersFile); err == nil {
+		if err := json.Unmarshal(data, &fixtures.Providers); err != nil {
+			return nil, fmt.Errorf("failed to parse providers.json: %w", err)
+		}
+	} else {
+		return nil, fmt.Errorf("failed to read providers.json: %w", err)
 	}
 
-	data, err := os.ReadFile(integrationFixturePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read integration fixture file: %w", err)
+	// Load teams fixture (optional)
+	teamsFile := filepath.Join(fixturesDir, "teams.json")
+	if data, err := os.ReadFile(teamsFile); err == nil {
+		if err := json.Unmarshal(data, &fixtures.Teams); err != nil {
+			return nil, fmt.Errorf("failed to parse teams.json: %w", err)
+		}
 	}
 
-	var fixtures FixtureData
-	if err := json.Unmarshal(data, &fixtures); err != nil {
-		return nil, fmt.Errorf("failed to parse integration fixture JSON: %w", err)
+	// Load licenses fixture (optional)
+	licensesFile := filepath.Join(fixturesDir, "licenses.json")
+	if data, err := os.ReadFile(licensesFile); err == nil {
+		if err := json.Unmarshal(data, &fixtures.Licenses); err != nil {
+			return nil, fmt.Errorf("failed to parse licenses.json: %w", err)
+		}
 	}
 
-	return &fixtures, nil
+	return fixtures, nil
 }
 
-// LoadLicenseFixture loads a specific license fixture by tier
+// LoadLicenseFixture loads a specific license fixture by tier key
 func LoadLicenseFixture(tier string) (*LicenseFixture, error) {
 	fixtures, err := LoadFixtureData()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, license := range fixtures.Licenses {
-		if license.Tier == tier {
-			return &license, nil
-		}
+	license, exists := fixtures.Licenses[tier]
+	if !exists {
+		return nil, fmt.Errorf("license fixture with tier '%s' not found", tier)
 	}
 
-	return nil, fmt.Errorf("license fixture with tier '%s' not found", tier)
-}
-
-// GetStandardFixtureData returns fixture data from fixtures.json
-// Returns error if file doesn't exist (no hardcoded fallback)
-func GetStandardFixtureData() (*FixtureData, error) {
-	localFixturePath := filepath.Join(".", "fixtures.json")
-
-	if _, err := os.Stat(localFixturePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("fixtures.json not found in %s", localFixturePath)
-	}
-
-	data, err := os.ReadFile(localFixturePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read fixtures.json: %w", err)
-	}
-
-	var fixtures FixtureData
-	if err := json.Unmarshal(data, &fixtures); err != nil {
-		return nil, fmt.Errorf("failed to parse fixtures.json: %w", err)
-	}
-
-	return &fixtures, nil
+	return &license, nil
 }
 
 // LoadLicensePEM loads a license PEM file from testdata/licenses

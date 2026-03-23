@@ -81,12 +81,14 @@ cd godog && go test -v -godog.paths="../features/hello_world.feature"
 
 ### Test Server Management
 
+The BDD test script manages its own test server independently:
+
 ```bash
 # Check server health
 curl http://localhost:8088/health
 
-# View server logs
-cat /tmp/test-server.log
+# View BDD test server logs
+cat /tmp/bdd-test-server.log
 ```
 
 ### Development Commands
@@ -309,8 +311,8 @@ func (ctx *ScenarioContext) CleanupScenarioResources() error {
 
 - **Default URL:** `http://localhost:8088`
 - **Health endpoint:** `/health`
-- **Log file:** `/tmp/test-server.log`
-- **Startup script:** `../integration/test-server.sh`
+- **Log file:** `/tmp/bdd-test-server.log`
+- **Startup:** Managed by `bdd-test.sh` script (builds and runs server binary directly)
 
 ### Health Check Pattern
 

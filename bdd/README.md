@@ -17,10 +17,7 @@ This BDD test suite converts existing integration tests into Gherkin scenarios t
 ### Run All BDD Tests
 
 ```bash
-# First, start the test server in another terminal
-cd ../integration && ./test-server.sh
-
-# Then run BDD tests in the bdd directory
+# The script will automatically build and start the test server if needed
 ./bdd-test.sh
 ```
 
@@ -114,7 +111,7 @@ suite.When(`^I create a ([^"]*) provider with API key "([^"]*)"$`,
 
 ## Test Server
 
-The BDD tests require a running test server. The script will automatically start the server if it's not running.
+The BDD tests require a running test server. The script manages the server independently.
 
 ### Automatic Server Management (Default)
 
@@ -123,8 +120,9 @@ The BDD tests require a running test server. The script will automatically start
 ```
 
 This will:
-- Check if test server is running
-- Start the server automatically if not running (via `../integration/test-server.sh`)
+- Build the test server binary if needed (from `../server`)
+- Check if test server is already running
+- Start the server automatically if not running
 - Wait for server to be ready
 - Execute BDD tests
 - Stop the server automatically if we started it
@@ -136,10 +134,11 @@ If you prefer to manage the server manually:
 
 ```bash
 # Terminal 1: Start server manually
-cd ../integration
-./test-server.sh
+cd ../server
+PORT=8088 ./bin/codetogether_test.cover -test.run TestCoverageServer
 
 # Terminal 2: Run tests with --no-server flag
+cd ../bdd
 ./bdd-test.sh --no-server
 ```
 
@@ -185,8 +184,9 @@ Cleanup failures are logged but don't fail the scenario.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `TEST_SERVER_URL` | Test server URL | `http://localhost:8088` |
+| `TEST_SERVER_PORT` | Test server port | `8088` |
 | `TEST_DATABASE_URL` | Test database URL | `postgres://test:test@localhost:5432/codetogether_test?sslmode=disable` |
-| `TEST_SERVER_LOG_PATH` | Test server log file | `/tmp/test-server.log` |
+| `TEST_SERVER_LOG_PATH` | Test server log file | `/tmp/bdd-test-server.log` |
 
 ## Troubleshooting
 
@@ -196,11 +196,12 @@ Cleanup failures are logged but don't fail the scenario.
 # Check server status
 curl http://localhost:8088/health
 
-# View server logs
-cat /tmp/test-server.log
+# View BDD test server logs
+cat /tmp/bdd-test-server.log
 
-# Manually start server
-cd ../integration && ./test-server.sh
+# The script will automatically start the server, but if you want to do it manually:
+cd ../server
+PORT=8088 ./bin/codetogether_test.cover -test.run TestCoverageServer
 ```
 
 ### Cleanup Failures
