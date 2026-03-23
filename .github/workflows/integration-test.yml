@@ -78,10 +78,14 @@ jobs:
       - name: Run integration tests
         working-directory: ./integration
         run: |
-          set -a && source .env.test && set +a
-          go test -v -coverprofile=coverage.out -covermode=atomic github.com/code-together/integration
+          ./integration-test.sh
         env:
           CGO_ENABLED: 0
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          SERVER_LOG_PATH: /tmp/integration-test-server.log
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -98,5 +102,5 @@ jobs:
         with:
           name: integration-test-logs
           path: |
-            integration/*.log
+            /tmp/integration-test-server.log
           retention-days: 7
