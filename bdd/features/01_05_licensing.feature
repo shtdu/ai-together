@@ -252,7 +252,7 @@ Feature: License Management
       Then the license should be marked as "grace_period"
       And features should still be available
 
-    @p3 @requirement:IA-04-021
+    @p3 @requirement:IA-04-021-B
     Scenario: License suspended after grace period
       Given I have a license that expired 30 days ago
       When I check license status
@@ -275,7 +275,7 @@ Feature: License Management
       And the max teams should change to unlimited
       And existing data should be preserved
 
-    @p2 @requirement:IA-04-025
+    @p2 @requirement:IA-04-025-B
     Scenario: Downgrade from Commercial to Open Source license
       Given I have an active Commercial license
       And I have data older than 7 days

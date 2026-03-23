@@ -88,7 +88,7 @@ Feature: User Profile Operations
       And I should receive a valid authentication token
       And I should be granted the Manager role
 
-    @p2 @requirement:IA-01-018
+    @p2 @requirement:IA-01-018-B
     Scenario: Registration creates unique organization name
       Given I am not authenticated
       And I have a unique email "orgtest@example.com"
@@ -133,7 +133,7 @@ Feature: User Profile Operations
       Then the response status code should be 400
       And the error message should contain "email already exists"
 
-    @p1 @requirement:IA-01-025
+    @p1 @requirement:IA-01-025-C
     Scenario Outline: Registration with missing required fields
       Given I am not authenticated
       And I have a strong password "StrongPass123!"

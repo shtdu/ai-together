@@ -160,7 +160,7 @@ Feature: Authentication Operations
       Then the response status code should be 200
       And I can login with the new password
 
-    @p2 @requirement:IA-01-025
+    @p2 @requirement:IA-01-025-B
     Scenario: Reset password with expired token
       Given a user exists with email "expired@example.com" and password "TestPassword123!"
       And I have an expired reset token
@@ -189,7 +189,7 @@ Feature: Authentication Operations
       And I should receive an "account_locked" error
       And the response status code should be 401
 
-    @p1 @requirement:IA-01-014
+    @p1 @requirement:IA-01-014-B
     Scenario: Locked account cannot login with correct password
       Given a user exists with email "locked@example.com" and password "TestPassword123!"
       And the account is locked
@@ -204,7 +204,7 @@ Feature: Authentication Operations
       When I login with email "timed@example.com" and password "TestPassword123!"
       Then I should receive a valid authentication token
 
-    @p2 @requirement:IA-01-016
+    @p2 @requirement:IA-01-016-B
     Scenario: Successful login resets failed attempt counter
       Given a user exists with email "reset@example.com" and password "TestPassword123!"
       And I have failed to login 4 times
