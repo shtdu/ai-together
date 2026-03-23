@@ -37,6 +37,7 @@ type BDDTestContext struct {
 	LastProviderID     int64
 	LastUserID         string
 	LastTeamID         int64
+	LastTeamName       string
 	LastLicenseID      string
 	CreatedResourceIDs map[string]string
 
@@ -166,6 +167,7 @@ func (ctx *BDDTestContext) Reset() {
 	ctx.LastProviderID = 0
 	ctx.LastUserID = ""
 	ctx.LastTeamID = 0
+	ctx.LastTeamName = ""
 	ctx.LastLicenseID = ""
 
 	// Reset resource tracking

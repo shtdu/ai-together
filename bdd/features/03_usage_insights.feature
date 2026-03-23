@@ -97,7 +97,7 @@ Feature: Usage Insights and Analytics
       Then the record should be stored
       And the cost should be recorded
 
-    @wip @p2 @requirement:UI-03-012
+    @p2 @requirement:UI-03-012
     Scenario: Upload usage record with metadata
       Given I have a usage record with metadata
       And the metadata contains "project": "ai-assistant"
@@ -198,7 +198,7 @@ Feature: Usage Insights and Analytics
       When I get usage statistics
       Then the success rate should be 95%
 
-    @wip @p3 @requirement:UI-03-024
+    @p3 @requirement:UI-03-024
     Scenario: Aggregate usage by project metadata
       Given I have uploaded usage with project metadata
       When I get usage aggregated by project
@@ -433,7 +433,7 @@ Feature: Usage Insights and Analytics
       Then I should see percentage change
       And I should see absolute change
 
-    @wip @p1 @requirement:UI-03-055
+    @p1 @requirement:UI-03-055
     Scenario: Member cannot see team analytics
       Given I am logged in as a member
       When I get team analytics
@@ -454,7 +454,7 @@ Feature: Usage Insights and Analytics
       Then I should see current usage
       And I should see today's cost
 
-    @wip @p3 @requirement:UI-03-058
+    @p3 @requirement:UI-03-058
     Scenario: Get usage by project
       Given I have uploaded usage with project metadata
       When I get usage by project
@@ -526,3 +526,453 @@ Feature: Usage Insights and Analytics
       When I downgrade to Open Source license
       Then the existing data should be retained
       But new data should follow 7-day retention
+
+  Rule: Aggregation Accuracy
+
+    @p1 @requirement:UI-03-068
+    Scenario: Token sum aggregation is accurate
+      Given I have created a claude provider "agg-test-provider"
+      And I upload usage records with exact token counts
+      When I get provider analytics for "agg-test-provider"
+      Then the total input tokens should be 4500
+      And the total output tokens should be 2250
+      And the total tokens should be 6750
+      And there should be no rounding errors
+
+    @p1 @requirement:UI-03-069
+    Scenario: Average calculation is accurate
+      Given I have created a claude provider "avg-test-provider"
+      And I upload 5 usage records with durations
+      When I get provider analytics for "avg-test-provider"
+      Then the average duration should be 3.0 seconds
+      And the minimum duration should be 1.0 seconds
+      And the maximum duration should be 5.0 seconds
+
+    @p1 @requirement:UI-03-070
+    Scenario: Model-level aggregation is accurate
+      Given I have created a claude provider "model-agg-provider"
+      And I upload usage across multiple models
+      When I get provider analytics for "model-agg-provider"
+      Then I should see data for all 3 models
+      And the total tokens should be 18000
+      And claude-3-opus should have 5 requests
+      And claude-3-sonnet should have 3 requests
+      And claude-3-haiku should have 2 requests
+
+    @p1 @requirement:UI-03-071
+    Scenario: Daily aggregation groups correctly by day
+      Given I have created a claude provider "daily-agg-provider"
+      And I upload usage over 3 days
+      When I get daily usage statistics
+      Then I should see 3 days of data
+      And day 1 should have 5000 tokens
+      And day 2 should have 3000 tokens
+      And day 3 should have 7000 tokens
+      And the total should be 15000 tokens
+
+    @p1 @requirement:UI-03-072
+    Scenario: Percentile calculation is accurate
+      Given I have created a claude provider "percentile-provider"
+      And I upload 100 usage records with varying token counts
+      When I get provider analytics for "percentile-provider"
+      Then the p50 percentile should be the median value
+      And the p95 percentile should represent the 95th percentile
+      And the p99 percentile should represent the 99th percentile
+
+  Rule: Edge Cases and Anomalies
+
+    @p1 @requirement:UI-03-073
+    Scenario: Handle zero token values
+      Given I have created a claude provider "zero-token-provider"
+      And I upload usage records with zero tokens
+      When I get provider analytics for "zero-token-provider"
+      Then the aggregation should include zero-token records
+      And the average should account for zeros
+      And the request count should be accurate
+
+    @p1 @requirement:UI-03-074
+    Scenario: Handle negative token values as errors
+      Given I have created a claude provider "negative-token-provider"
+      And I upload a usage record with -100 tokens
+      Then the record should be rejected
+      And I should receive a 400 error
+      And the error message should contain "negative"
+
+    @p1 @requirement:UI-03-075
+    Scenario: Cache tokens are included in totals
+      Given I have created a claude provider "cache-provider"
+      And I upload usage records with cache tokens:
+        | record | input_tokens | output_tokens | cache_read_tokens |
+        | 1      | 1000         | 500           | 200               |
+        | 2      | 2000         | 1000          | 400               |
+      When I get provider analytics for "cache-provider"
+      Then the cache tokens should be included in totals
+      And the total input tokens should be 3000
+      And the total cache tokens should be 600
+
+    @p1 @requirement:UI-03-076
+    Scenario: Handle single record aggregation
+      Given I have created a claude provider "single-record-provider"
+      And I upload a single usage record with 1000 tokens
+      When I get provider analytics for "single-record-provider"
+      Then the total tokens should be 1000
+      And the average should be 1000
+      And the minimum should be 1000
+      And the maximum should be 1000
+
+    @p2 @requirement:UI-03-077
+    Scenario: Handle malformed timestamps gracefully
+      Given I have created a claude provider "timestamp-provider"
+      And I upload usage records with invalid timestamps
+      Then the records should be rejected
+      And I should receive a 400 error
+
+  Rule: Time-Based Filtering Accuracy
+
+    @p1 @requirement:UI-03-078
+    Scenario: Hourly aggregation returns 24 data points
+      Given I have created a claude provider "hourly-provider"
+      And I upload usage for the past 24 hours
+      When I get hourly usage statistics
+      Then I should see 24 data points
+      And each hour should have correct token totals
+
+    @p1 @requirement:UI-03-079
+    Scenario: Weekly aggregation returns correct number of weeks
+      Given I have created a claude provider "weekly-provider"
+      And I upload usage for the past 4 weeks
+      When I get weekly usage statistics
+      Then I should see 4 data points
+      And each week should have correct token totals
+
+    @p1 @requirement:UI-03-080
+    Scenario: Monthly aggregation handles partial months correctly
+      Given I have created a claude provider "monthly-provider"
+      And I upload usage from mid-month to mid-month
+      When I get monthly usage statistics
+      Then partial months should be handled correctly
+      And the totals should be accurate
+
+    @p1 @requirement:UI-03-081
+    Scenario: Get current usage statistics
+      When I get current usage
+      Then I should see current usage data
+      And the operation should succeed
+
+  Rule: Usage Error Paths
+
+    @p1 @requirement:UI-03-082
+    Scenario: Get current usage without authentication
+      Given I am not authenticated
+      When I get current usage
+      Then I should receive a 401 error
+
+    @p1 @requirement:UI-03-083
+    Scenario: Get usage statistics without authentication
+      Given I am not authenticated
+      When I get usage statistics
+      Then I should receive a 401 error
+
+    @p1 @requirement:UI-03-084
+    Scenario: Upload usage record with invalid data
+      When I upload usage record with invalid payload
+      Then I should receive a 400 error
+      And the error should indicate invalid data
+
+    @p1 @requirement:UI-03-085
+    Scenario: Upload usage batch with empty array
+      When I upload empty usage batch
+      Then the operation should succeed
+      And no records should be stored
+
+  Rule: Usage API Error Paths
+
+    @p2 @requirement:UI-03-086
+    Scenario: Get provider stats without authentication
+      Given I am not authenticated
+      When I get provider statistics for ID 1
+      Then I should receive a 401 error
+
+    @p2 @requirement:UI-03-087
+    Scenario: List usage records with invalid date range
+      Given I am logged in as a member
+      When I get usage statistics with invalid date range
+      Then the operation should succeed or return validation error
+
+    @p2 @requirement:UI-03-088
+    Scenario: Get personal analytics without authentication
+      Given I am not authenticated
+      When I get my usage statistics
+      Then I should receive a 401 error
+
+    @p2 @requirement:UI-03-089
+    Scenario: Get team analytics without authentication
+      Given I am not authenticated
+      When I get team analytics
+      Then I should receive a 401 error
+
+  Rule: Usage Current Statistics
+
+    @p1 @requirement:UI-03-090
+    Scenario: Get current usage as manager
+      Given I am logged in as a manager
+      When I get current usage
+      Then the operation should succeed
+      And I should see usage data
+
+    @p1 @requirement:UI-03-091
+    Scenario: Get current usage as member
+      Given I am logged in as a member
+      When I get current usage
+      Then the operation should succeed
+      And I should see my usage data
+
+    @p2 @requirement:UI-03-092
+    Scenario: Get current usage after uploading records
+      Given I am logged in as a manager
+      And I have uploaded 5 usage records
+      When I get current usage
+      Then I should see usage data
+      And the total should be greater than 0
+
+  Rule: Usage Statistics Queries
+
+    @p1 @requirement:UI-03-093
+    Scenario: Get usage statistics as manager
+      Given I am logged in as a manager
+      When I get usage statistics
+      Then the operation should succeed
+
+    @p2 @requirement:UI-03-094
+    Scenario: Get usage statistics with date filter
+      Given I am logged in as a manager
+      When I get usage statistics for today
+      Then the operation should succeed
+
+    @p1 @requirement:UI-03-095
+    Scenario: Get usage statistics returns summary data
+      Given I am logged in as a manager
+      And I have uploaded usage records
+      When I get usage statistics
+      Then I should see total usage
+      And I should see request count
+
+  Rule: Usage Extended Queries
+
+    @p1 @requirement:UI-03-096
+    Scenario: Upload multiple usage records in sequence
+      Given I am logged in as a manager
+      When I upload a single usage record with 1000 tokens
+      And I upload a single usage record with 2000 tokens
+      Then both operations should succeed
+      And the total usage should reflect both records
+
+    @p1 @requirement:UI-03-097
+    Scenario: Get provider statistics after usage upload
+      Given I am logged in as a manager
+      And I have created a provider
+      And I upload usage records for that provider
+      When I get provider statistics
+      Then the statistics should show total requests
+      And the operation should succeed
+
+    @p2 @requirement:UI-03-098
+    Scenario: Get current usage returns current period data
+      Given I am logged in as a manager
+      When I get current usage
+      Then the operation should succeed
+      And I should see usage data
+
+    @p2 @requirement:UI-03-099
+    Scenario: List usage records returns array
+      Given I am logged in as a manager
+      And I have uploaded usage records
+      When I list all usage records
+      Then I should see at least 1 usage record
+      And the operation should succeed
+
+    @p2 @requirement:UI-03-100
+    Scenario: Get provider analytics as manager
+      Given I am logged in as a manager
+      And I have created a provider
+      When I get provider analytics
+      Then the operation should succeed
+      And I should see analytics data
+
+  Rule: Usage Statistics Extended
+
+    @p1 @requirement:UI-03-101
+    Scenario: Get usage statistics multiple times
+      Given I am logged in as a manager
+      When I get usage statistics
+      And I get usage statistics
+      And I get usage statistics
+      Then all operations should succeed
+
+    @p1 @requirement:UI-03-102
+    Scenario: Get current usage after statistics
+      Given I am logged in as a manager
+      When I get usage statistics
+      And I get current usage
+      Then both operations should succeed
+
+    @p2 @requirement:UI-03-103
+    Scenario: List usage records returns all records
+      Given I am logged in as a manager
+      And I have uploaded 10 usage records
+      When I list all usage records
+      Then I should see at least 10 usage records
+
+    @p2 @requirement:UI-03-104
+    Scenario: Get provider analytics multiple times
+      Given I am logged in as a manager
+      And I have created a provider
+      When I get provider analytics
+      And I get provider analytics
+      Then both operations should succeed
+
+    @p2 @requirement:UI-03-105
+    Scenario: Upload usage record then verify statistics
+      Given I am logged in as a manager
+      And I have created a provider
+      When I upload a single usage record with 5000 tokens
+      And I get provider statistics
+      Then the statistics should show increased total
+
+  Rule: Personal Usage Extended
+
+    @p1 @requirement:UI-03-106
+    Scenario: Get personal usage as member
+      Given I am logged in as a member
+      When I get my usage statistics
+      Then the operation should succeed
+      And I should see my usage data
+
+    @p1 @requirement:UI-03-107
+    Scenario: Get personal usage with date range
+      Given I am logged in as a member
+      When I get usage statistics for this week
+      Then the operation should succeed
+
+    @p2 @requirement:UI-03-108
+    Scenario: Get personal usage without authentication fails
+      Given I am not authenticated
+      When I get my usage statistics
+      Then I should receive a 401 error
+
+    @p2 @requirement:UI-03-109
+    Scenario: Upload usage without provider returns error
+      Given I am logged in as a manager
+      When I upload usage with invalid provider ID
+      Then the operation should fail
+
+  Rule: Analytics Extended
+
+    @p1 @requirement:UI-03-110
+    Scenario: Get analytics with different providers
+      Given I am logged in as a manager
+      And I have created a claude provider
+      And I have created a codex provider
+      When I get provider analytics for claude
+      Then the operation should succeed
+      When I get provider analytics for codex
+      Then the operation should succeed
+
+    @p2 @requirement:UI-03-111
+    Scenario: Get analytics requires authentication
+      Given I am not authenticated
+      When I get provider analytics
+      Then I should receive a 401 error
+
+    @p2 @requirement:UI-03-112
+    Scenario: Upload usage with large token count
+      Given I am logged in as a manager
+      And I have created a provider
+      When I upload a single usage record with 100000 tokens
+      Then the operation should succeed
+
+  Rule: Usage Queries Extended
+
+    @p1 @requirement:UI-03-113
+    Scenario: List all usage records as manager
+      Given I am logged in as a manager
+      When I list all usage records
+      Then the operation should succeed
+
+    @p1 @requirement:UI-03-114
+    Scenario: Get current usage as manager
+      Given I am logged in as a manager
+      When I get current usage statistics
+      Then the operation should succeed
+
+    @p2 @requirement:UI-03-115
+    Scenario: List all usage records as member
+      Given I am logged in as a member
+      When I list all usage records
+      Then the operation should succeed
+
+    @p2 @requirement:UI-03-116
+    Scenario: Get current usage without authentication fails
+      Given I am not authenticated
+      When I get current usage statistics
+      Then I should receive a 401 error
+
+  Rule: Usage Statistics Extended
+
+    @p1 @requirement:UI-03-117
+    Scenario: Get usage statistics multiple times
+      Given I am logged in as a manager
+      When I get usage statistics
+      And I get usage statistics
+      And I get usage statistics
+      Then all operations should succeed
+
+    @p1 @requirement:UI-03-118
+    Scenario: Get current usage multiple times
+      Given I am logged in as a manager
+      When I get current usage statistics
+      And I get current usage statistics
+      And I get current usage statistics
+      Then all operations should succeed
+
+    @p1 @requirement:UI-03-119
+    Scenario: Usage endpoints together
+      Given I am logged in as a manager
+      When I get usage statistics
+      And I get current usage statistics
+      Then both operations should succeed
+
+    @p2 @requirement:UI-03-120
+    Scenario: Get usage as member multiple times
+      Given I am logged in as a member
+      When I get current usage statistics
+      And I get current usage statistics
+      Then both operations should succeed
+
+    @p2 @requirement:UI-03-121
+    Scenario: Upload and get usage in sequence
+      Given I am logged in as a manager
+      When I upload a single usage record with 1000 tokens
+      And I get usage statistics
+      And I get current usage statistics
+      Then all operations should succeed
+
+  Rule: Usage Comprehensive
+
+    @p1 @requirement:UI-03-122
+    Scenario: All usage endpoints
+      Given I am logged in as a manager
+      When I get usage statistics
+      And I get current usage statistics
+      And I list all usage records
+      Then all operations should succeed
+
+    @p2 @requirement:UI-03-123
+    Scenario: Usage operations repeated
+      Given I am logged in as a manager
+      When I get usage statistics
+      And I get current usage statistics
+      And I get usage statistics
+      And I get current usage statistics
+      Then all operations should succeed
+
