@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=codetogether
-Exec=CodeTogether
+Name=AITogether
+Exec=AITogether
 Icon=appicon
 Categories=Development;
 Terminal=false

@@ -3,15 +3,15 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleExecutable</key>
-		<string>CodeTogether</string>
+		<string>AITogether</string>
 		<key>CFBundleGetInfoString</key>
-		<string>Code Together desktop relay controller</string>
+		<string>AI Together desktop relay controller</string>
 		<key>CFBundleIconFile</key>
 		<string>icons</string>
 		<key>CFBundleIdentifier</key>
 		<string>com.codeswitch.app</string>
 		<key>CFBundleName</key>
-		<string>Code Together</string>
+		<string>AI Together</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -28,6 +28,6 @@
 		<key>NSHighResolutionCapable</key>
 		<string>true</string>
 		<key>NSHumanReadableCopyright</key>
-		<string>(c) 2025, Code Together</string>
+		<string>(c) 2025, AI Together</string>
 	</dict>
 </plist>

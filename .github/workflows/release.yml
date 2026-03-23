@@ -48,9 +48,9 @@ jobs:
       - name: Verify app bundle
         working-directory: ./member
         run: |
-          if [ -d "bin/CodeTogether.app" ]; then
-            echo "✓ App bundle found: bin/CodeTogether.app"
-            ls -lh bin/CodeTogether.app
+          if [ -d "bin/AITogether.app" ]; then
+            echo "✓ App bundle found: bin/AITogether.app"
+            ls -lh bin/AITogether.app
           else
             echo "✗ App bundle not found!"
             echo "Listing bin directory:"
@@ -61,13 +61,13 @@ jobs:
       - name: Archive macOS app
         working-directory: ./member/bin
         run: |
-          ditto -c -k --sequesterRsrc --keepParent "CodeTogether.app" "codetogether-macos-${{ matrix.arch }}.zip"
+          ditto -c -k --sequesterRsrc --keepParent "AITogether.app" "aitogether-macos-${{ matrix.arch }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
-          path: member/bin/codetogether-macos-${{ matrix.arch }}.zip
+          path: member/bin/aitogether-macos-${{ matrix.arch }}.zip
 
   build-windows:
     name: Build Windows
@@ -112,9 +112,9 @@ jobs:
       - name: Verify Binary
         working-directory: ./member
         run: |
-          if (Test-Path "bin\CodeTogether.exe") {
-            Write-Host "✓ Binary found: bin\CodeTogether.exe"
-            Get-Item "bin\CodeTogether.exe" | Format-List Name,Length,LastWriteTime
+          if (Test-Path "bin\AITogether.exe") {
+            Write-Host "✓ Binary found: bin\AITogether.exe"
+            Get-Item "bin\AITogether.exe" | Format-List Name,Length,LastWriteTime
           } else {
             Write-Host "✗ Binary not found!"
             Write-Host "Listing bin directory:"
@@ -128,7 +128,7 @@ jobs:
           $env:PATH += ";C:\Program Files (x86)\NSIS"
           Push-Location build\windows\nsis
           wails3 generate webview2bootstrapper
-          $binaryPath = (Resolve-Path "..\..\..\bin\CodeTogether.exe").Path
+          $binaryPath = (Resolve-Path "..\..\..\bin\AITogether.exe").Path
           Write-Host "Binary path: $binaryPath"
           makensis -DARG_WAILS_AMD64_BINARY="$binaryPath" project.nsi
           Pop-Location
@@ -138,8 +138,8 @@ jobs:
         with:
           name: windows-amd64
           path: |
-            member/bin/CodeTogether-amd64-installer.exe
-            member/bin/CodeTogether.exe
+            member/bin/AITogether-amd64-installer.exe
+            member/bin/AITogether.exe
 
   create-release:
     name: Create Release
@@ -159,10 +159,10 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          cp artifacts/macos-arm64/codetogether-macos-arm64.zip release-assets/
-          cp artifacts/macos-amd64/codetogether-macos-amd64.zip release-assets/
-          cp artifacts/windows-amd64/CodeTogether-amd64-installer.exe release-assets/
-          cp artifacts/windows-amd64/CodeTogether.exe release-assets/
+          cp artifacts/macos-arm64/aitogether-macos-arm64.zip release-assets/
+          cp artifacts/macos-amd64/aitogether-macos-amd64.zip release-assets/
+          cp artifacts/windows-amd64/AITogether-amd64-installer.exe release-assets/
+          cp artifacts/windows-amd64/AITogether.exe release-assets/
           ls -lh release-assets/
 
       - name: Create Release
@@ -174,17 +174,17 @@ jobs:
 
             ## 安装说明 / Installation
 
-            - **Windows**: Download `CodeTogether-amd64-installer.exe` to install, or `CodeTogether.exe` to run directly
-            - **macOS (Apple Silicon)**: Download `codetogether-macos-arm64.zip`
-            - **macOS (Intel)**: Download `codetogether-macos-amd64.zip`
+            - **Windows**: Download `AITogether-amd64-installer.exe` to install, or `AITogether.exe` to run directly
+            - **macOS (Apple Silicon)**: Download `aitogether-macos-arm64.zip`
+            - **macOS (Intel)**: Download `aitogether-macos-amd64.zip`
 
             ## 安装说明
 
-            - **Windows**：下载 `CodeTogether-amd64-installer.exe` 运行安装，或下载 `CodeTogether.exe` 直接运行
-            - **macOS (Apple Silicon)**：下载 `codetogether-macos-arm64.zip`
-            - **macOS (Intel)**：下载 `codetogether-macos-amd64.zip`
+            - **Windows**：下载 `AITogether-amd64-installer.exe` 运行安装，或下载 `AITogether.exe` 直接运行
+            - **macOS (Apple Silicon)**：下载 `aitogether-macos-arm64.zip`
+            - **macOS (Intel)**：下载 `aitogether-macos-amd64.zip`
 
-            See [RELEASE_NOTES.md](https://github.com/genewoo/ai-together/blob/main/RELEASE_NOTES.md) for detailed changes.
+            See [RELEASE_NOTES.md](https://github.com/shtdu/ai-together/blob/main/RELEASE_NOTES.md) for detailed changes.
           draft: false
           prerelease: false
         env:

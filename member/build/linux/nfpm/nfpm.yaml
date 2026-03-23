@@ -3,7 +3,7 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "CodeTogether"
+name: "AITogether"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.4.0.1"
@@ -17,12 +17,12 @@ license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/CodeTogether"
-    dst: "/usr/local/bin/CodeTogether"
+  - src: "./bin/AITogether"
+    dst: "/usr/local/bin/AITogether"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/CodeTogether.png"
-  - src: "./build/linux/CodeTogether.desktop"
-    dst: "/usr/share/applications/CodeTogether.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/AITogether.png"
+  - src: "./build/linux/AITogether.desktop"
+    dst: "/usr/share/applications/AITogether.desktop"
 
 # Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
 depends:
