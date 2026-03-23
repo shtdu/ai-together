@@ -180,7 +180,7 @@ echo ""
 echo "Running initial setup..."
 SETUP_RESPONSE=$(curl -s -X POST http://localhost:$TEST_SERVER_PORT/api/v1/setup/admin \
   -H "Content-Type: application/json" \
-  -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Admin","admin_password":"AdminPassword123!"}')
+  -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Test Admin","admin_password":"AdminPassword123!"}')
 
 # Check if setup was successful or already done
 if echo "$SETUP_RESPONSE" | grep -q "already"; then

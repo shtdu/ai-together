@@ -87,7 +87,7 @@ sleep 3
 echo "Running initial setup..."
 curl -s -X POST http://localhost:8088/api/v1/setup/admin \
   -H "Content-Type: application/json" \
-  -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Admin","admin_password":"AdminPassword123!"}' | jq .
+  -d '{"organization_name":"Test Org","admin_email":"admin@example.com","admin_name":"Test Admin","admin_password":"AdminPassword123!"}' | jq .
 
 echo "Test server is ready with admin user: admin@example.com / AdminPassword123!"
 echo ""
