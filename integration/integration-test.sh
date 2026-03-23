@@ -75,20 +75,35 @@ generate_coverage() {
   echo "================================"
 
   cd ../server
-  if [ -d "covdata" ] && [ "$(ls -A covdata)" ]; then
-    # Find and concatenate all coverage files
+  if [ -d "covdata" ] && [ "$(ls -A covdata/coverage.* 2>/dev/null)" ]; then
+    # Find and concatenate integration coverage files
     coverage_files=$(ls covdata/coverage.* 2>/dev/null)
     if [ -n "$coverage_files" ]; then
-      # Merge all coverage files
-      cat $coverage_files > coverage.out
+      # Merge all coverage files - keep first file's header, skip headers in rest
+      first_file=true
+      for f in $coverage_files; do
+        if [ "$first_file" = "true" ]; then
+          cat "$f" > coverage.integration.out
+          first_file=false
+        else
+          grep -v "^mode:" "$f" >> coverage.integration.out
+        fi
+      done
+
       # Display coverage percentage
       echo ""
-      echo -e "${GREEN}Total Coverage:${NC}"
-      go tool cover -func=coverage.out | tail -1
+      echo -e "${GREEN}Server Coverage (Integration Tests):${NC}"
+      go tool cover -func=coverage.integration.out | tail -1
+
       # Generate HTML report
-      go tool cover -html=coverage.out -o=coverage.html
+      go tool cover -html=coverage.integration.out -o=coverage.integration.html
       echo ""
-      echo "Coverage report generated: server/coverage.html"
+      echo "Coverage report generated: server/coverage.integration.html"
+
+      # Show breakdown by module (excluding 0% coverage files)
+      echo ""
+      echo "Breakdown by module (with coverage):"
+      go tool cover -func=coverage.integration.out | grep -E "^switch-server/" | grep -v "0.0%" | head -20
     else
       echo "No coverage files found in covdata/"
     fi
