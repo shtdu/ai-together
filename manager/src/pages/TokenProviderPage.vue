@@ -300,7 +300,7 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-for="(provider, i) in data.distribution.by_provider" :key="provider.name">
+              <tr v-for="provider in data.distribution.by_provider" :key="provider.name">
                 <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ provider.name }}</td>
                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ provider.requests.toLocaleString() }}</td>
                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(provider.tokens) }}</td>

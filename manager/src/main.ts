@@ -17,7 +17,6 @@ apiClient.interceptors.response.use(
 
       if (refreshToken && !originalRequest.url?.includes('/auth/refresh')) {
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
           const response = await apiClient.post('/auth/refresh', {
             refresh_token: refreshToken,
           })

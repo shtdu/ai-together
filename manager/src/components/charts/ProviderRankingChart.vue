@@ -42,8 +42,9 @@ const chartOptions = {
     },
     tooltip: {
       callbacks: {
-        label: (context: any) => {
-          const idx = context.dataIndex
+        label: (context: unknown) => {
+          const ctx = context as { dataIndex: number }
+          const idx = ctx.dataIndex
           const ranking = props.rankings[idx]
           return `${ranking.provider}: ${ranking.percentage}% (${ranking.total_tokens.toLocaleString()} tokens)`
         }

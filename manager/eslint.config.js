@@ -1,13 +1,14 @@
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
-import pluginReactHooks from 'eslint-plugin-react-hooks'
-import pluginReactRefresh from 'eslint-plugin-react-refresh'
+import pluginVue from 'eslint-plugin-vue'
+import vueParser from 'vue-eslint-parser'
 
 export default tseslint.config(
   { ignores: ['dist'] },
+  ...pluginVue.configs['flat/recommended'],
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx,vue}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
@@ -15,17 +16,17 @@ export default tseslint.config(
         es2020: true,
         node: true,
       },
-    },
-    plugins: {
-      'react-hooks': pluginReactHooks,
-      'react-refresh': pluginReactRefresh,
+      parser: vueParser,
+      parserOptions: {
+        parser: tseslint.parser,
+        sourceType: 'module',
+      },
     },
     rules: {
-      ...pluginReactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'vue/multi-word-component-names': 'off',
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/attributes-order': 'off',
     },
   }
 )
