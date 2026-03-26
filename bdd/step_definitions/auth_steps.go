@@ -130,7 +130,6 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Then(`^the profile should contain last update timestamp$`, ctx.theProfileShouldContainLastUpdateTimestamp)
 	suite.Then(`^the profile should contain team ID$`, ctx.theProfileShouldContainTeamID)
 	suite.Then(`^the profile should contain team name$`, ctx.theProfileShouldContainTeamName)
-	suite.Then(`^the operation should succeed$`, ctx.operationShouldSucceed)
 	suite.Then(`^I should receive a (\d+) error$`, ctx.iShouldReceiveAStatusCode)
 	suite.Then(`^the error message should contain "([^"]*)"$`, ctx.errorMessageShouldContain)
 	suite.Then(`^I should not see "([^"]*)"$`, ctx.iShouldNotSee)
@@ -185,6 +184,7 @@ func RegisterAuthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Then(`^each response should contain user data$`, ctx.eachResponseShouldContainUserData)
 
 	// IA-01-211 to IA-01-220: Extended registration and profile scenarios
+	suite.When(`^I register with email "([^"]*)" and password "([^"]*)"$`, ctx.iRegisterWithEmailAndPasswordExtended)
 	suite.When(`^I register with email "([^"]*)" and password "([^"]*)"$`, ctx.iRegisterWithEmailAndPasswordExtended)
 	suite.When(`^I register a new account with name "([^"]*)"$`, ctx.iRegisterNewAccountWithName)
 	suite.Then(`^all operations should succeed$`, ctx.allOperationsShouldSucceed)
@@ -1295,15 +1295,6 @@ func (ctx *ScenarioContext) myAuthTokenShouldBeInvalid() error {
 // myProfileShouldContainField checks if profile contains a specific field
 func (ctx *ScenarioContext) myProfileShouldContainField(field string) error {
 	// TODO: Check if field exists in profile
-	return nil
-}
-
-// operationShouldSucceed checks if operation succeeded
-func (ctx *ScenarioContext) operationShouldSucceed() error {
-	statusCode, _, _ := ctx.GetLastResponse()
-	if statusCode < 200 || statusCode >= 300 {
-		return fmt.Errorf("operation failed with status %d", statusCode)
-	}
 	return nil
 }
 

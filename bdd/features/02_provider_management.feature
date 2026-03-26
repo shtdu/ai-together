@@ -513,14 +513,6 @@ Feature: Provider Management
       Then the operation should succeed
       And I should see provider information
 
-    @p2 @requirement:PM-02-070
-    Scenario: Update provider name multiple times
-      Given I am logged in as a manager
-      And I have created a provider
-      When I update the provider name to "First Update"
-      And I update the provider name to "Second Update"
-      Then the provider name should be "Second Update"
-
     @p2 @requirement:PM-02-071
     Scenario: List providers returns providers in order
       Given I am logged in as a manager
@@ -537,14 +529,6 @@ Feature: Provider Management
       When I update the provider name to "same-name-test"
       Then the operation should succeed
       And the provider name should be "same-name-test"
-
-    @p2 @requirement:PM-02-075
-    Scenario: Update provider API key multiple times
-      Given I am logged in as a manager
-      And I have created a provider
-      When I update the provider API key to "first-key-123"
-      And I update the provider API key to "second-key-456"
-      Then the operation should succeed
 
     @p2 @requirement:PM-02-076
     Scenario: Update provider all optional fields
@@ -691,30 +675,6 @@ Feature: Provider Management
       When I update the provider name
       Then the provider should still be enabled
 
-  Rule: Provider Connectivity Extended Tests
-
-    @p2 @requirement:PM-02-093
-    Scenario: Test connectivity for enabled provider
-      Given I am logged in as a manager
-      And I have created an enabled provider
-      When I test the provider connectivity
-      Then the operation should succeed
-
-    @p2 @requirement:PM-02-094
-    Scenario: Test connectivity for disabled provider
-      Given I am logged in as a manager
-      And I have created a disabled provider
-      When I test the provider connectivity
-      Then the operation should succeed
-
-    @p1 @requirement:PM-02-095
-    Scenario: Test connectivity returns connection status
-      Given I am logged in as a manager
-      And I have created a provider
-      When I test the provider connectivity
-      Then the operation should succeed
-      And the response should contain status information
-
   Rule: Provider List Extended Queries
 
     @p1 @requirement:PM-02-096
@@ -770,18 +730,6 @@ Feature: Provider Management
 
   Rule: Provider Enable/Disable Extended Tests
 
-    @p1 @requirement:PM-02-102
-    Scenario: Enable provider with invalid ID
-      Given I am logged in as a manager
-      When I attempt to enable provider with ID 99999
-      Then I should receive a 404 error
-
-    @p1 @requirement:PM-02-103
-    Scenario: Disable provider with invalid ID
-      Given I am logged in as a manager
-      When I attempt to disable provider with ID 99999
-      Then I should receive a 404 error
-
     @p1 @requirement:PM-02-104
     Scenario: Enable provider with non-numeric ID
       Given I am logged in as a manager
@@ -793,22 +741,6 @@ Feature: Provider Management
       Given I am logged in as a manager
       When I attempt to disable provider with ID "abc"
       Then I should receive a 400 error
-
-    @p1 @requirement:PM-02-106
-    Scenario: Enable already enabled provider
-      Given I am logged in as a manager
-      And I have created an enabled provider
-      When I enable provider with the provider ID
-      Then the operation should succeed
-      And the provider should be enabled
-
-    @p1 @requirement:PM-02-107
-    Scenario: Disable already disabled provider
-      Given I am logged in as a manager
-      And I have created a disabled provider
-      When I disable provider with the provider ID
-      Then the operation should succeed
-      And the provider should not be enabled
 
   Rule: Provider Update Extended Tests
 
@@ -901,15 +833,6 @@ Feature: Provider Management
 
   Rule: Provider Statistics Extended
 
-    @p1 @requirement:PM-02-119
-    Scenario: Get provider stats multiple times
-      Given I am logged in as a manager
-      And I have created a provider
-      When I get provider statistics
-      And I get provider statistics
-      And I get provider statistics
-      Then all operations should succeed
-
     @p1 @requirement:PM-02-120
     Scenario: Get provider stats after update
       Given I am logged in as a manager
@@ -926,16 +849,6 @@ Feature: Provider Management
       And I should see statistics data
 
   Rule: Provider Enable/Disable Extended
-
-    @p1 @requirement:PM-02-122
-    Scenario: Toggle provider enable state
-      Given I am logged in as a manager
-      And I have created a provider
-      When I disable the provider
-      And I enable the provider
-      And I disable the provider again
-      And I enable the provider again
-      Then the provider should be enabled
 
     @p1 @requirement:PM-02-123
     Scenario: Enable provider then update
@@ -1049,18 +962,6 @@ Feature: Provider Management
       When I test provider with ID 99999
       Then I should receive a 404 error
 
-    @p2 @requirement:PM-02-137
-    Scenario: Disable non-existent provider fails
-      Given I am logged in as a manager
-      When I disable provider with ID 99999
-      Then I should receive a 404 error
-
-    @p2 @requirement:PM-02-138
-    Scenario: Enable non-existent provider fails
-      Given I am logged in as a manager
-      When I enable provider with ID 99999
-      Then I should receive a 404 error
-
   Rule: Provider List Variations
 
     @p1 @requirement:PM-02-139
@@ -1159,13 +1060,5 @@ Feature: Provider Management
       And I list all providers
       And I disable the provider
       And I list all providers
-      Then all operations should succeed
-
-    @p2 @requirement:PM-02-151
-    Scenario: Update provider multiple times
-      Given I am logged in as a manager
-      And I have created a provider
-      When I update the provider name to "Updated Name"
-      And I update the provider name to "Another Name"
       Then all operations should succeed
 

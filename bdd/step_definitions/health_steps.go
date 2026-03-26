@@ -4,7 +4,6 @@ package step_definitions
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/cucumber/godog"
 )
@@ -44,9 +43,6 @@ func RegisterHealthSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) {
 	suite.Then(`^the response status code should be 200$`, ctx.responseStatusCodeShouldBe200)
 	suite.Then(`^all requests should succeed$`, ctx.allRequestsShouldSucceed)
 	suite.Then(`^all responses should be consistent$`, ctx.allHealthCheckResponsesShouldBeConsistent)
-
-	// Simple health variations
-	suite.Then(`^the response should contain "([^"]*)"$`, ctx.responseShouldContainString)
 
 	// SB-05-035 to SB-05-039: Extended health check scenarios
 	suite.When(`^I check the health endpoint (\d+) times$`, ctx.iCheckTheHealthEndpointMultipleTimesAlt)
@@ -423,29 +419,6 @@ func (ctx *ScenarioContext) allHealthCheckResponsesShouldBeConsistent() error {
 			return fmt.Errorf("responses are not consistent: %d vs %d", firstCode, code)
 		}
 	}
-	return nil
-}
-
-// responseShouldContainString checks if response contains a specific string
-func (ctx *ScenarioContext) responseShouldContainString(str string) error {
-	statusCode, resp, _ := ctx.GetLastResponse()
-	_ = statusCode
-
-	if respMap, ok := resp.(map[string]interface{}); ok {
-		// Check if any value in the response contains the string
-		for _, v := range respMap {
-			if strVal, ok := v.(string); ok && strings.Contains(strVal, str) {
-				return nil
-			}
-			if strVal, ok := v.(float64); ok && fmt.Sprintf("%v", strVal) == str {
-				return nil
-			}
-		}
-		// Also check if the string is in the overall response
-		return fmt.Errorf("expected response to contain %q", str)
-	}
-
-	// For non-map responses, assume the check passes
 	return nil
 }
 

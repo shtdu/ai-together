@@ -70,7 +70,7 @@ func RegisterDashboardSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) 
 	suite.Then(`^member should be removed$`, ctx.memberShouldBeRemoved)
 	suite.Then(`^team member count should decrease$`, ctx.teamMemberCountShouldDecrease)
 	suite.Then(`^I should see team members list$`, ctx.iShouldSeeTeamMembersList)
-	suite.Then(`^the operation should succeed$`, ctx.theOperationShouldSucceed)
+	suite.Then(`^the operation should succeed$`, ctx.operationShouldSucceed)
 	suite.Then(`^I should see at least (\d+) team$`, ctx.iShouldSeeAtLeastNTeams)
 	suite.Then(`^each team should have name$`, ctx.eachTeamShouldHaveName)
 	suite.Then(`^the team should not exist$`, ctx.teamShouldNotExist)
@@ -112,7 +112,6 @@ func RegisterDashboardSteps(ctx *ScenarioContext, suite *godog.ScenarioContext) 
 	suite.Then(`^I should receive a 404 error$`, ctx.iShouldReceive404Error)
 	suite.When(`^I attempt to delete team with ID (\d+)$`, ctx.iAttemptToDeleteTeamWithID)
 	suite.When(`^I attempt to remove member with ID (\d+)$`, ctx.iAttemptToRemoveMemberWithID)
-	suite.Then(`^the operation should succeed$`, ctx.theOperationShouldSucceed)
 
 	// New dashboard and user management steps
 	suite.When(`^I get dashboard rankings$`, ctx.iGetDashboardRankingsWithoutAuth)
@@ -1113,14 +1112,6 @@ func (ctx *ScenarioContext) iAttemptToRemoveMemberWithID(memberID int64) error {
 		ctx.SetLastResponse(resp.StatusCode(), nil, fmt.Sprintf("unexpected response: %d", resp.StatusCode()))
 	}
 
-	return nil
-}
-
-func (ctx *ScenarioContext) theOperationShouldSucceed() error {
-	statusCode, _, _ := ctx.GetLastResponse()
-	if statusCode != 200 && statusCode != 204 && statusCode != 201 {
-		return fmt.Errorf("expected success status (200/201/204), got %d", statusCode)
-	}
 	return nil
 }
 
