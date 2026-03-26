@@ -6,15 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The Manager client is the administrative web interface for the AI Together platform. It provides team-level dashboards, usage analytics, user management, and token usage tracking for AI coding tools (Claude Code, Codex, and OpenCode).
 
-This is a **React 18 + TypeScript** single-page application (SPA) built with:
+This is a **Vue 3 + TypeScript** single-page application (SPA) built with:
 - **Vite** for build tooling and dev server
-- **Material UI (MUI) v6** for UI components
-- **React Router v7** for routing and navigation
-- **TanStack React Query** for server state management and caching
+- **Tailwind CSS v4** for styling
+- **Vue Router v5** for routing and navigation
+- **Pinia v3** for state management
 - **Axios** for HTTP client with interceptors
-- **Recharts** for data visualization
+- **Chart.js + vue-chartjs** for data visualization
 
 The application communicates with the backend server (`/server`) via REST API and includes authentication, role-based access control (RBAC), and real-time data refresh capabilities.
+
+## Tech Stack Alignment with Member Module
+
+The manager now uses the same web stack as the member client:
+- Vue 3 with Composition API (`<script setup>`)
+- Tailwind CSS v4 for styling
+- Vue Router for navigation
+- No formal component library (custom components with Tailwind)
 
 ## Pre-Push Validation
 
@@ -23,7 +31,7 @@ The application communicates with the backend server (`/server`) via REST API an
 Manager-specific checks:
 ```bash
 cd manager
-pnpm lint                # Lint TypeScript code
+pnpm lint                # Lint TypeScript/Vue code
 pnpm build               # Verify production build
 pnpm test                # Run tests (when configured)
 ```
@@ -73,21 +81,25 @@ src/
 │   ├── auth.ts          # Authentication endpoints
 │   ├── dashboard.ts     # Dashboard data endpoints
 │   ├── analytics.ts     # Analytics endpoints
+│   ├── setup.ts         # Setup endpoints
 │   └── users.ts         # User management endpoints
 ├── components/
-│   ├── charts/          # Recharts visualization components
+│   ├── charts/          # Chart.js visualization components
 │   ├── common/          # Reusable UI components
-│   ├── layout/          # App shell (Header, Sidebar, AppLayout)
-│   └── *.tsx            # Feature components
-├── contexts/
-│   └── AuthContext.tsx  # Authentication state management
+│   └── layout/          # App shell (Header, Sidebar, AppLayout)
 ├── pages/               # Route components (Dashboard, Analytics, Users)
+├── stores/              # Pinia stores for state management
+│   ├── auth.ts          # Authentication store
+│   └── setup.ts         # Setup state store
+├── router/              # Vue Router configuration
+│   └── index.ts
+├── styles/              # Global styles
+│   └── main.css
 ├── types/
 │   ├── api.ts           # API request/response types
 │   └── models.ts        # Domain model types
-├── App.tsx              # Root routing configuration
-├── main.tsx             # Application entry point
-└── theme.ts             # MUI theme configuration
+├── App.vue              # Root component with router guards
+└── main.ts              # Application entry point
 ```
 
 ### Key Architectural Patterns
@@ -97,7 +109,7 @@ src/
 Each API module exports an object with async methods that wrap Axios calls:
 - Uses a shared `apiClient` from `client.ts` with automatic auth token injection
 - Returns typed responses matching API schema
-- Errors are handled by React Query error boundaries
+- Errors are handled by calling code
 
 Example:
 ```typescript
@@ -112,47 +124,50 @@ export const dashboardApi = {
 }
 ```
 
-**2. Authentication Flow (`src/contexts/AuthContext.tsx`)**
+**2. Authentication Flow (`src/stores/auth.ts`)**
 
-Authentication is managed through a React Context with the following flow:
+Authentication is managed through a Pinia store:
 - Tokens stored in `localStorage` (`access_token`, `refresh_token`)
 - `apiClient` interceptors automatically add `Authorization: Bearer <token>` to requests
 - On 401 errors, the interceptor attempts token refresh via `/auth/refresh`
 - Failed refresh redirects to `/login` and clears tokens
-- `AuthProvider` wraps the app and exposes `useAuth()` hook for auth state
 
-**3. Data Fetching with React Query**
+**3. State Management with Pinia**
 
-Pages use `useQuery` for data fetching with automatic caching and refetching:
+State is managed using Pinia stores:
 ```typescript
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ['dashboard', 'metrics', timeRange],
-  queryFn: () => dashboardApi.getMetrics(timeRange, 'hour'),
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<User | null>(null)
+  const isAuthenticated = computed(() => !!user.value)
+
+  async function login(email: string, password: string) {
+    // ...
+  }
+
+  return { user, isAuthenticated, login }
 })
 ```
 
-Query keys follow the pattern: `['resource', 'id?', 'params?']` for cache invalidation.
-
 **4. Role-Based Access Control**
 
-Routes are protected using nested `ProtectedRoute` components:
-- Default: requires authentication (any role)
-- `requireAdmin`: requires `user.role === 'manager'`
-- Auth context provides `isAdmin` boolean for conditional rendering
+Routes are protected using Vue Router navigation guards:
+- Meta field `public: true` marks public routes
+- Meta field `requiresAdmin: true` for admin-only routes
+- Auth store provides `isAdmin` boolean for conditional rendering
 
 **5. Responsive Layout**
 
 The app shell (`AppLayout`) features:
 - Fixed sidebar with resizable width (persists to `localStorage`)
-- Mobile-responsive drawer (temporary on mobile, permanent on desktop)
+- Mobile-responsive drawer (hidden on mobile by default)
 - Fixed header with navigation toggle
-- Main content area with `<Outlet />` for nested routes
+- Main content area with `<RouterView />` for nested routes
 
 ### TypeScript Configuration
 
-- Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`)
-- Strict mode enabled with `noUnusedLocals` and `noUnusedParameters`
-- JSX runtime: `react-jsx` (no need to import React)
+- Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json` and `vite.config.ts`)
+- Strict mode enabled
+- JSX runtime: `preserve` for Vue SFC support
 
 ### Package Manager
 
@@ -171,7 +186,7 @@ The Manager client expects the backend server to provide:
 - `POST /auth/login` - Email/password login
 - `POST /auth/logout` - Invalidate refresh token
 - `POST /auth/refresh` - Refresh access token
-- `GET /auth/profile` - Get current user profile
+- `GET /api/v1/user/profile` - Get current user profile
 
 **Dashboard endpoints:**
 - `GET /api/v1/dashboard/metrics?range={7d}&interval={hour}` - Activity metrics
@@ -182,12 +197,17 @@ The Manager client expects the backend server to provide:
 - `GET /api/v1/analytics/providers` - Provider-level analytics
 - `GET /api/v1/analytics/users` - User-level analytics
 - `GET /api/v1/analytics/history` - Request history with pagination
+- `GET /api/v1/analytics/filters` - Filter options for analytics
 
 **User management endpoints:**
 - `GET /api/v1/users` - List users
 - `POST /api/v1/users` - Create user
 - `PUT /api/v1/users/:id` - Update user
 - `DELETE /api/v1/users/:id` - Delete user
+
+**Setup endpoints:**
+- `GET /api/v1/setup/status` - Check if setup is required
+- `POST /api/v1/setup/admin` - Create initial admin user
 
 All responses follow the schema in `src/types/api.ts`.
 
@@ -196,49 +216,50 @@ All responses follow the schema in `src/types/api.ts`.
 ### Page Components
 
 Pages are route-level components that:
-- Use `useQuery` for data fetching
+- Use Pinia stores for state management
+- Call API functions for data fetching
 - Handle loading/error states
 - Compose UI components and charts
 - Avoid business logic (delegates to API layer)
 
 ### Chart Components
 
-Charts use Recharts and accept:
+Charts use Chart.js with vue-chartjs and accept:
 - `data: T[]` - Array of data points
-- `isLoading: boolean` - Show skeleton loading state
+- `isLoading: boolean` - Show loading state
 - Responsive containers (no fixed dimensions)
 
 ### Common Components
 
 Reusable components in `src/components/common/`:
-- `DateRangePicker` - Date range selection with MUI X DatePickers
-- `MultiSelect` - Multi-select dropdown with chips
-- `UserSelect` - User selection with search
+- `DateRangePicker.vue` - Date range selection with presets
+- `MultiSelect.vue` - Multi-select dropdown
+- `UserSelect.vue` - User selection with search
 
 ## Styling
 
-- **Material UI** uses the `theme.ts` configuration for colors, spacing, and typography
-- **Tailwind CSS** is available for utility classes (configured but minimal usage)
-- Component styling uses `sx` prop or `styled()` from MUI
-- Responsive breakpoints: `xs`, `sm`, `md`, `lg`, `xl` (MUI breakpoint system)
+- **Tailwind CSS v4** is the primary styling solution
+- Custom styles in `src/styles/main.css`
+- Dark mode support using `dark:` prefix
+- Responsive breakpoints: `sm`, `md`, `lg`, `xl`, `2xl` (Tailwind breakpoint system)
 
 ## Error Handling
 
-- API errors are caught by React Query and can be displayed with error boundaries
+- API errors are caught by calling code and displayed to users
 - Auth errors (401) trigger automatic logout via Axios interceptor
-- Form validations use controlled components with error state
+- Form validations use reactive refs with error state
 - Error messages extracted via `getErrorMessage()` utility from `api/client`
 
 ## Testing
 
 No test framework is currently configured. When adding tests:
 - Prefer Vitest for unit/integration tests (compatible with Vite)
-- Use React Testing Library for component tests
+- Use Vue Test Utils for component tests
 - Mock API calls with MSW (Mock Service Worker)
 
 ## Build and Deployment
 
 The production build outputs static assets to `dist/`:
-- `npm run build` creates optimized bundle
+- `pnpm build` creates optimized bundle
 - `dist/` can be served by any static web server or the backend server
 - For production, the backend server should serve `dist/index.html` for SPA routing
