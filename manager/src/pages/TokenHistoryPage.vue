@@ -13,7 +13,7 @@ const selectedModels = ref<string[]>([])
 const selectedUsers = ref<number[]>([])
 
 const paginationModel = ref({ page: 0, pageSize: 25 })
-const sortModel = ref({ field: 'created_at', order: 'desc' as 'asc' | 'desc' })
+const sortModel = ref({ field: 'timestamp', order: 'desc' as 'asc' | 'desc' })
 
 const searchParams = ref({
   startDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
@@ -35,9 +35,10 @@ function formatNumber(num: number): string {
   return num.toString()
 }
 
-function formatDuration(ms: number): string {
-  if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`
-  return `${ms}ms`
+function formatDuration(sec: number): string {
+  if (sec >= 60) return `${(sec / 60).toFixed(1)}m`
+  if (sec >= 1) return `${sec.toFixed(2)}s`
+  return `${sec * 1000}ms`
 }
 
 async function fetchFilterOptions() {
@@ -116,7 +117,7 @@ function handlePageSizeChange(newSize: number) {
 function handleExportCSV() {
   if (!data.value) return
 
-  const headers = ['ID', 'User', 'Provider', 'Model', 'Input Tokens', 'Output Tokens', 'Duration', 'Created At']
+  const headers = ['ID', 'User', 'Provider', 'Model', 'Input Tokens', 'Output Tokens', 'Duration', 'Timestamp']
   const rows = data.value.records.map(r => [
     r.id,
     r.user_name,
@@ -124,8 +125,8 @@ function handleExportCSV() {
     r.model,
     r.input_tokens,
     r.output_tokens,
-    r.duration_ms,
-    r.created_at
+    r.duration_sec,
+    r.timestamp
   ])
 
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
@@ -255,18 +256,18 @@ onMounted(() => {
                 <span v-if="sortModel.field === 'output_tokens'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th
-                @click="handleSort('duration_ms')"
+                @click="handleSort('duration_sec')"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Duration
-                <span v-if="sortModel.field === 'duration_ms'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
+                <span v-if="sortModel.field === 'duration_sec'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th
-                @click="handleSort('created_at')"
+                @click="handleSort('timestamp')"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Created At
-                <span v-if="sortModel.field === 'created_at'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
+                <span v-if="sortModel.field === 'timestamp'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
             </tr>
           </thead>
@@ -288,8 +289,8 @@ onMounted(() => {
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ record.model }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(record.input_tokens) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(record.output_tokens) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatDuration(record.duration_ms) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ dayjs(record.created_at).format('YYYY-MM-DD HH:mm:ss') }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatDuration(record.duration_sec) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ dayjs(record.timestamp).format('YYYY-MM-DD HH:mm:ss') }}</td>
             </tr>
           </tbody>
         </table>
@@ -298,7 +299,7 @@ onMounted(() => {
       <!-- Pagination -->
       <div v-if="data?.pagination" class="bg-gray-50 dark:bg-gray-900 px-6 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
         <div class="text-sm text-gray-700 dark:text-gray-300">
-          Showing {{ ((data.pagination.page - 1) * data.pagination.limit) + 1 }} to {{ Math.min(data.pagination.page * data.pagination.limit, data.pagination.total) }} of {{ data.pagination.total.toLocaleString() }} results
+          Showing {{ ((data.pagination.page - 1) * data.pagination.limit) + 1 }} to {{ Math.min(data.pagination.page * data.pagination.limit, data.pagination.total_count) }} of {{ data.pagination.total_count.toLocaleString() }} results
         </div>
         <div class="flex items-center gap-2">
           <select
