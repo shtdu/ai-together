@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw, NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useSetupStore } from '../stores/setup'
 
 // Layouts
 import AppLayout from '../components/layout/AppLayout.vue'
@@ -73,7 +75,49 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
 })
+
+// Global navigation guard - registered at module load time
+router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
+  const authStore = useAuthStore()
+  const setupStore = useSetupStore()
+
+  // Wait for stores to initialize if not already done
+  if (!setupStore.isInitialized) {
+    await setupStore.initialize()
+  }
+  if (!authStore.isInitialized) {
+    await authStore.initialize()
+  }
+
+  // If setup is required, only allow setup route
+  if (setupStore.setupRequired === true && to.name !== 'setup') {
+    return next({ name: 'setup' })
+  }
+
+  // Public routes
+  if (to.meta.public) {
+    // If authenticated and trying to access login, redirect to dashboard
+    if (to.name === 'login' && authStore.isAuthenticated) {
+      return next({ name: 'dashboard' })
+    }
+    return next()
+  }
+
+  // Protected routes
+  if (!authStore.isAuthenticated) {
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+
+  // Admin-only routes
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    return next({ name: 'dashboard' })
+  }
+
+  return next()
+})
+
+export default router

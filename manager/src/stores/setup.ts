@@ -6,6 +6,7 @@ export const useSetupStore = defineStore('setup', () => {
   const setupRequired = ref<boolean | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const isInitialized = ref(false)
 
   async function checkSetupStatus() {
     try {
@@ -23,12 +24,14 @@ export const useSetupStore = defineStore('setup', () => {
 
   async function initialize() {
     await checkSetupStatus()
+    isInitialized.value = true
   }
 
   return {
     setupRequired,
     isLoading,
     error,
+    isInitialized,
     checkSetupStatus,
     initialize,
   }

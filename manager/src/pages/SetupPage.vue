@@ -114,12 +114,17 @@ function handleCopyPassword() {
   navigator.clipboard.writeText(adminPassword.value)
 }
 
-// Countdown timer for success page
-watch(countdown, (newVal) => {
-  if (activeStep.value === 2 && newVal > 0) {
-    setTimeout(() => countdown.value--, 1000)
-  } else if (activeStep.value === 2 && newVal === 0) {
-    handleGoToLogin()
+// Countdown timer for success page - watch activeStep to start countdown
+watch(activeStep, (newStep) => {
+  if (newStep === 2) {
+    // Start countdown when reaching success step
+    const timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer)
+        handleGoToLogin()
+      }
+    }, 1000)
   }
 })
 </script>

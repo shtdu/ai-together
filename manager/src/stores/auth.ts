@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const teams = ref<Team[]>([])
   const isLoading = ref(false)
+  const isInitialized = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'manager')
@@ -65,12 +66,14 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true
     await refreshUser()
     isLoading.value = false
+    isInitialized.value = true
   }
 
   return {
     user,
     teams,
     isLoading,
+    isInitialized,
     isAuthenticated,
     isAdmin,
     login,
