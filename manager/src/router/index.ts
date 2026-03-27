@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw, NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import type { RouteRecordRaw, RouteLocationNormalized } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSetupStore } from '../stores/setup'
 
@@ -81,7 +81,8 @@ const router = createRouter({
 })
 
 // Global navigation guard - registered at module load time
-router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
+// Using return instead of next() for Vue Router v5
+router.beforeEach(async (to: RouteLocationNormalized) => {
   const authStore = useAuthStore()
   const setupStore = useSetupStore()
 
@@ -95,29 +96,29 @@ router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormal
 
   // If setup is required, only allow setup route
   if (setupStore.setupRequired === true && to.name !== 'setup') {
-    return next({ name: 'setup' })
+    return { name: 'setup' }
   }
 
   // Public routes
   if (to.meta.public) {
     // If authenticated and trying to access login, redirect to dashboard
     if (to.name === 'login' && authStore.isAuthenticated) {
-      return next({ name: 'dashboard' })
+      return { name: 'dashboard' }
     }
-    return next()
+    return
   }
 
   // Protected routes
   if (!authStore.isAuthenticated) {
-    return next({ name: 'login', query: { redirect: to.fullPath } })
+    return { name: 'login', query: { redirect: to.fullPath } }
   }
 
   // Admin-only routes
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    return next({ name: 'dashboard' })
+    return { name: 'dashboard' }
   }
 
-  return next()
+  return
 })
 
 export default router
