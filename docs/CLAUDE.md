@@ -8,7 +8,7 @@ This directory contains all project documentation, organized into distinct categ
 docs/
 ├── ears/           # Single Source of Truth for REQUIREMENTS
 ├── design/         # Technical architecture and design principles
-└── QMD.md          # QMD knowledge base setup
+└── QMD.md          # QMD document query workflow and local setup
 ```
 
 ## Single Source of Truth for Requirements: `ears/`
@@ -61,6 +61,14 @@ See `ears/CLAUDE.md` for detailed EARS syntax and writing guidelines.
 
 Read `design/constitution.md` **before** making architectural decisions.
 
+### `QMD.md` - Document Query Workflow
+
+Use `QMD.md` when you need to discover the right documentation quickly.
+
+- Query QMD first to locate relevant requirements or design documents
+- Then read the exact files in `ears/` or `design/`
+- Prefer the QMD MCP workflow for document discovery over broad file greps
+
 ## Quick Reference
 
 | Need | Go To |
@@ -69,15 +77,17 @@ Read `design/constitution.md` **before** making architectural decisions.
 | How to write requirements? | `ears/CLAUDE.md` |
 | Technology choices? | `design/constitution.md` |
 | System architecture? | `design/architecture.md` |
+| How to query docs quickly? | `QMD.md` |
 | Module implementation? | `../member/CLAUDE.md`, `../server/CLAUDE.md` |
 
 ## Workflow for Implementation
 
-1. **Start with `ears/`** - Find the feature requirements
-2. **Check `design/constitution.md`** - Verify architectural alignment
-3. **Reference `design/architecture.md`** - Understand system design
-4. **Consult module CLAUDE.md** - Follow implementation patterns
+1. **Query with `QMD.md` guidance first** - Use QMD MCP tools to find the right documents
+2. **Read `ears/`** - Confirm the feature requirements in the source files
+3. **Check `design/constitution.md`** - Verify architectural alignment
+4. **Reference `design/architecture.md`** - Understand system design
+5. **Consult module CLAUDE.md** - Follow implementation patterns
 
 ---
 
-**Remember:** `ears/` is the single source of truth for requirements. Always start there when implementing features.
+**Remember:** Use QMD to find documents quickly, but treat `ears/` as the single source of truth for requirements and `design/` as the source of truth for architecture.
