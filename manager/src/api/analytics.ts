@@ -101,13 +101,13 @@ export interface HistoryResponse {
     model: string;
     input_tokens: number;
     output_tokens: number;
-    duration_ms: number;
-    created_at: string;
+    duration_sec: number;
+    timestamp: string;
   }>;
   pagination: {
     page: number;
     limit: number;
-    total: number;
+    total_count: number;
     total_pages: number;
   };
 }
