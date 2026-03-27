@@ -13,7 +13,7 @@ const selectedModels = ref<string[]>([])
 const selectedUsers = ref<number[]>([])
 
 const paginationModel = ref({ page: 0, pageSize: 25 })
-const sortModel = ref({ field: 'timestamp', order: 'desc' as 'asc' | 'desc' })
+const sortModel = ref({ field: 'created_at', order: 'desc' as 'asc' | 'desc' })
 
 const searchParams = ref({
   startDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
@@ -213,33 +213,17 @@ onMounted(() => {
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th
-                @click="handleSort('id')"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 ID
-                <span v-if="sortModel.field === 'id'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th
-                @click="handleSort('user_name')"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 User
-                <span v-if="sortModel.field === 'user_name'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th
-                @click="handleSort('provider')"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 Provider
-                <span v-if="sortModel.field === 'provider'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th
-                @click="handleSort('model')"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 Model
-                <span v-if="sortModel.field === 'model'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th
                 @click="handleSort('input_tokens')"
@@ -263,11 +247,11 @@ onMounted(() => {
                 <span v-if="sortModel.field === 'duration_sec'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th
-                @click="handleSort('timestamp')"
+                @click="handleSort('created_at')"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Created At
-                <span v-if="sortModel.field === 'timestamp'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
+                <span v-if="sortModel.field === 'created_at'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
             </tr>
           </thead>
