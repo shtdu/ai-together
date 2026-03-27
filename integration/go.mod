@@ -6,7 +6,7 @@ require (
 	github.com/code-together/integration_manager v0.0.0-00010101000000-000000000000
 	github.com/code-together/shared v0.0.0
 	github.com/jackc/pgx/v5 v5.9.1
-	github.com/oapi-codegen/runtime v1.2.0
+	github.com/oapi-codegen/runtime v1.3.0
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -16,7 +16,7 @@ require (
 	github.com/getkin/kin-openapi v0.131.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
