@@ -17,6 +17,7 @@ package integration
 import (
 	"context"
 	"net/http"
+	"time"
 
 	integrationclient "github.com/code-together/shared/integration"
 	"github.com/stretchr/testify/assert"

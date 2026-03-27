@@ -50,11 +50,6 @@ var (
 	providerMutex   sync.Mutex
 )
 
-// boolPointer returns a pointer to a bool value
-func boolPointer(b bool) *bool {
-	return &b
-}
-
 // generateUniqueProviderName creates a unique provider name by appending a counter
 // This prevents duplicate name errors when tests run in sequence
 func generateUniqueProviderName(baseName string) string {

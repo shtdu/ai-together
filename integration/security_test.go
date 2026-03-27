@@ -389,7 +389,7 @@ func (s *IntegrationTestSuite) TestSecurityGlobalLogout() {
 
 // TestSecurityPasswordReusePrevention tests that old passwords cannot be reused.
 func (s *IntegrationTestSuite) TestSecurityPasswordReusePrevention() {
-	_ = context.Background() // Context for future implementation
+	ctx := context.Background()
 
 	// This test requires a password change endpoint
 	// Documenting expected behavior:
