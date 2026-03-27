@@ -14,4 +14,4 @@
 
 package main
 
-const ServerVersion = "v0.2.0"
+const ServerVersion = "v0.3.1"
