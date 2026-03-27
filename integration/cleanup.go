@@ -38,12 +38,12 @@ func setupTestDB(logger *slog.Logger) string {
 		panic(fmt.Sprintf("Failed to parse database URL: %v", err))
 	}
 
-	// Connect to postgres database to create test database
-	adminDBURL := fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=disable",
-		connConfig.User, connConfig.Host, connConfig.Port, "postgres")
-
 	ctx := context.Background()
-	conn, err := pgx.Connect(ctx, adminDBURL)
+	// Reuse the parsed connection config so password/TLS settings are preserved.
+	adminConnConfig := connConfig.Copy()
+	adminConnConfig.Database = "postgres"
+
+	conn, err := pgx.ConnectConfig(ctx, adminConnConfig)
 	if err != nil {
 		logger.Error("Failed to connect to postgres database", "error", err)
 		panic(fmt.Sprintf("Failed to connect to postgres: %v (ensure PostgreSQL is running)", err))
