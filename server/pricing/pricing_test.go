@@ -39,17 +39,17 @@ func TestGetPrice_EmptyModel(t *testing.T) {
 
 func TestEstimateCost(t *testing.T) {
 	tests := []struct {
-		model        string
-		input        int64
-		output       int64
-		wantCostMin  float64
-		wantCostMax  float64
+		model       string
+		input       int64
+		output      int64
+		wantCostMin float64
+		wantCostMax float64
 	}{
-		{"claude-3-5-sonnet-20241022", 1_000_000, 1_000_000, 18.0, 18.0},   // $3 + $15
-		{"gpt-4o-mini", 1_000_000, 1_000_000, 0.75, 0.75},                  // $0.15 + $0.60
-		{"claude-3-5-sonnet-20241022", 0, 0, 0.0, 0.0},                     // zero tokens
-		{"claude-3-5-sonnet-20241022", 1000, 500, 0.0105, 0.0105},           // small values
-		{"unknown-model", 1_000_000, 1_000_000, 18.0, 18.0},                // fallback
+		{"claude-3-5-sonnet-20241022", 1_000_000, 1_000_000, 18.0, 18.0}, // $3 + $15
+		{"gpt-4o-mini", 1_000_000, 1_000_000, 0.75, 0.75},                // $0.15 + $0.60
+		{"claude-3-5-sonnet-20241022", 0, 0, 0.0, 0.0},                   // zero tokens
+		{"claude-3-5-sonnet-20241022", 1000, 500, 0.0105, 0.0105},        // small values
+		{"unknown-model", 1_000_000, 1_000_000, 18.0, 18.0},              // fallback
 	}
 
 	for _, tt := range tests {
