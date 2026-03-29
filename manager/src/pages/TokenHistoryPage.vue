@@ -117,7 +117,7 @@ function handlePageSizeChange(newSize: number) {
 function handleExportCSV() {
   if (!data.value) return
 
-  const headers = ['ID', 'User', 'Provider', 'Model', 'Input Tokens', 'Output Tokens', 'Duration', 'Timestamp']
+  const headers = ['ID', 'User', 'Provider', 'Model', 'Input Tokens', 'Output Tokens', 'Duration', 'Est. Cost', 'Timestamp']
   const rows = data.value.records.map(r => [
     r.id,
     r.user_name,
@@ -126,6 +126,7 @@ function handleExportCSV() {
     r.input_tokens,
     r.output_tokens,
     r.duration_sec,
+    r.estimated_cost?.toFixed(4) || '0.0000',
     r.timestamp
   ])
 
@@ -246,6 +247,9 @@ onMounted(() => {
                 Duration
                 <span v-if="sortModel.field === 'duration_sec'">{{ sortModel.order === 'asc' ? '↑' : '↓' }}</span>
               </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Cost
+              </th>
               <th
                 @click="handleSort('created_at')"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -257,12 +261,12 @@ onMounted(() => {
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-if="isLoading">
-              <td colspan="8" class="px-6 py-20 text-center">
+              <td colspan="9" class="px-6 py-20 text-center">
                 <div class="animate-spin text-4xl inline-block">⟳</div>
               </td>
             </tr>
             <tr v-else-if="!data?.records || data.records.length === 0">
-              <td colspan="8" class="px-6 py-20 text-center text-gray-500 dark:text-gray-400">
+              <td colspan="9" class="px-6 py-20 text-center text-gray-500 dark:text-gray-400">
                 No records found
               </td>
             </tr>
@@ -274,6 +278,7 @@ onMounted(() => {
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(record.input_tokens) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(record.output_tokens) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatDuration(record.duration_sec) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${{ record.estimated_cost?.toFixed(4) || '0.0000' }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ dayjs(record.timestamp).format('YYYY-MM-DD HH:mm:ss') }}</td>
             </tr>
           </tbody>

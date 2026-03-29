@@ -1038,7 +1038,8 @@ func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startD
 	totalPages := (totalCount + int64(limit) - 1) / int64(limit)
 	offset := (page - 1) * limit
 
-	// Get records
+	// Get records with estimated cost per request
+	// Cost formula: (input_tokens * 0.001 + output_tokens * 0.002) / 1000
 	recordsQuery := fmt.Sprintf(`
 		SELECT
 			r.id,
@@ -1052,7 +1053,8 @@ func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startD
 			r.output_tokens,
 			r.http_code,
 			r.duration_sec,
-			r.is_stream
+			r.is_stream,
+			(COALESCE(r.input_tokens, 0)::float * 0.001 + COALESCE(r.output_tokens, 0)::float * 0.002) / 1000.0 AS estimated_cost
 		FROM request_log r
 		JOIN users u ON r.user_id = u.id
 		WHERE %s
@@ -1074,25 +1076,27 @@ func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startD
 		var provider, model, platform *string
 		var inputTokens, outputTokens, httpCode *int32
 		var durationSec *float32
+		var estimatedCost *float64
 		var isStream *bool
 
-		if err := rows.Scan(&id, &createdAt, &userID, &userName, &provider, &model, &platform, &inputTokens, &outputTokens, &httpCode, &durationSec, &isStream); err != nil {
+		if err := rows.Scan(&id, &createdAt, &userID, &userName, &provider, &model, &platform, &inputTokens, &outputTokens, &httpCode, &durationSec, &isStream, &estimatedCost); err != nil {
 			return nil, fmt.Errorf("failed to scan record: %w", err)
 		}
 
 		record := map[string]interface{}{
-			"id":            id,
-			"timestamp":     createdAt,
-			"user_id":       userID,
-			"user_name":     userName,
-			"provider":      stringOrEmpty(provider),
-			"model":         stringOrEmpty(model),
-			"platform":      stringOrEmpty(platform),
-			"input_tokens":  intOrZero(inputTokens),
-			"output_tokens": intOrZero(outputTokens),
-			"http_code":     intOrZero(httpCode),
-			"duration_sec":  floatOrZero(durationSec),
-			"is_stream":     boolOrFalse(isStream),
+			"id":              id,
+			"timestamp":       createdAt,
+			"user_id":         userID,
+			"user_name":       userName,
+			"provider":        stringOrEmpty(provider),
+			"model":           stringOrEmpty(model),
+			"platform":        stringOrEmpty(platform),
+			"input_tokens":    intOrZero(inputTokens),
+			"output_tokens":   intOrZero(outputTokens),
+			"http_code":       intOrZero(httpCode),
+			"duration_sec":    floatOrZero(durationSec),
+			"is_stream":       boolOrFalse(isStream),
+			"estimated_cost":  float64OrZero(estimatedCost),
 		}
 		records = append(records, record)
 	}
@@ -1210,4 +1214,11 @@ func boolOrFalse(b *bool) bool {
 		return false
 	}
 	return *b
+}
+
+func float64OrZero(f *float64) float64 {
+	if f == nil {
+		return 0.0
+	}
+	return *f
 }
