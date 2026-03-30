@@ -411,6 +411,9 @@ func setupAnalyticsRouter(handler *AnalyticsHandler) *gin.Engine {
 	router.GET("/analytics/users", handler.GetUserAnalytics)
 	router.GET("/analytics/history", handler.GetHistory)
 	router.GET("/analytics/filter-options", handler.GetFilterOptions)
+	router.GET("/analytics/personal", handler.GetPersonalAnalytics)
+	router.GET("/analytics/personal/history", handler.GetPersonalHistory)
+	router.GET("/analytics/personal/filters", handler.GetPersonalFilterOptions)
 
 	return router
 }
@@ -751,4 +754,290 @@ func TestAnalyticsHandler_GetHistory_WithAllFiltersIncludingTools(t *testing.T) 
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	mockUsageService.AssertExpectations(t)
+}
+
+// --- Personal analytics tests (issue #101) ---
+
+func TestAnalyticsHandler_GetPersonalAnalytics_Success(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"summary": map[string]interface{}{
+			"total_tokens":   5000,
+			"total_requests": 50,
+		},
+		"distribution": map[string]interface{}{
+			"by_provider": []map[string]interface{}{
+				{"name": "anthropic", "tokens": 5000, "requests": 50, "percentage": 100.0},
+			},
+			"by_model": []map[string]interface{}{
+				{"name": "claude-3-opus", "tokens": 5000, "requests": 50, "percentage": 100.0},
+			},
+		},
+	}
+
+	mockUsageService.On("GetPersonalAnalytics",
+		mock.Anything,
+		int64(42), int64(1), "2024-01-01", "2024-01-31",
+		[]string(nil), []string(nil), []string(nil)).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	// Both member and manager can access personal analytics
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal?start_date=2024-01-01&end_date=2024-01-31", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.NewDecoder(w.Body).Decode(&response)
+	require.NoError(t, err)
+	assert.NotNil(t, response["summary"])
+
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetPersonalAnalytics_ManagerCanAccess(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"summary": map[string]interface{}{
+			"total_tokens":   1000,
+			"total_requests": 10,
+		},
+	}
+
+	mockUsageService.On("GetPersonalAnalytics",
+		mock.Anything,
+		int64(1), int64(1), "2024-01-01", "2024-01-31",
+		[]string(nil), []string(nil), []string(nil)).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal?start_date=2024-01-01&end_date=2024-01-31", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetPersonalAnalytics_MissingDates(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&response)
+	assert.Equal(t, "start_date and end_date are required", response["error"])
+}
+
+func TestAnalyticsHandler_GetPersonalAnalytics_WithFilters(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"summary": map[string]interface{}{"total_tokens": 3000},
+	}
+
+	mockUsageService.On("GetPersonalAnalytics",
+		mock.Anything,
+		int64(42), int64(1), "2024-01-01", "2024-01-31",
+		[]string{"anthropic"}, []string{"claude-3-opus"}, []string{"claude"}).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal?start_date=2024-01-01&end_date=2024-01-31&providers=anthropic&models=claude-3-opus&tools=claude", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetPersonalAnalytics_Unauthorized(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/analytics/personal", handler.GetPersonalAnalytics)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal?start_date=2024-01-01&end_date=2024-01-31", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestAnalyticsHandler_GetPersonalHistory_Success(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"records": []map[string]interface{}{
+			{"id": int64(1), "model": "claude-3-opus", "total_tokens": 1000},
+		},
+		"pagination": map[string]interface{}{
+			"page":  1,
+			"limit": 100,
+			"total": 1,
+		},
+	}
+
+	mockUsageService.On("GetPersonalHistory",
+		mock.Anything,
+		int64(42), int64(1), "2024-01-01", "2024-01-31",
+		1, 100,
+		[]string(nil), []string(nil), []string(nil),
+		"created_at", "desc").
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal/history?start_date=2024-01-01&end_date=2024-01-31", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.NewDecoder(w.Body).Decode(&response)
+	require.NoError(t, err)
+	assert.NotNil(t, response["records"])
+
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetPersonalHistory_MissingDates(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal/history", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestAnalyticsHandler_GetPersonalHistory_WithPagination(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"records": []map[string]interface{}{},
+		"pagination": map[string]interface{}{
+			"page":  2,
+			"limit": 25,
+			"total": 100,
+		},
+	}
+
+	mockUsageService.On("GetPersonalHistory",
+		mock.Anything,
+		int64(42), int64(1), "2024-01-01", "2024-01-31",
+		2, 25,
+		[]string{"anthropic"}, []string(nil), []string(nil),
+		"total_tokens", "asc").
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal/history?start_date=2024-01-01&end_date=2024-01-31&page=2&limit=25&providers=anthropic&sort_by=total_tokens&sort_order=asc", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetPersonalFilterOptions_Success(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"providers": []string{"anthropic"},
+		"models":    []string{"claude-3-opus"},
+		"tools":     []string{"claude"},
+	}
+
+	mockUsageService.On("GetPersonalFilterOptions",
+		mock.Anything,
+		int64(42), int64(1)).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	memberUser := createTestUser(42, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal/filters", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, memberUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.NewDecoder(w.Body).Decode(&response)
+	require.NoError(t, err)
+	assert.NotNil(t, response["providers"])
+	assert.NotNil(t, response["models"])
+	assert.NotNil(t, response["tools"])
+
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetPersonalFilterOptions_Unauthorized(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/analytics/personal/filters", handler.GetPersonalFilterOptions)
+
+	req, _ := http.NewRequest("GET", "/analytics/personal/filters", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }

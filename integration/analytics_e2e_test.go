@@ -738,3 +738,196 @@ func (s *IntegrationTestSuite) TestErrorRecordsInAnalytics() {
 func float32Pointer(f float32) *float32 {
 	return &f
 }
+
+// ============================================================================
+// Personal Analytics E2E Tests (issue #101)
+// ============================================================================
+
+// TestPersonalAnalyticsDataIsolation verifies that a member user can only
+// see their own data in personal analytics, not other users' data.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
+	ctx := context.Background()
+
+	// Bootstrap standard fixture (creates admin + member users)
+	fixture := s.bootstrapStandardFixture()
+	defer fixture.TearDown()
+
+	// Create provider
+	uniqueName := generateUniqueProviderName("e2e-personal-isolation")
+	kind := integrationclient.CreateProviderRequestKindClaude
+	provReq := integrationclient.PostApiV1ProvidersJSONRequestBody{
+		Name:            uniqueName,
+		Kind:            &kind,
+		ApiKey:          "sk-ant-test-key",
+		ApiUrl:          "https://api.anthropic.com",
+		Enabled:         &[]bool{true}[0],
+		Level:           &[]int{1}[0],
+		SupportedModels: &[]string{"claude-3-opus"},
+	}
+
+	provResp, err := s.Client.PostApiV1ProvidersWithResponse(ctx, provReq)
+	require.NoError(s.T(), err, "Failed to create provider")
+	require.Equal(s.T(), 201, provResp.StatusCode())
+	providerID := provResp.JSON201.Id
+	defer s.Client.DeleteApiV1ProvidersProviderIdWithResponse(ctx, providerID)
+
+	now := time.Now()
+
+	// Upload records for admin user (user_id = 1)
+	adminRecords := []integrationclient.UsageRecord{
+		{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(5000),
+			OutputTokens: intPointer(3000),
+			DurationSec:  float32Pointer(3.0),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1), // admin
+			CreatedAt:    now,
+		},
+		{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(2000),
+			OutputTokens: intPointer(1000),
+			DurationSec:  float32Pointer(1.5),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1), // admin
+			CreatedAt:    now.Add(-5 * time.Minute),
+		},
+	}
+
+	// Upload records for member user (different user_id)
+	memberRecords := []integrationclient.UsageRecord{
+		{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(300),
+			OutputTokens: intPointer(200),
+			DurationSec:  float32Pointer(0.5),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(2), // member
+			CreatedAt:    now,
+		},
+	}
+
+	// Upload all records using admin client
+	allRecords := append(adminRecords, memberRecords...)
+	batchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(allRecords)
+	batchResp, err := s.Client.PostApiV1UsageBatchWithResponse(ctx, batchReq)
+	require.NoError(s.T(), err, "Failed to upload usage records")
+	require.Equal(s.T(), 200, batchResp.StatusCode())
+	require.Equal(s.T(), 3, batchResp.JSON200.SyncedCount, "Should sync all 3 records")
+
+	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	endDate := time.Now().Format("2006-01-02")
+
+	httpClient := &http.Client{}
+
+	// Query personal analytics as member - should only see member's 1 record
+	memberURL := fmt.Sprintf("%s/api/v1/analytics/personal?start_date=%s&end_date=%s",
+		s.ServerURL, startDate, endDate)
+
+	memberReq, err := http.NewRequest("GET", memberURL, nil)
+	require.NoError(s.T(), err)
+	memberReq.Header.Set("Authorization", "Bearer "+s.MemberToken)
+
+	memberResp, err := httpClient.Do(memberReq)
+	require.NoError(s.T(), err)
+	defer memberResp.Body.Close()
+
+	memberBody, err := io.ReadAll(memberResp.Body)
+	require.NoError(s.T(), err)
+
+	s.T().Logf("Member personal analytics response (%d): %s", memberResp.StatusCode, string(memberBody))
+
+	assert.Equal(s.T(), 200, memberResp.StatusCode, "Member should be able to access personal analytics")
+
+	// Query personal analytics as admin - should only see admin's 2 records
+	adminURL := fmt.Sprintf("%s/api/v1/analytics/personal?start_date=%s&end_date=%s",
+		s.ServerURL, startDate, endDate)
+
+	adminReq, err := http.NewRequest("GET", adminURL, nil)
+	require.NoError(s.T(), err)
+	adminReq.Header.Set("Authorization", "Bearer "+s.AdminToken)
+
+	adminResp, err := httpClient.Do(adminReq)
+	require.NoError(s.T(), err)
+	defer adminResp.Body.Close()
+
+	adminBody, err := io.ReadAll(adminResp.Body)
+	require.NoError(s.T(), err)
+
+	s.T().Logf("Admin personal analytics response (%d): %s", adminResp.StatusCode, string(adminBody))
+
+	assert.Equal(s.T(), 200, adminResp.StatusCode, "Admin should be able to access personal analytics")
+
+	// Verify the response bodies are different (data isolation)
+	assert.NotEqual(s.T(), string(memberBody), string(adminBody),
+		"Member and admin personal analytics should return different data")
+}
+
+// TestPersonalAnalyticsFilterOptions verifies that personal filter options
+// are returned for any authenticated user.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsFilterOptions() {
+	ctx := context.Background()
+
+	fixture := s.bootstrapStandardFixture()
+	defer fixture.TearDown()
+
+	httpClient := &http.Client{}
+
+	// Member can access personal filter options
+	filterURL := fmt.Sprintf("%s/api/v1/analytics/personal/filters", s.ServerURL)
+
+	req, err := http.NewRequest("GET", filterURL, nil)
+	require.NoError(s.T(), err)
+	req.Header.Set("Authorization", "Bearer "+s.MemberToken)
+
+	resp, err := httpClient.Do(req)
+	require.NoError(s.T(), err)
+	defer resp.Body.Close()
+
+	assert.Equal(s.T(), 200, resp.StatusCode, "Member should be able to access personal filter options")
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(s.T(), err)
+	s.T().Logf("Personal filter options response (%d): %s", resp.StatusCode, string(body))
+}
+
+// TestPersonalAnalyticsRequiresAuth verifies that personal analytics
+// endpoints require authentication.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
+	ctx := context.Background()
+
+	// Start server (no auth)
+	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	endDate := time.Now().Format("2006-01-02")
+
+	httpClient := &http.Client{}
+
+	endpoints := []string{
+		fmt.Sprintf("%s/api/v1/analytics/personal?start_date=%s&end_date=%s", s.ServerURL, startDate, endDate),
+		fmt.Sprintf("%s/api/v1/analytics/personal/history?start_date=%s&end_date=%s", s.ServerURL, startDate, endDate),
+		fmt.Sprintf("%s/api/v1/analytics/personal/filters", s.ServerURL),
+	}
+
+	for _, endpoint := range endpoints {
+		req, err := http.NewRequest("GET", endpoint, nil)
+		require.NoError(s.T(), err)
+		// No Authorization header
+
+		resp, err := httpClient.Do(req)
+		require.NoError(s.T(), err)
+		defer resp.Body.Close()
+
+		assert.Equal(s.T(), 401, resp.StatusCode,
+			"Personal analytics endpoint should require auth: %s", endpoint)
+	}
+}
