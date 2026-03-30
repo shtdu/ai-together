@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -509,10 +510,18 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	err := h.userService.ChangePassword(authenticatedUser.ID, req.CurrentPassword, req.NewPassword)
 	if err != nil {
 		requestID := c.GetString("request_id")
+		if errors.Is(err, services.ErrIncorrectPassword) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Error:   err.Error(),
+				Code:    models.ErrCodeValidation,
+				Request: requestID,
+			})
+			return
+		}
 		log.Printf("[ERROR] [%s] Failed to change password - user_id=%d error=%v", requestID, authenticatedUser.ID, err)
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error:   err.Error(),
-			Code:    models.ErrCodeValidation,
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to change password",
+			Code:    models.ErrCodeInternal,
 			Request: requestID,
 		})
 		return

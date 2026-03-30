@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"switch-server/models"
+	"switch-server/services"
 )
 
 // MockUserService is a mock implementation of UserServiceInterface using testify/mock
@@ -1291,7 +1292,7 @@ func TestChangePassword_WrongCurrentPassword(t *testing.T) {
 	mockTeamService := new(MockTeamService)
 
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
-	mockService.On("ChangePassword", int64(1), "wrongPass", "newPass456").Return(assert.AnError)
+	mockService.On("ChangePassword", int64(1), "wrongPass", "newPass456").Return(services.ErrIncorrectPassword)
 
 	handler := NewAuthHandler(mockService, mockTeamService)
 
@@ -1314,6 +1315,39 @@ func TestChangePassword_WrongCurrentPassword(t *testing.T) {
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, "VALIDATION_ERROR", response["code"])
+
+	mockService.AssertExpectations(t)
+}
+
+func TestChangePassword_InternalError(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+	mockService.On("ChangePassword", int64(1), "oldPass123", "newPass456").Return(assert.AnError)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/password", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.ChangePassword(c)
+	})
+
+	reqBody := `{"current_password": "oldPass123", "new_password": "newPass456"}`
+	req, _ := http.NewRequest("PUT", "/password", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, "INTERNAL_ERROR", response["code"])
+	assert.Equal(t, "Failed to change password", response["error"])
 
 	mockService.AssertExpectations(t)
 }
