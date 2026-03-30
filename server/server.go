@@ -123,6 +123,8 @@ func startServer() {
 
 		// User profile
 		protected.GET("/user/profile", authHandlers.GetProfile)
+		protected.PUT("/user/profile", authHandlers.UpdateProfile)
+		protected.PUT("/user/password", authHandlers.ChangePassword)
 
 		// Team management
 		protected.GET("/teams", teamHandlers.ListTeams)

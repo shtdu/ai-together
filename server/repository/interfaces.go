@@ -29,6 +29,8 @@ type UserRepositoryInterface interface {
 	ListUsersByTenant(ctx context.Context, tenantID int64) ([]models.User, error)
 	UpdateUser(ctx context.Context, userID int64, name, role string) error
 	UpdateUserWithPassword(ctx context.Context, userID int64, name, role, hashedPassword string) error
+	UpdateUserName(ctx context.Context, userID int64, name string) error
+	UpdateUserPassword(ctx context.Context, userID int64, hashedPassword string) error
 	DeleteUser(ctx context.Context, userID int64) error
 }
 

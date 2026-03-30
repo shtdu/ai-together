@@ -32,6 +32,8 @@ type UserServiceInterface interface {
 	ListUsersByTenant(tenantID int64) ([]models.User, error)
 	UpdateUser(userID int64, name, role, password string) (*models.User, error)
 	DeleteUser(userID int64) error
+	UpdateProfileName(userID int64, name string) (*models.User, error)
+	ChangePassword(userID int64, currentPassword, newPassword string) error
 }
 
 // ProviderServiceInterface defines the contract for provider service operations

@@ -150,6 +150,24 @@ func (r *UserRepository) ListUsersByTenant(ctx context.Context, tenantID int64) 
 	return users, nil
 }
 
+func (r *UserRepository) UpdateUserName(ctx context.Context, userID int64, name string) error {
+	query := `UPDATE users SET name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
+	_, err := r.db.Pool().Exec(ctx, query, userID, name)
+	if err != nil {
+		return fmt.Errorf("failed to update user name: %w", err)
+	}
+	return nil
+}
+
+func (r *UserRepository) UpdateUserPassword(ctx context.Context, userID int64, hashedPassword string) error {
+	query := `UPDATE users SET password = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1`
+	_, err := r.db.Pool().Exec(ctx, query, userID, hashedPassword)
+	if err != nil {
+		return fmt.Errorf("failed to update user password: %w", err)
+	}
+	return nil
+}
+
 func (r *UserRepository) DeleteUser(ctx context.Context, userID int64) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.Pool().Exec(ctx, query, userID)
