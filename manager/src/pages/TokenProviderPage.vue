@@ -264,8 +264,9 @@ onMounted(() => {
         />
         <MultiSelect
           label="Tools"
-          :options="(filterOptions?.tools || []).map(t => formatToolName(t))"
+          :options="filterOptions?.tools || []"
           v-model="selectedTools"
+          :labels="{ claude: 'Claude', codex: 'Codex', opencode: 'OpenCode' }"
         />
         <MultiSelect
           label="Providers"
