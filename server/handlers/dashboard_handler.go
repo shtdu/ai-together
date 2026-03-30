@@ -104,20 +104,39 @@ func (h *DashboardHandler) GetMetrics(c *gin.Context) {
 	// Parse query parameters
 	rangeParam := c.DefaultQuery("range", "7d")
 	interval := c.DefaultQuery("interval", "hour")
+	startDateParam := c.Query("start_date")
+	endDateParam := c.Query("end_date")
 
 	// Calculate time range
 	var startTime time.Time
 	endTime := time.Now()
 
-	switch rangeParam {
-	case "24h":
-		startTime = endTime.Add(-24 * time.Hour)
-	case "7d":
-		startTime = endTime.Add(-7 * 24 * time.Hour)
-	case "30d":
-		startTime = endTime.Add(-30 * 24 * time.Hour)
-	default:
-		startTime = endTime.Add(-7 * 24 * time.Hour)
+	if startDateParam != "" && endDateParam != "" {
+		// Custom date range takes priority over preset range
+		parsed, err := time.Parse("2006-01-02", startDateParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start_date format, use YYYY-MM-DD"})
+			return
+		}
+		startTime = parsed
+
+		parsed, err = time.Parse("2006-01-02", endDateParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end_date format, use YYYY-MM-DD"})
+			return
+		}
+		endTime = parsed.Add(24*time.Hour - time.Second) // End of the day
+	} else {
+		switch rangeParam {
+		case "24h":
+			startTime = endTime.Add(-24 * time.Hour)
+		case "7d":
+			startTime = endTime.Add(-7 * 24 * time.Hour)
+		case "30d":
+			startTime = endTime.Add(-30 * 24 * time.Hour)
+		default:
+			startTime = endTime.Add(-7 * 24 * time.Hour)
+		}
 	}
 
 	// Get metrics from service

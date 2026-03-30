@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import dayjs from 'dayjs'
 import { useAuthStore } from '../stores/auth'
 import { dashboardApi } from '../api/dashboard'
 import type { DashboardMetricsResponse, DashboardRankingsResponse, DashboardMembersResponse } from '../types/api'
 import ActivityChart from '../components/charts/ActivityChart.vue'
 import ProviderRankingChart from '../components/charts/ProviderRankingChart.vue'
 import MemberStatsTable from '../components/charts/MemberStatsTable.vue'
+import DateRangePicker from '../components/common/DateRangePicker.vue'
 
 const authStore = useAuthStore()
 
-type TimeRange = '24h' | '7d' | '30d'
+type TimeRange = '24h' | '7d' | '30d' | 'custom'
 const timeRange = ref<TimeRange>('7d')
+const customStartDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
+const customEndDate = ref(dayjs().format('YYYY-MM-DD'))
 
 const metricsData = ref<DashboardMetricsResponse | null>(null)
 const metricsLoading = ref(false)
@@ -26,7 +30,12 @@ const summary = computed(() => metricsData.value?.summary)
 async function fetchMetrics() {
   metricsLoading.value = true
   try {
-    metricsData.value = await dashboardApi.getMetrics(timeRange.value, 'hour')
+    metricsData.value = await dashboardApi.getMetrics(
+      timeRange.value,
+      'hour',
+      timeRange.value === 'custom' ? customStartDate.value : undefined,
+      timeRange.value === 'custom' ? customEndDate.value : undefined
+    )
   } finally {
     metricsLoading.value = false
   }
@@ -64,6 +73,12 @@ function handleTimeRangeChange(newRange: TimeRange) {
   fetchMetrics()
 }
 
+function handleCustomDateChange(start: string, end: string) {
+  customStartDate.value = start
+  customEndDate.value = end
+  fetchMetrics()
+}
+
 function formatTokens(value: number): string {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
   if (value >= 1000) return `${(value / 1000).toFixed(0)}K`
@@ -86,7 +101,7 @@ onMounted(() => {
       <div class="flex gap-4 items-center">
         <div class="inline-flex rounded-md shadow-sm" role="group">
           <button
-            v-for="range in ['24h', '7d', '30d'] as TimeRange[]"
+            v-for="range in ['24h', '7d', '30d', 'custom'] as TimeRange[]"
             :key="range"
             @click="handleTimeRangeChange(range)"
             class="px-4 py-2 text-sm font-medium"
@@ -95,7 +110,7 @@ onMounted(() => {
               'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700': timeRange !== range
             }"
           >
-            {{ range === '24h' ? '24h' : range === '7d' ? '7 Days' : '30 Days' }}
+            {{ range === '24h' ? '24h' : range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : 'Custom' }}
           </button>
         </div>
         <button
@@ -108,6 +123,15 @@ onMounted(() => {
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- Custom Date Range Picker -->
+    <div v-if="timeRange === 'custom'" class="mb-6">
+      <DateRangePicker
+        :start-date="customStartDate"
+        :end-date="customEndDate"
+        @change="handleCustomDateChange"
+      />
     </div>
 
     <!-- Summary Cards -->
