@@ -5,6 +5,7 @@ import DateRangePicker from '../components/common/DateRangePicker.vue'
 import MultiSelect from '../components/common/MultiSelect.vue'
 import UserSelect from '../components/common/UserSelect.vue'
 import { analyticsApi, type HistoryResponse, type FilterOptions } from '../api/analytics'
+import { exportCSV, exportJSON } from '../utils/export'
 
 const startDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
 const endDate = ref(dayjs().format('YYYY-MM-DD'))
@@ -28,6 +29,7 @@ const data = ref<HistoryResponse | null>(null)
 const isLoading = ref(false)
 const filterLoading = ref(false)
 const error = ref<string | null>(null)
+const showExportMenu = ref(false)
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
@@ -130,14 +132,13 @@ function handleExportCSV() {
     r.timestamp
   ])
 
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `token-history-${searchParams.value.startDate}-${searchParams.value.endDate}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  exportCSV(headers, rows, `token-history-${searchParams.value.startDate}-${searchParams.value.endDate}`)
+}
+
+function handleExportJSON() {
+  if (!data.value) return
+
+  exportJSON(data.value.records, `token-history-${searchParams.value.startDate}-${searchParams.value.endDate}`)
 }
 
 onMounted(() => {
@@ -157,13 +158,32 @@ onMounted(() => {
         >
           ⟳ Refresh
         </button>
-        <button
-          @click="handleExportCSV"
-          :disabled="!data"
-          class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          📥 Export CSV
-        </button>
+        <div class="relative">
+          <button
+            @click="showExportMenu = !showExportMenu"
+            :disabled="!data"
+            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            📥 Export ▼
+          </button>
+          <div
+            v-if="showExportMenu"
+            class="absolute right-0 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10"
+          >
+            <button
+              @click="handleExportCSV(); showExportMenu = false"
+              class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              CSV
+            </button>
+            <button
+              @click="handleExportJSON(); showExportMenu = false"
+              class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              JSON
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
