@@ -751,8 +751,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 	ctx := context.Background()
 
 	// Bootstrap standard fixture (creates admin + member users)
-	fixture := s.bootstrapStandardFixture()
-	defer fixture.TearDown()
+	s.bootstrapStandardFixture()
 
 	// Create provider
 	uniqueName := generateUniqueProviderName("e2e-personal-isolation")
@@ -853,8 +852,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 func (s *IntegrationTestSuite) TestPersonalAnalyticsFilterOptions() {
 	ctx := context.Background()
 
-	fixture := s.bootstrapStandardFixture()
-	defer fixture.TearDown()
+	s.bootstrapStandardFixture()
 
 	// Manager client can access personal filter options
 	filterResp, err := s.ManagerClient.GetApiV1AnalyticsPersonalFiltersWithResponse(ctx)
@@ -905,8 +903,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 	ctx := context.Background()
 
-	fixture := s.bootstrapStandardFixture()
-	defer fixture.TearDown()
+	s.bootstrapStandardFixture()
 
 	// Create provider
 	uniqueName := generateUniqueProviderName("e2e-personal-history")
