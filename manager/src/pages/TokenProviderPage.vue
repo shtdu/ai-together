@@ -180,6 +180,17 @@ const toolPieChartData = computed(() => {
   }
 })
 
+const modelPieChartData = computed(() => {
+  if (!data.value?.distribution.by_model) return { labels: [], datasets: [] }
+  return {
+    labels: data.value.distribution.by_model.map(m => m.name),
+    datasets: [{
+      data: data.value.distribution.by_model.map(m => m.tokens),
+      backgroundColor: COLORS.slice(0, data.value.distribution.by_model.length)
+    }]
+  }
+})
+
 const barOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -394,6 +405,44 @@ onMounted(() => {
                   <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(tool.tokens) }}</td>
                   <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ tool.percentage.toFixed(1) }}%</td>
                   <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatCost(tool.cost) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Model Distribution Section -->
+      <div v-if="data.distribution.by_model && data.distribution.by_model.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Model Distribution Pie Chart -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <h3 class="text-lg font-semibold mb-4">Model Distribution</h3>
+          <div class="h-[250px]">
+            <Pie :data="modelPieChartData" :options="pieOptions" />
+          </div>
+        </div>
+
+        <!-- Model Details Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <h3 class="text-lg font-semibold mb-4">Model Details</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Model</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Requests</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Tokens</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Share</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="model in data.distribution.by_model" :key="model.name">
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ model.name }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ model.requests.toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(model.tokens) }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ model.percentage.toFixed(1) }}%</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatCost(model.cost) }}</td>
                 </tr>
               </tbody>
             </table>
