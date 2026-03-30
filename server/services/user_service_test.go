@@ -397,3 +397,166 @@ func TestUserService_UpdateUser_PasswordHashing(t *testing.T) {
 
 	mockRepo.AssertExpectations(t)
 }
+
+func TestUserService_UpdateProfileName_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	updatedUser := &models.User{
+		ID:       1,
+		Email:    "test@example.com",
+		Name:     "New Name",
+		Role:     "member",
+		TenantID: 1,
+		Password: "hashed",
+	}
+
+	mockRepo.On("UpdateUserName", mock.Anything, int64(1), "New Name").Return(nil)
+	mockRepo.On("GetUserByID", mock.Anything, int64(1)).Return(updatedUser, nil)
+
+	user, err := service.UpdateProfileName(1, "New Name")
+
+	require.NoError(t, err)
+	assert.Equal(t, "New Name", user.Name)
+	assert.Empty(t, user.Password) // Password should be cleared in response
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUserService_UpdateProfileName_EmptyName(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	_, err := service.UpdateProfileName(1, "")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "name cannot be empty")
+}
+
+func TestUserService_UpdateProfileName_RepositoryError(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	mockRepo.On("UpdateUserName", mock.Anything, int64(1), "New Name").Return(assert.AnError)
+
+	_, err := service.UpdateProfileName(1, "New Name")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to update profile name")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUserService_UpdateProfileName_GetUserError(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	mockRepo.On("UpdateUserName", mock.Anything, int64(1), "New Name").Return(nil)
+	mockRepo.On("GetUserByID", mock.Anything, int64(1)).Return(nil, assert.AnError)
+
+	_, err := service.UpdateProfileName(1, "New Name")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to retrieve updated user")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUserService_ChangePassword_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	// Generate a valid bcrypt hash for the current password
+	hashedPassword, err := service.HashPassword("currentPassword123")
+	require.NoError(t, err)
+
+	testUser := &models.User{
+		ID:       1,
+		Email:    "test@example.com",
+		Name:     "Test User",
+		Role:     "member",
+		Password: hashedPassword,
+	}
+
+	var capturedHash string
+	mockRepo.On("GetUserByID", mock.Anything, int64(1)).Return(testUser, nil)
+	mockRepo.On("UpdateUserPassword", mock.Anything, int64(1), mock.AnythingOfType("string")).
+		Run(func(args mock.Arguments) {
+			capturedHash = args.String(2)
+		}).Return(nil)
+
+	err = service.ChangePassword(1, "currentPassword123", "newPassword456")
+
+	require.NoError(t, err)
+	// Verify the new password was hashed
+	assert.Contains(t, capturedHash, "$2a$")
+	assert.NotEqual(t, "newPassword456", capturedHash)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUserService_ChangePassword_WrongCurrentPassword(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	// Hash for "correctPassword"
+	hashedPassword, err := service.HashPassword("correctPassword")
+	require.NoError(t, err)
+
+	testUser := &models.User{
+		ID:       1,
+		Email:    "test@example.com",
+		Name:     "Test User",
+		Role:     "member",
+		Password: hashedPassword,
+	}
+
+	mockRepo.On("GetUserByID", mock.Anything, int64(1)).Return(testUser, nil)
+
+	err = service.ChangePassword(1, "wrongPassword", "newPassword456")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "current password is incorrect")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUserService_ChangePassword_UserNotFound(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	mockRepo.On("GetUserByID", mock.Anything, int64(1)).Return(nil, assert.AnError)
+
+	err := service.ChangePassword(1, "currentPassword", "newPassword456")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to find user")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUserService_ChangePassword_UpdateError(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	hashedPassword, err := service.HashPassword("currentPassword")
+	require.NoError(t, err)
+
+	testUser := &models.User{
+		ID:       1,
+		Email:    "test@example.com",
+		Name:     "Test User",
+		Role:     "member",
+		Password: hashedPassword,
+	}
+
+	mockRepo.On("GetUserByID", mock.Anything, int64(1)).Return(testUser, nil)
+	mockRepo.On("UpdateUserPassword", mock.Anything, int64(1), mock.AnythingOfType("string")).Return(assert.AnError)
+
+	err = service.ChangePassword(1, "currentPassword", "newPassword456")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to update password")
+
+	mockRepo.AssertExpectations(t)
+}

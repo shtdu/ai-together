@@ -1053,3 +1053,267 @@ func TestVerifyToken_MissingAuthHeader(t *testing.T) {
 	assert.Equal(t, "Token required", response["error"])
 	assert.Equal(t, "UNAUTHORIZED", response["code"])
 }
+
+// --- Profile Update Tests ---
+
+func TestUpdateProfile_Success(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+	updatedUser := createTestUser(1, "test@example.com", "New Name", "manager", 1)
+
+	mockService.On("UpdateProfileName", int64(1), "New Name").Return(updatedUser, nil)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/profile", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.UpdateProfile(c)
+	})
+
+	reqBody := `{"name": "New Name"}`
+	req, _ := http.NewRequest("PUT", "/profile", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response, "user")
+
+	userData := response["user"].(map[string]interface{})
+	assert.Equal(t, "New Name", userData["name"])
+
+	mockService.AssertExpectations(t)
+}
+
+func TestUpdateProfile_MissingUserContext(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/profile", handler.UpdateProfile)
+
+	req, _ := http.NewRequest("PUT", "/profile", bytes.NewReader([]byte(`{"name": "Test"}`)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestUpdateProfile_MissingName(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/profile", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.UpdateProfile(c)
+	})
+
+	reqBody := `{}`
+	req, _ := http.NewRequest("PUT", "/profile", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestUpdateProfile_ServiceError(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+	mockService.On("UpdateProfileName", int64(1), "New Name").Return((*models.User)(nil), assert.AnError)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/profile", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.UpdateProfile(c)
+	})
+
+	reqBody := `{"name": "New Name"}`
+	req, _ := http.NewRequest("PUT", "/profile", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, "Failed to update profile", response["error"])
+
+	mockService.AssertExpectations(t)
+}
+
+// --- Change Password Tests ---
+
+func TestChangePassword_Success(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+	mockService.On("ChangePassword", int64(1), "oldPass123", "newPass456").Return(nil)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/password", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.ChangePassword(c)
+	})
+
+	reqBody := `{"current_password": "oldPass123", "new_password": "newPass456"}`
+	req, _ := http.NewRequest("PUT", "/password", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Equal(t, "Password changed successfully", response["message"])
+
+	mockService.AssertExpectations(t)
+}
+
+func TestChangePassword_MissingUserContext(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/password", handler.ChangePassword)
+
+	req, _ := http.NewRequest("PUT", "/password", bytes.NewReader([]byte(`{"current_password":"a","new_password":"b"}`)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestChangePassword_ShortNewPassword(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/password", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.ChangePassword(c)
+	})
+
+	reqBody := `{"current_password": "oldPass123", "new_password": "abc"}`
+	req, _ := http.NewRequest("PUT", "/password", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestChangePassword_MissingFields(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/password", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.ChangePassword(c)
+	})
+
+	tests := []struct {
+		name    string
+		reqBody string
+	}{
+		{"missing both", `{}`},
+		{"missing current", `{"new_password": "newpass123"}`},
+		{"missing new", `{"current_password": "oldpass123"}`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, _ := http.NewRequest("PUT", "/password", bytes.NewReader([]byte(tt.reqBody)))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+	}
+}
+
+func TestChangePassword_WrongCurrentPassword(t *testing.T) {
+	mockService := new(MockUserService)
+	mockTeamService := new(MockTeamService)
+
+	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
+	mockService.On("ChangePassword", int64(1), "wrongPass", "newPass456").Return(assert.AnError)
+
+	handler := NewAuthHandler(mockService, mockTeamService)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.PUT("/password", func(c *gin.Context) {
+		c.Set("user", testUser)
+		handler.ChangePassword(c)
+	})
+
+	reqBody := `{"current_password": "wrongPass", "new_password": "newPass456"}`
+	req, _ := http.NewRequest("PUT", "/password", bytes.NewReader([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, "VALIDATION_ERROR", response["code"])
+
+	mockService.AssertExpectations(t)
+}
