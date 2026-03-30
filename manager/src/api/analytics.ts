@@ -191,4 +191,49 @@ export const analyticsApi = {
     const response = await apiClient.get('/api/v1/analytics/filters');
     return response.data;
   },
+
+  getPersonalAnalytics: async (params: ProviderAnalyticsParams): Promise<ProviderAnalyticsResponse> => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    if (params.providers?.length) {
+      queryParams.set('providers', params.providers.join(','));
+    }
+    if (params.models?.length) {
+      queryParams.set('models', params.models.join(','));
+    }
+    if (params.tools?.length) {
+      queryParams.set('tools', params.tools.join(','));
+    }
+    const response = await apiClient.get(`/api/v1/analytics/personal?${queryParams}`);
+    return response.data;
+  },
+
+  getPersonalHistory: async (params: HistoryParams): Promise<HistoryResponse> => {
+    const queryParams = new URLSearchParams({
+      start_date: params.start_date,
+      end_date: params.end_date,
+    });
+    if (params.page) queryParams.set('page', params.page.toString());
+    if (params.limit) queryParams.set('limit', params.limit.toString());
+    if (params.providers?.length) {
+      queryParams.set('providers', params.providers.join(','));
+    }
+    if (params.models?.length) {
+      queryParams.set('models', params.models.join(','));
+    }
+    if (params.tools?.length) {
+      queryParams.set('tools', params.tools.join(','));
+    }
+    if (params.sort_by) queryParams.set('sort_by', params.sort_by);
+    if (params.sort_order) queryParams.set('sort_order', params.sort_order);
+    const response = await apiClient.get(`/api/v1/analytics/personal/history?${queryParams}`);
+    return response.data;
+  },
+
+  getPersonalFilterOptions: async (): Promise<FilterOptions> => {
+    const response = await apiClient.get('/api/v1/analytics/personal/filters');
+    return response.data;
+  },
 };

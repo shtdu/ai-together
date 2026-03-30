@@ -1266,6 +1266,391 @@ func (r *UsageRepository) GetFilterOptions(ctx context.Context, tenantID int64) 
 	}, nil
 }
 
+// GetPersonalAnalytics returns personal analytics for a specific user with filtering
+func (r *UsageRepository) GetPersonalAnalytics(ctx context.Context, userID, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error) {
+	startTime, endTime, err := parseDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	endTime = endTime.Add(24 * time.Hour)
+
+	whereClause := "tenant_id = $1 AND user_id = $2 AND created_at >= $3 AND created_at < $4"
+	args := []interface{}{tenantID, userID, startTime, endTime}
+	argIndex := 5
+
+	if len(providers) > 0 {
+		whereClause += fmt.Sprintf(" AND provider = ANY($%d)", argIndex)
+		args = append(args, providers)
+		argIndex++
+	}
+	if len(models) > 0 {
+		whereClause += fmt.Sprintf(" AND model = ANY($%d)", argIndex)
+		args = append(args, models)
+		argIndex++
+	}
+	if len(tools) > 0 {
+		whereClause += fmt.Sprintf(" AND platform = ANY($%d)", argIndex)
+		args = append(args, tools)
+		argIndex++
+	}
+
+	// Get summary
+	summaryQuery := fmt.Sprintf(`
+		SELECT
+			COALESCE(SUM(input_tokens + output_tokens), 0) AS total_tokens,
+			COALESCE(SUM(input_tokens), 0) AS total_input,
+			COALESCE(SUM(output_tokens), 0) AS total_output,
+			COUNT(*) AS total_requests
+		FROM request_log
+		WHERE %s
+	`, whereClause)
+
+	var totalTokens, totalInput, totalOutput, totalRequests int64
+	err = r.db.Conn().QueryRow(ctx, summaryQuery, args...).Scan(&totalTokens, &totalInput, &totalOutput, &totalRequests)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get summary: %w", err)
+	}
+
+	totalCost := (float64(totalInput)*0.001 + float64(totalOutput)*0.002) / 1000
+
+	// Get success rate
+	successQuery := fmt.Sprintf(`
+		SELECT
+			COALESCE(
+				COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM request_log WHERE %s), 0),
+				0.0
+			)
+		FROM request_log
+		WHERE %s AND http_code >= 200 AND http_code < 300
+	`, whereClause, whereClause)
+
+	var successRate float64
+	err = r.db.Conn().QueryRow(ctx, successQuery, append(args, args...)...).Scan(&successRate)
+	if err != nil {
+		successRate = 0
+	}
+
+	// Get trend data by day
+	trendQuery := fmt.Sprintf(`
+		SELECT
+			DATE(created_at) AS date,
+			COALESCE(SUM(input_tokens + output_tokens), 0) AS tokens,
+			COALESCE(SUM(input_tokens), 0) AS input_tokens,
+			COALESCE(SUM(output_tokens), 0) AS output_tokens,
+			COUNT(*) AS requests
+		FROM request_log
+		WHERE %s
+		GROUP BY DATE(created_at)
+		ORDER BY date ASC
+	`, whereClause)
+
+	rows, err := r.db.Conn().Query(ctx, trendQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trend data: %w", err)
+	}
+	defer rows.Close()
+
+	var trendArray []map[string]interface{}
+	for rows.Next() {
+		var date time.Time
+		var tokens, inputTokens, outputTokens, requests int64
+		if err := rows.Scan(&date, &tokens, &inputTokens, &outputTokens, &requests); err != nil {
+			return nil, fmt.Errorf("failed to scan trend data: %w", err)
+		}
+		trendArray = append(trendArray, map[string]interface{}{
+			"date":         date.Format("2006-01-02"),
+			"tokens":       tokens,
+			"input_tokens": inputTokens,
+			"output_tokens": outputTokens,
+			"requests":     requests,
+		})
+	}
+
+	// Get distribution by provider
+	distQuery := fmt.Sprintf(`
+		SELECT
+			provider,
+			COALESCE(SUM(input_tokens + output_tokens), 0) AS tokens,
+			COUNT(*) AS requests
+		FROM request_log
+		WHERE %s AND provider IS NOT NULL AND provider != ''
+		GROUP BY provider
+		ORDER BY tokens DESC
+	`, whereClause)
+
+	rows2, err := r.db.Conn().Query(ctx, distQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get distribution: %w", err)
+	}
+	defer rows2.Close()
+
+	var byProvider []map[string]interface{}
+	for rows2.Next() {
+		var provider string
+		var tokens, requests int64
+		if err := rows2.Scan(&provider, &tokens, &requests); err != nil {
+			return nil, fmt.Errorf("failed to scan distribution: %w", err)
+		}
+		percentage := float64(0)
+		if totalTokens > 0 {
+			percentage = float64(tokens) * 100 / float64(totalTokens)
+		}
+		byProvider = append(byProvider, map[string]interface{}{
+			"name":       provider,
+			"tokens":     tokens,
+			"requests":   requests,
+			"percentage": percentage,
+			"cost":       (float64(tokens) * 0.0015) / 1000,
+		})
+	}
+
+	// Get distribution by model
+	modelDistQuery := fmt.Sprintf(`
+		SELECT
+			model,
+			COALESCE(SUM(input_tokens + output_tokens), 0) AS tokens,
+			COUNT(*) AS requests
+		FROM request_log
+		WHERE %s AND model IS NOT NULL AND model != ''
+		GROUP BY model
+		ORDER BY tokens DESC
+		LIMIT 10
+	`, whereClause)
+
+	rows3, err := r.db.Conn().Query(ctx, modelDistQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get model distribution: %w", err)
+	}
+	defer rows3.Close()
+
+	var byModel []map[string]interface{}
+	for rows3.Next() {
+		var model string
+		var tokens, requests int64
+		if err := rows3.Scan(&model, &tokens, &requests); err != nil {
+			return nil, fmt.Errorf("failed to scan model distribution: %w", err)
+		}
+		percentage := float64(0)
+		if totalTokens > 0 {
+			percentage = float64(tokens) * 100 / float64(totalTokens)
+		}
+		byModel = append(byModel, map[string]interface{}{
+			"name":       model,
+			"tokens":     tokens,
+			"requests":   requests,
+			"percentage": percentage,
+			"cost":       (float64(tokens) * 0.0015) / 1000,
+		})
+	}
+
+	return map[string]interface{}{
+		"period": map[string]interface{}{
+			"start": startDate,
+			"end":   endDate,
+		},
+		"summary": map[string]interface{}{
+			"total_tokens":   totalTokens,
+			"total_input":    totalInput,
+			"total_output":   totalOutput,
+			"total_cost":     totalCost,
+			"total_requests": totalRequests,
+			"success_rate":   successRate,
+		},
+		"trend_data": trendArray,
+		"distribution": map[string]interface{}{
+			"by_provider": byProvider,
+			"by_model":    byModel,
+		},
+	}, nil
+}
+
+// GetPersonalHistory returns paginated request logs for a specific user
+func (r *UsageRepository) GetPersonalHistory(ctx context.Context, userID, tenantID int64, startDate, endDate string, page, limit int, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error) {
+	startTime, endTime, err := parseDateRange(startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	endTime = endTime.Add(24 * time.Hour)
+
+	whereClause := "r.tenant_id = $1 AND r.user_id = $2 AND r.created_at >= $3 AND r.created_at < $4"
+	args := []interface{}{tenantID, userID, startTime, endTime}
+	argIndex := 5
+
+	if len(providers) > 0 {
+		whereClause += fmt.Sprintf(" AND r.provider = ANY($%d)", argIndex)
+		args = append(args, providers)
+		argIndex++
+	}
+	if len(models) > 0 {
+		whereClause += fmt.Sprintf(" AND r.model = ANY($%d)", argIndex)
+		args = append(args, models)
+		argIndex++
+	}
+	if len(tools) > 0 {
+		whereClause += fmt.Sprintf(" AND r.platform = ANY($%d)", argIndex)
+		args = append(args, tools)
+	}
+
+	validSortColumns := map[string]bool{
+		"created_at": true, "input_tokens": true, "output_tokens": true, "duration_sec": true,
+	}
+	if !validSortColumns[sortBy] {
+		sortBy = "created_at"
+	}
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
+	}
+
+	// Get total count
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM request_log r WHERE %s`, whereClause)
+	var totalCount int64
+	err = r.db.Conn().QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get count: %w", err)
+	}
+
+	totalPages := (totalCount + int64(limit) - 1) / int64(limit)
+	offset := (page - 1) * limit
+
+	recordsQuery := fmt.Sprintf(`
+		SELECT
+			r.id,
+			r.created_at,
+			r.provider,
+			r.model,
+			r.platform,
+			r.input_tokens,
+			r.output_tokens,
+			r.http_code,
+			r.duration_sec,
+			r.is_stream
+		FROM request_log r
+		WHERE %s
+		ORDER BY r.%s %s
+		LIMIT %d OFFSET %d
+	`, whereClause, sortBy, sortOrder, limit, offset)
+
+	rows, err := r.db.Conn().Query(ctx, recordsQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get records: %w", err)
+	}
+	defer rows.Close()
+
+	var records []map[string]interface{}
+	for rows.Next() {
+		var id int64
+		var createdAt time.Time
+		var provider, model, platform *string
+		var inputTokens, outputTokens, httpCode *int32
+		var durationSec *float32
+		var isStream *bool
+
+		if err := rows.Scan(&id, &createdAt, &provider, &model, &platform, &inputTokens, &outputTokens, &httpCode, &durationSec, &isStream); err != nil {
+			return nil, fmt.Errorf("failed to scan record: %w", err)
+		}
+
+		modelName := stringOrEmpty(model)
+		cost := pricing.EstimateCost(modelName, int64(intOrZero(inputTokens)), int64(intOrZero(outputTokens)))
+
+		record := map[string]interface{}{
+			"id":             id,
+			"timestamp":      createdAt,
+			"provider":       stringOrEmpty(provider),
+			"model":          modelName,
+			"platform":       stringOrEmpty(platform),
+			"input_tokens":   intOrZero(inputTokens),
+			"output_tokens":  intOrZero(outputTokens),
+			"http_code":      intOrZero(httpCode),
+			"duration_sec":   floatOrZero(durationSec),
+			"is_stream":      boolOrFalse(isStream),
+			"estimated_cost": cost,
+		}
+		records = append(records, record)
+	}
+
+	return map[string]interface{}{
+		"pagination": map[string]interface{}{
+			"page":        page,
+			"limit":       limit,
+			"total_count": totalCount,
+			"total_pages": totalPages,
+		},
+		"records": records,
+	}, nil
+}
+
+// GetPersonalFilterOptions returns filter options scoped to a specific user
+func (r *UsageRepository) GetPersonalFilterOptions(ctx context.Context, userID, tenantID int64) (map[string]interface{}, error) {
+	// Get unique providers for user
+	providersQuery := `
+		SELECT DISTINCT provider FROM request_log
+		WHERE tenant_id = $1 AND user_id = $2 AND provider IS NOT NULL AND provider != ''
+		ORDER BY provider
+	`
+	rows, err := r.db.Conn().Query(ctx, providersQuery, tenantID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get providers: %w", err)
+	}
+	defer rows.Close()
+
+	var providers []string
+	for rows.Next() {
+		var provider string
+		if err := rows.Scan(&provider); err != nil {
+			return nil, fmt.Errorf("failed to scan provider: %w", err)
+		}
+		providers = append(providers, provider)
+	}
+
+	// Get unique models for user
+	modelsQuery := `
+		SELECT DISTINCT model FROM request_log
+		WHERE tenant_id = $1 AND user_id = $2 AND model IS NOT NULL AND model != ''
+		ORDER BY model
+	`
+	rows2, err := r.db.Conn().Query(ctx, modelsQuery, tenantID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get models: %w", err)
+	}
+	defer rows2.Close()
+
+	var modelsList []string
+	for rows2.Next() {
+		var model string
+		if err := rows2.Scan(&model); err != nil {
+			return nil, fmt.Errorf("failed to scan model: %w", err)
+		}
+		modelsList = append(modelsList, model)
+	}
+
+	// Get unique tools (platforms) for user
+	toolsQuery := `
+		SELECT DISTINCT platform FROM request_log
+		WHERE tenant_id = $1 AND user_id = $2 AND platform IS NOT NULL AND platform != ''
+		ORDER BY platform
+	`
+	rows3, err := r.db.Conn().Query(ctx, toolsQuery, tenantID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tools: %w", err)
+	}
+	defer rows3.Close()
+
+	var tools []string
+	for rows3.Next() {
+		var tool string
+		if err := rows3.Scan(&tool); err != nil {
+			return nil, fmt.Errorf("failed to scan tool: %w", err)
+		}
+		tools = append(tools, tool)
+	}
+
+	return map[string]interface{}{
+		"providers": providers,
+		"models":    modelsList,
+		"tools":     tools,
+	}, nil
+}
+
 // Helper functions
 func stringOrEmpty(s *string) string {
 	if s == nil {

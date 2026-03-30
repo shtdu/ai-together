@@ -15,6 +15,7 @@ import TokenUserPage from '../pages/TokenUserPage.vue'
 import TokenHistoryPage from '../pages/TokenHistoryPage.vue'
 import UserManagementPage from '../pages/UserManagementPage.vue'
 import ProfilePage from '../pages/ProfilePage.vue'
+import PersonalAnalyticsPage from '../pages/PersonalAnalyticsPage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -42,6 +43,11 @@ const routes: RouteRecordRaw[] = [
         path: 'profile',
         name: 'profile',
         component: ProfilePage,
+      },
+      {
+        path: 'analytics/personal',
+        name: 'analytics-personal',
+        component: PersonalAnalyticsPage,
       },
       {
         path: 'analytics/providers',

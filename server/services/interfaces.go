@@ -64,6 +64,10 @@ type UsageServiceInterface interface {
 	GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers, tools []string) (map[string]interface{}, error)
 	GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error)
 	GetFilterOptions(ctx context.Context, tenantID int64) (map[string]interface{}, error)
+	// Personal analytics methods
+	GetPersonalAnalytics(ctx context.Context, userID, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error)
+	GetPersonalHistory(ctx context.Context, userID, tenantID int64, startDate, endDate string, page, limit int, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error)
+	GetPersonalFilterOptions(ctx context.Context, userID, tenantID int64) (map[string]interface{}, error)
 }
 
 // TeamServiceInterface defines the contract for team service operations
