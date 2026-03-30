@@ -1358,11 +1358,11 @@ func (r *UsageRepository) GetPersonalAnalytics(ctx context.Context, userID, tena
 			return nil, fmt.Errorf("failed to scan trend data: %w", err)
 		}
 		trendArray = append(trendArray, map[string]interface{}{
-			"date":         date.Format("2006-01-02"),
-			"tokens":       tokens,
-			"input_tokens": inputTokens,
+			"date":          date.Format("2006-01-02"),
+			"tokens":        tokens,
+			"input_tokens":  inputTokens,
 			"output_tokens": outputTokens,
-			"requests":     requests,
+			"requests":      requests,
 		})
 	}
 
