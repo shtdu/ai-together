@@ -40,16 +40,6 @@ const searchParams = ref({
   tools: [] as string[],
 })
 
-// Helper function to format tool names for display
-function formatToolName(platform: string): string {
-  if (!platform) return ''
-  const lower = platform.toLowerCase()
-  if (lower === 'claude') return 'Claude'
-  if (lower === 'codex') return 'Codex'
-  if (lower === 'opencode') return 'OpenCode'
-  return platform
-}
-
 const filterOptions = ref<FilterOptions | null>(null)
 const data = ref<UserAnalyticsResponse | null>(null)
 const isLoading = ref(false)
