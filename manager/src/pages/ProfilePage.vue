@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { profileApi } from '../api/profile'
+import { getErrorMessage } from '../api/client'
 
 const authStore = useAuthStore()
 
@@ -9,19 +11,59 @@ const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null)
+const isUpdatingProfile = ref(false)
+const isChangingPassword = ref(false)
 
-function handleUpdateProfile() {
-  // TODO: Implement profile update
-  message.value = { type: 'success', text: 'Profile update will be implemented with backend API.' }
+async function handleUpdateProfile() {
+  if (!name.value.trim()) {
+    message.value = { type: 'error', text: 'Name cannot be empty.' }
+    return
+  }
+
+  isUpdatingProfile.value = true
+  message.value = null
+
+  try {
+    const response = await profileApi.updateProfile({ name: name.value.trim() })
+    // Update the auth store with the new name
+    if (authStore.user) {
+      authStore.user.name = response.user.name
+    }
+    message.value = { type: 'success', text: 'Profile updated successfully.' }
+  } catch (error) {
+    message.value = { type: 'error', text: getErrorMessage(error) }
+  } finally {
+    isUpdatingProfile.value = false
+  }
 }
 
-function handleUpdatePassword() {
+async function handleUpdatePassword() {
   if (newPassword.value !== confirmPassword.value) {
     message.value = { type: 'error', text: 'New passwords do not match.' }
     return
   }
-  // TODO: Implement password update
-  message.value = { type: 'success', text: 'Password update will be implemented with backend API.' }
+  if (newPassword.value.length < 6) {
+    message.value = { type: 'error', text: 'New password must be at least 6 characters.' }
+    return
+  }
+
+  isChangingPassword.value = true
+  message.value = null
+
+  try {
+    await profileApi.changePassword({
+      current_password: currentPassword.value,
+      new_password: newPassword.value,
+    })
+    message.value = { type: 'success', text: 'Password changed successfully.' }
+    currentPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
+  } catch (error) {
+    message.value = { type: 'error', text: getErrorMessage(error) }
+  } finally {
+    isChangingPassword.value = false
+  }
 }
 </script>
 
@@ -73,9 +115,10 @@ function handleUpdatePassword() {
           </div>
           <button
             type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            :disabled="isUpdatingProfile"
+            class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
-            Update Profile
+            {{ isUpdatingProfile ? 'Saving...' : 'Update Profile' }}
           </button>
         </form>
       </div>
@@ -111,9 +154,10 @@ function handleUpdatePassword() {
           </div>
           <button
             type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            :disabled="isChangingPassword"
+            class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
-            Change Password
+            {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
           </button>
         </form>
       </div>

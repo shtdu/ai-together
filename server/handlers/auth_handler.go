@@ -436,6 +436,91 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	})
 }
 
+// UpdateProfileRequest is the request body for updating the user's own profile
+type UpdateProfileRequest struct {
+	Name string `json:"name" binding:"required,min=1"`
+}
+
+// UpdateProfile updates the authenticated user's profile (name)
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error: "User not found in context",
+			Code:  models.ErrCodeUnauthorized,
+		})
+		return
+	}
+	authenticatedUser := user.(*models.User)
+
+	var req UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request",
+			Code:    models.ErrCodeValidation,
+			Details: err.Error(),
+		})
+		return
+	}
+
+	updatedUser, err := h.userService.UpdateProfileName(authenticatedUser.ID, req.Name)
+	if err != nil {
+		requestID := c.GetString("request_id")
+		log.Printf("[ERROR] [%s] Failed to update profile - user_id=%d error=%v", requestID, authenticatedUser.ID, err)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "Failed to update profile",
+			Code:    models.ErrCodeInternal,
+			Request: requestID,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": updatedUser})
+}
+
+// ChangePasswordRequest is the request body for changing the user's password
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=6"`
+}
+
+// ChangePassword changes the authenticated user's password
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error: "User not found in context",
+			Code:  models.ErrCodeUnauthorized,
+		})
+		return
+	}
+	authenticatedUser := user.(*models.User)
+
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "Invalid request",
+			Code:    models.ErrCodeValidation,
+			Details: err.Error(),
+		})
+		return
+	}
+
+	err := h.userService.ChangePassword(authenticatedUser.ID, req.CurrentPassword, req.NewPassword)
+	if err != nil {
+		requestID := c.GetString("request_id")
+		log.Printf("[ERROR] [%s] Failed to change password - user_id=%d error=%v", requestID, authenticatedUser.ID, err)
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   err.Error(),
+			Code:    models.ErrCodeValidation,
+			Request: requestID,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
+}
+
 // Helper function to generate JWT tokens
 func generateToken(userID int64, email, role string, tenantID int64, duration time.Duration) (string, time.Time, error) {
 	expirationTime := time.Now().Add(duration)

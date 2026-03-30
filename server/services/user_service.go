@@ -144,3 +144,43 @@ func (s *UserService) DeleteUser(userID int64) error {
 	}
 	return nil
 }
+
+// UpdateProfileName updates the authenticated user's display name
+func (s *UserService) UpdateProfileName(userID int64, name string) (*models.User, error) {
+	if name == "" {
+		return nil, fmt.Errorf("name cannot be empty")
+	}
+	err := s.userRepo.UpdateUserName(context.Background(), userID, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update profile name: %w", err)
+	}
+	user, err := s.userRepo.GetUserByID(context.Background(), userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve updated user: %w", err)
+	}
+	user.Password = ""
+	return user, nil
+}
+
+// ChangePassword validates the current password and sets a new one
+func (s *UserService) ChangePassword(userID int64, currentPassword, newPassword string) error {
+	user, err := s.userRepo.GetUserByID(context.Background(), userID)
+	if err != nil {
+		return fmt.Errorf("failed to find user: %w", err)
+	}
+
+	if !s.ValidatePassword(user, currentPassword) {
+		return fmt.Errorf("current password is incorrect")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	err = s.userRepo.UpdateUserPassword(context.Background(), userID, string(hashedPassword))
+	if err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+	return nil
+}
