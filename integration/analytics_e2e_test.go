@@ -828,77 +828,64 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
 	endDate := time.Now().Format("2006-01-02")
 
-	httpClient := &http.Client{}
+	// Create member client for personal analytics calls
+	memberClient := s.createAuthenticatedClient(s.MemberToken)
 
-	// Query personal analytics as member - should only see member's 1 record
-	memberURL := fmt.Sprintf("%s/api/v1/analytics/personal?start_date=%s&end_date=%s",
-		s.ServerURL, startDate, endDate)
+	// Query personal analytics as member - should only see member's 1 record (300+200=500 tokens)
+	memberAnalyticsResp, err := memberClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integrationclient.GetApiV1AnalyticsPersonalParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err, "Member personal analytics request failed")
+	require.Equal(s.T(), 200, memberAnalyticsResp.StatusCode(), "Member should be able to access personal analytics")
+	require.NotNil(s.T(), memberAnalyticsResp.JSON200)
 
-	memberReq, err := http.NewRequest("GET", memberURL, nil)
-	require.NoError(s.T(), err)
-	memberReq.Header.Set("Authorization", "Bearer "+s.MemberToken)
+	memberSummary := memberAnalyticsResp.JSON200.Summary
+	assert.Equal(s.T(), int64(1), memberSummary.TotalRequests, "Member should see exactly 1 request")
+	assert.Equal(s.T(), int64(500), memberSummary.TotalTokens, "Member should see 500 total tokens (300 input + 200 output)")
 
-	memberResp, err := httpClient.Do(memberReq)
-	require.NoError(s.T(), err)
-	defer memberResp.Body.Close()
+	s.T().Logf("Member personal analytics: requests=%d, tokens=%d, cost=%.4f",
+		memberSummary.TotalRequests, memberSummary.TotalTokens, memberSummary.TotalCost)
 
-	memberBody, err := io.ReadAll(memberResp.Body)
-	require.NoError(s.T(), err)
+	// Query personal analytics as admin - should only see admin's 2 records (7000+4000=11000 tokens)
+	adminAnalyticsResp, err := s.Client.GetApiV1AnalyticsPersonalWithResponse(ctx, &integrationclient.GetApiV1AnalyticsPersonalParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err, "Admin personal analytics request failed")
+	require.Equal(s.T(), 200, adminAnalyticsResp.StatusCode(), "Admin should be able to access personal analytics")
+	require.NotNil(s.T(), adminAnalyticsResp.JSON200)
 
-	s.T().Logf("Member personal analytics response (%d): %s", memberResp.StatusCode, string(memberBody))
+	adminSummary := adminAnalyticsResp.JSON200.Summary
+	assert.Equal(s.T(), int64(2), adminSummary.TotalRequests, "Admin should see exactly 2 requests")
+	assert.Equal(s.T(), int64(11000), adminSummary.TotalTokens, "Admin should see 11000 total tokens (5000+2000 input + 3000+1000 output)")
 
-	assert.Equal(s.T(), 200, memberResp.StatusCode, "Member should be able to access personal analytics")
+	s.T().Logf("Admin personal analytics: requests=%d, tokens=%d, cost=%.4f",
+		adminSummary.TotalRequests, adminSummary.TotalTokens, adminSummary.TotalCost)
 
-	// Query personal analytics as admin - should only see admin's 2 records
-	adminURL := fmt.Sprintf("%s/api/v1/analytics/personal?start_date=%s&end_date=%s",
-		s.ServerURL, startDate, endDate)
-
-	adminReq, err := http.NewRequest("GET", adminURL, nil)
-	require.NoError(s.T(), err)
-	adminReq.Header.Set("Authorization", "Bearer "+s.AdminToken)
-
-	adminResp, err := httpClient.Do(adminReq)
-	require.NoError(s.T(), err)
-	defer adminResp.Body.Close()
-
-	adminBody, err := io.ReadAll(adminResp.Body)
-	require.NoError(s.T(), err)
-
-	s.T().Logf("Admin personal analytics response (%d): %s", adminResp.StatusCode, string(adminBody))
-
-	assert.Equal(s.T(), 200, adminResp.StatusCode, "Admin should be able to access personal analytics")
-
-	// Verify the response bodies are different (data isolation)
-	assert.NotEqual(s.T(), string(memberBody), string(adminBody),
-		"Member and admin personal analytics should return different data")
+	// Verify data isolation: member and admin see different data
+	assert.NotEqual(s.T(), memberSummary.TotalTokens, adminSummary.TotalTokens,
+		"Member and admin should see different token counts")
 }
 
 // TestPersonalAnalyticsFilterOptions verifies that personal filter options
-// are returned for any authenticated user.
+// are returned for any authenticated user using the generated client.
 func (s *IntegrationTestSuite) TestPersonalAnalyticsFilterOptions() {
 	ctx := context.Background()
 
 	fixture := s.bootstrapStandardFixture()
 	defer fixture.TearDown()
 
-	httpClient := &http.Client{}
+	memberClient := s.createAuthenticatedClient(s.MemberToken)
 
-	// Member can access personal filter options
-	filterURL := fmt.Sprintf("%s/api/v1/analytics/personal/filters", s.ServerURL)
+	// Member can access personal filter options via generated client
+	filterResp, err := memberClient.GetApiV1AnalyticsPersonalFiltersWithResponse(ctx)
+	require.NoError(s.T(), err, "Personal filter options request failed")
+	require.Equal(s.T(), 200, filterResp.StatusCode(), "Member should be able to access personal filter options")
+	require.NotNil(s.T(), filterResp.JSON200)
 
-	req, err := http.NewRequest("GET", filterURL, nil)
-	require.NoError(s.T(), err)
-	req.Header.Set("Authorization", "Bearer "+s.MemberToken)
-
-	resp, err := httpClient.Do(req)
-	require.NoError(s.T(), err)
-	defer resp.Body.Close()
-
-	assert.Equal(s.T(), 200, resp.StatusCode, "Member should be able to access personal filter options")
-
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(s.T(), err)
-	s.T().Logf("Personal filter options response (%d): %s", resp.StatusCode, string(body))
+	s.T().Logf("Personal filter options: providers=%v, models=%v, tools=%v",
+		filterResp.JSON200.Providers, filterResp.JSON200.Models, filterResp.JSON200.Tools)
 }
 
 // TestPersonalAnalyticsRequiresAuth verifies that personal analytics
@@ -906,28 +893,122 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsFilterOptions() {
 func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 	ctx := context.Background()
 
-	// Start server (no auth)
 	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
 	endDate := time.Now().Format("2006-01-02")
 
-	httpClient := &http.Client{}
+	// Create anonymous (unauthenticated) client
+	anonClient, err := integrationclient.NewAnonymousClient(s.ServerURL, s.Logger, false)
+	require.NoError(s.T(), err)
 
-	endpoints := []string{
-		fmt.Sprintf("%s/api/v1/analytics/personal?start_date=%s&end_date=%s", s.ServerURL, startDate, endDate),
-		fmt.Sprintf("%s/api/v1/analytics/personal/history?start_date=%s&end_date=%s", s.ServerURL, startDate, endDate),
-		fmt.Sprintf("%s/api/v1/analytics/personal/filters", s.ServerURL),
+	// Personal analytics requires auth
+	personalResp, err := anonClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integrationclient.GetApiV1AnalyticsPersonalParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 401, personalResp.StatusCode(), "Personal analytics should require auth")
+
+	// Personal history requires auth
+	historyResp, err := anonClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integrationclient.GetApiV1AnalyticsPersonalHistoryParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 401, historyResp.StatusCode(), "Personal history should require auth")
+
+	// Personal filters requires auth
+	filtersResp, err := anonClient.GetApiV1AnalyticsPersonalFiltersWithResponse(ctx)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 401, filtersResp.StatusCode(), "Personal filters should require auth")
+}
+
+// TestPersonalAnalyticsHistoryPagination verifies that personal history
+// supports pagination using the generated client.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
+	ctx := context.Background()
+
+	fixture := s.bootstrapStandardFixture()
+	defer fixture.TearDown()
+
+	// Create provider
+	uniqueName := generateUniqueProviderName("e2e-personal-history")
+	kind := integrationclient.CreateProviderRequestKindClaude
+	provReq := integrationclient.PostApiV1ProvidersJSONRequestBody{
+		Name:            uniqueName,
+		Kind:            &kind,
+		ApiKey:          "sk-ant-test-key",
+		ApiUrl:          "https://api.anthropic.com",
+		Enabled:         &[]bool{true}[0],
+		Level:           &[]int{1}[0],
+		SupportedModels: &[]string{"claude-3-opus"},
 	}
 
-	for _, endpoint := range endpoints {
-		req, err := http.NewRequest("GET", endpoint, nil)
-		require.NoError(s.T(), err)
-		// No Authorization header
+	provResp, err := s.Client.PostApiV1ProvidersWithResponse(ctx, provReq)
+	require.NoError(s.T(), err, "Failed to create provider")
+	require.Equal(s.T(), 201, provResp.StatusCode())
+	providerID := provResp.JSON201.Id
+	defer s.Client.DeleteApiV1ProvidersProviderIdWithResponse(ctx, providerID)
 
-		resp, err := httpClient.Do(req)
-		require.NoError(s.T(), err)
-		defer resp.Body.Close()
+	now := time.Now()
 
-		assert.Equal(s.T(), 401, resp.StatusCode,
-			"Personal analytics endpoint should require auth: %s", endpoint)
+	// Upload 5 records for admin user
+	records := make([]integrationclient.UsageRecord, 5)
+	for i := 0; i < 5; i++ {
+		records[i] = integrationclient.UsageRecord{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
+			OutputTokens: intPointer(500),
+			DurationSec:  float32Pointer(1.0),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(time.Duration(i) * 10 * time.Minute),
+		}
 	}
+
+	batchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(records)
+	batchResp, err := s.Client.PostApiV1UsageBatchWithResponse(ctx, batchReq)
+	require.NoError(s.T(), err, "Failed to upload usage records")
+	require.Equal(s.T(), 200, batchResp.StatusCode())
+	require.Equal(s.T(), 5, batchResp.JSON200.SyncedCount, "Should sync all 5 records")
+
+	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	endDate := time.Now().Format("2006-01-02")
+
+	// Page 1 with limit=2
+	sortBy := integrationclient.CreatedAt
+	sortOrder := integrationclient.Desc
+	page1Resp, err := s.Client.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integrationclient.GetApiV1AnalyticsPersonalHistoryParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Page:      intPointer(1),
+		Limit:     intPointer(2),
+		SortBy:    &sortBy,
+		SortOrder: &sortOrder,
+	})
+	require.NoError(s.T(), err, "Personal history page 1 request failed")
+	require.Equal(s.T(), 200, page1Resp.StatusCode())
+	require.NotNil(s.T(), page1Resp.JSON200)
+
+	assert.Equal(s.T(), 2, len(page1Resp.JSON200.Records), "Page 1 should have 2 records")
+	assert.Equal(s.T(), int64(5), page1Resp.JSON200.Pagination.TotalCount, "Total should be 5 records")
+	assert.Equal(s.T(), 3, page1Resp.JSON200.Pagination.TotalPages, "Should have 3 total pages")
+
+	// Page 2 with limit=2
+	page2Resp, err := s.Client.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integrationclient.GetApiV1AnalyticsPersonalHistoryParams{
+		StartDate: startDate,
+		EndDate:   endDate,
+		Page:      intPointer(2),
+		Limit:     intPointer(2),
+		SortBy:    &sortBy,
+		SortOrder: &sortOrder,
+	})
+	require.NoError(s.T(), err, "Personal history page 2 request failed")
+	require.Equal(s.T(), 200, page2Resp.StatusCode())
+	assert.Equal(s.T(), 2, len(page2Resp.JSON200.Records), "Page 2 should have 2 records")
+
+	s.T().Logf("Personal history pagination: page1=%d records, page2=%d records, total=%d",
+		len(page1Resp.JSON200.Records), len(page2Resp.JSON200.Records), page1Resp.JSON200.Pagination.TotalCount)
 }
