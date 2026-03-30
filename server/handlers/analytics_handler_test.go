@@ -532,3 +532,223 @@ func TestNewAnalyticsHandler_VerifyInitialization(t *testing.T) {
 	assert.NotNil(t, handler.usageService)
 	assert.NotNil(t, handler.userService)
 }
+
+// --- Tool dimension tests (issue #104) ---
+
+func TestAnalyticsHandler_GetProviderAnalytics_WithToolsFilter(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"summary": map[string]interface{}{
+			"total_tokens":   3000,
+			"total_requests": 30,
+		},
+		"distribution": map[string]interface{}{
+			"by_tool": []map[string]interface{}{
+				{"name": "claude", "tokens": 3000, "requests": 30, "percentage": 100.0},
+			},
+		},
+	}
+
+	mockUsageService.On("GetProviderAnalytics",
+		mock.Anything,
+		int64(1), "2024-01-01", "2024-01-31",
+		[]string(nil), []string(nil), []string{"claude"}).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/providers?start_date=2024-01-01&end_date=2024-01-31&tools=claude", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&response)
+
+	dist := response["distribution"].(map[string]interface{})
+	byTool := dist["by_tool"].([]interface{})
+	assert.Len(t, byTool, 1)
+	assert.Equal(t, "claude", byTool[0].(map[string]interface{})["name"])
+
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetProviderAnalytics_WithMultipleToolsFilter(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"summary": map[string]interface{}{
+			"total_tokens": 9000,
+		},
+	}
+
+	mockUsageService.On("GetProviderAnalytics",
+		mock.Anything,
+		int64(1), "2024-01-01", "2024-01-31",
+		[]string(nil), []string(nil), []string{"claude", "codex"}).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/providers?start_date=2024-01-01&end_date=2024-01-31&tools=claude,codex", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetUserAnalytics_WithToolsFilter(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"leaderboard": []map[string]interface{}{
+			{"user_id": int64(1), "name": "User 1", "total_tokens": 1000},
+		},
+	}
+
+	mockUsageService.On("GetUserAnalytics",
+		mock.Anything,
+		int64(1), "2024-01-01", "2024-01-31",
+		[]int64(nil), []string(nil), []string{"opencode"}).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/users?start_date=2024-01-01&end_date=2024-01-31&tools=opencode", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetHistory_WithToolsFilter(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"records": []map[string]interface{}{
+			{"id": int64(1), "model": "claude-3-opus", "platform": "claude"},
+		},
+		"pagination": map[string]interface{}{
+			"page":  1,
+			"limit": 50,
+			"total": 1,
+		},
+	}
+
+	mockUsageService.On("GetHistory",
+		mock.Anything,
+		int64(1), "2024-01-01", "2024-01-31",
+		1, 50,
+		[]int64(nil), []string(nil), []string(nil), []string{"codex"},
+		"created_at", "desc").
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/history?start_date=2024-01-01&end_date=2024-01-31&tools=codex", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&response)
+	records := response["records"].([]interface{})
+	assert.Len(t, records, 1)
+	assert.Equal(t, "claude", records[0].(map[string]interface{})["platform"])
+
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetFilterOptions_IncludesTools(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"providers": []string{"anthropic"},
+		"models":    []string{"claude-3-opus"},
+		"tools":     []string{"claude", "codex", "opencode"},
+		"users":     []interface{}{},
+	}
+
+	mockUsageService.On("GetFilterOptions",
+		mock.Anything,
+		int64(1)).
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/filter-options", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&response)
+
+	tools := response["tools"].([]interface{})
+	assert.Len(t, tools, 3)
+	assert.Equal(t, "claude", tools[0])
+	assert.Equal(t, "codex", tools[1])
+	assert.Equal(t, "opencode", tools[2])
+
+	mockUsageService.AssertExpectations(t)
+}
+
+func TestAnalyticsHandler_GetHistory_WithAllFiltersIncludingTools(t *testing.T) {
+	mockUsageService := new(MockUsageService)
+	mockUserService := new(MockUserService)
+
+	testResult := map[string]interface{}{
+		"records": []map[string]interface{}{},
+		"pagination": map[string]interface{}{
+			"page":  1,
+			"limit": 25,
+			"total": 0,
+		},
+	}
+
+	mockUsageService.On("GetHistory",
+		mock.Anything,
+		int64(1), "2024-01-01", "2024-01-31",
+		1, 25,
+		[]int64{1}, []string{"anthropic"}, []string{"claude-3-opus"}, []string{"claude"},
+		"total_tokens", "asc").
+		Return(testResult, nil)
+
+	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
+	router := setupAnalyticsRouter(handler)
+
+	managerUser := createTestUser(1, "manager@example.com", "Manager", "manager", 1)
+
+	req, _ := http.NewRequest("GET", "/analytics/history?start_date=2024-01-01&end_date=2024-01-31&page=1&limit=25&user_ids=1&providers=anthropic&models=claude-3-opus&tools=claude&sort_by=total_tokens&sort_order=asc", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, managerUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockUsageService.AssertExpectations(t)
+}
