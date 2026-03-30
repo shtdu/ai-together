@@ -7,12 +7,19 @@ import type {
 
 export const dashboardApi = {
   getMetrics: async (
-    range: '24h' | '7d' | '30d' = '7d',
-    interval: 'hour' | 'day' = 'hour'
+    range: '24h' | '7d' | '30d' | 'custom' = '7d',
+    interval: 'hour' | 'day' = 'hour',
+    startDate?: string,
+    endDate?: string
   ): Promise<DashboardMetricsResponse> => {
+    const params: Record<string, string> = { range, interval }
+    if (range === 'custom' && startDate && endDate) {
+      params.start_date = startDate
+      params.end_date = endDate
+    }
     const response = await apiClient.get<DashboardMetricsResponse>(
       `/api/v1/dashboard/metrics`,
-      { params: { range, interval } }
+      { params }
     )
     return response.data
   },
