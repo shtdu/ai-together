@@ -44,7 +44,7 @@ Provide managers with a comprehensive interface for managing their team's AI too
 
 #### Event-Driven Requirements (Time Range Selection)
 
-- **MD-05-307:** `When a manager selects a time range (Today, Last 7 days, Last 30 days, Custom), the system shall update all dashboard metrics for the selected period.`
+- **MD-05-307:** `When a manager selects a time range (Last 24 hours, Last 7 days, Last 30 days, Custom), the system shall update all dashboard metrics for the selected period.`
 
 ---
 
@@ -120,10 +120,10 @@ Provide managers with a comprehensive interface for managing their team's AI too
 - Top users
 
 **Time Range Options:**
-- Today
+- Last 24 hours
 - Last 7 days
 - Last 30 days
-- Custom range
+- Custom range (start/end date picker with presets)
 
 ### 2. User Management
 
