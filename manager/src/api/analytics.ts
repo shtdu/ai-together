@@ -102,6 +102,7 @@ export interface HistoryResponse {
     input_tokens: number;
     output_tokens: number;
     duration_sec: number;
+    estimated_cost: number;
     timestamp: string;
   }>;
   pagination: {

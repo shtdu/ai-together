@@ -21,6 +21,7 @@ import (
 
 	"switch-server/internal/db"
 	"switch-server/models"
+	"switch-server/pricing"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -1080,19 +1081,24 @@ func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startD
 			return nil, fmt.Errorf("failed to scan record: %w", err)
 		}
 
+		// Calculate cost using per-model pricing table
+		modelName := stringOrEmpty(model)
+		cost := pricing.EstimateCost(modelName, int64(intOrZero(inputTokens)), int64(intOrZero(outputTokens)))
+
 		record := map[string]interface{}{
-			"id":            id,
-			"timestamp":     createdAt,
-			"user_id":       userID,
-			"user_name":     userName,
-			"provider":      stringOrEmpty(provider),
-			"model":         stringOrEmpty(model),
-			"platform":      stringOrEmpty(platform),
-			"input_tokens":  intOrZero(inputTokens),
-			"output_tokens": intOrZero(outputTokens),
-			"http_code":     intOrZero(httpCode),
-			"duration_sec":  floatOrZero(durationSec),
-			"is_stream":     boolOrFalse(isStream),
+			"id":             id,
+			"timestamp":      createdAt,
+			"user_id":        userID,
+			"user_name":      userName,
+			"provider":       stringOrEmpty(provider),
+			"model":          modelName,
+			"platform":       stringOrEmpty(platform),
+			"input_tokens":   intOrZero(inputTokens),
+			"output_tokens":  intOrZero(outputTokens),
+			"http_code":      intOrZero(httpCode),
+			"duration_sec":   floatOrZero(durationSec),
+			"is_stream":      boolOrFalse(isStream),
+			"estimated_cost": cost,
 		}
 		records = append(records, record)
 	}
@@ -1210,4 +1216,11 @@ func boolOrFalse(b *bool) bool {
 		return false
 	}
 	return *b
+}
+
+func float64OrZero(f *float64) float64 {
+	if f == nil {
+		return 0.0
+	}
+	return *f
 }

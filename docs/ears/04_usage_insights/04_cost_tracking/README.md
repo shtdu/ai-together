@@ -46,13 +46,22 @@ Help users and managers understand the financial impact of their AI tool usage.
 
 **Purpose:** Define how provider pricing is configured.
 
-#### Ubiquitous Requirements
+#### Current Implementation (v0.3.x)
+
+Pricing is defined in a hardcoded table in `server/pricing/pricing.go` covering major providers (Anthropic, OpenAI, Google, DeepSeek, Meta, Mistral, Qwen). Prices are per 1M tokens, sourced from provider pricing pages, and updated via code deploys.
+
+**Limitations of current approach:**
+- Cache token pricing not yet supported (only input + output)
+- Prices require a code deployment to update
+- No per-provider custom pricing (all providers of the same model share the same price)
+
+#### Ubiquitous Requirements (Target)
 
 - **CT-04-301:** `The system shall store pricing models for each provider and model combination.`
 - **CT-04-302:** `The system shall support per-token pricing (input, output, cache).`
 - **CT-04-303:** `The system shall allow managers to update pricing models when providers change prices.`
 
-#### Event-Driven Requirements (Pricing Updates)
+#### Event-Driven Requirements (Pricing Updates — Target)
 
 - **CT-04-304:** `When a manager updates pricing models, the system shall apply new prices to future requests.`
 - **CT-04-305:** `When a manager updates pricing models, the system shall not recalculate costs for historical requests.`
@@ -75,17 +84,26 @@ Help users and managers understand the financial impact of their AI tool usage.
 
 ## Cost Calculation Formula
 
+**Current (v0.3.x):**
 ```
-Total Request Cost = (Input Tokens × Input Price) +
-                     (Output Tokens × Output Price) +
-                     (Cache Tokens × Cache Price)
+Total Request Cost = (Input Tokens × Input Price / 1,000,000) +
+                     (Output Tokens × Output Price / 1,000,000)
 ```
+
+**Target (with cache support):**
+```
+Total Request Cost = (Input Tokens × Input Price / 1,000,000) +
+                     (Output Tokens × Output Price / 1,000,000) +
+                     (Cache Tokens × Cache Price / 1,000,000)
+```
+
+> Prices are per 1M tokens. See `server/pricing/pricing.go` for the current price table.
 
 ## Business Rules
 
 - **BR-04-001:** Cost estimates are approximate (based on provider pricing)
 - **BR-04-002:** Actual billing may differ from estimates
-- **BR-04-003:** Pricing models are configurable per provider
+- **BR-04-003:** Pricing models are configurable per provider (target: via UI; current: via code in `server/pricing/pricing.go`)
 - **BR-04-004:** Historical costs are not recalculated when pricing changes
 
 ---
