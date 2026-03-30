@@ -30,13 +30,25 @@ const startDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
 const endDate = ref(dayjs().format('YYYY-MM-DD'))
 const selectedUsers = ref<number[]>([])
 const selectedProviders = ref<string[]>([])
+const selectedTools = ref<string[]>([])
 
 const searchParams = ref({
   startDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
   endDate: dayjs().format('YYYY-MM-DD'),
   userIds: [] as number[],
   providers: [] as string[],
+  tools: [] as string[],
 })
+
+// Helper function to format tool names for display
+function formatToolName(platform: string): string {
+  if (!platform) return ''
+  const lower = platform.toLowerCase()
+  if (lower === 'claude') return 'Claude'
+  if (lower === 'codex') return 'Codex'
+  if (lower === 'opencode') return 'OpenCode'
+  return platform
+}
 
 const filterOptions = ref<FilterOptions | null>(null)
 const data = ref<UserAnalyticsResponse | null>(null)
@@ -73,6 +85,7 @@ async function fetchData() {
       end_date: searchParams.value.endDate,
       user_ids: searchParams.value.userIds.length > 0 ? searchParams.value.userIds : undefined,
       providers: searchParams.value.providers.length > 0 ? searchParams.value.providers : undefined,
+      tools: searchParams.value.tools.length > 0 ? searchParams.value.tools : undefined,
     })
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load user analytics'
@@ -92,6 +105,7 @@ function handleSearch() {
     endDate: endDate.value,
     userIds: selectedUsers.value,
     providers: selectedProviders.value,
+    tools: selectedTools.value,
   }
   fetchData()
 }
@@ -212,6 +226,11 @@ onMounted(() => {
           label="Users"
           :options="filterOptions?.users || []"
           v-model="selectedUsers"
+        />
+        <MultiSelect
+          label="Tools"
+          :options="(filterOptions?.tools || []).map(t => formatToolName(t))"
+          v-model="selectedTools"
         />
         <MultiSelect
           label="Providers"

@@ -5,6 +5,7 @@ export interface ProviderAnalyticsParams {
   end_date: string;
   providers?: string[];
   models?: string[];
+  tools?: string[];
 }
 
 export interface UserAnalyticsParams {
@@ -12,6 +13,7 @@ export interface UserAnalyticsParams {
   end_date: string;
   user_ids?: number[];
   providers?: string[];
+  tools?: string[];
 }
 
 export interface HistoryParams {
@@ -22,6 +24,7 @@ export interface HistoryParams {
   user_ids?: number[];
   providers?: string[];
   models?: string[];
+  tools?: string[];
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
 }
@@ -29,6 +32,7 @@ export interface HistoryParams {
 export interface FilterOptions {
   providers: string[];
   models: string[];
+  tools: string[];
   users: Array<{ id: number; name: string; email: string }>;
 }
 
@@ -49,6 +53,13 @@ export interface ProviderAnalyticsResponse {
       percentage: number;
     }>;
     by_model: Array<{
+      name: string;
+      requests: number;
+      tokens: number;
+      cost: number;
+      percentage: number;
+    }>;
+    by_tool: Array<{
       name: string;
       requests: number;
       tokens: number;
@@ -99,6 +110,7 @@ export interface HistoryResponse {
     user_name: string;
     provider: string;
     model: string;
+    platform: string;
     input_tokens: number;
     output_tokens: number;
     duration_sec: number;
@@ -125,6 +137,9 @@ export const analyticsApi = {
     if (params.models?.length) {
       queryParams.set('models', params.models.join(','));
     }
+    if (params.tools?.length) {
+      queryParams.set('tools', params.tools.join(','));
+    }
     const response = await apiClient.get(`/api/v1/analytics/providers?${queryParams}`);
     return response.data;
   },
@@ -139,6 +154,9 @@ export const analyticsApi = {
     }
     if (params.providers?.length) {
       queryParams.set('providers', params.providers.join(','));
+    }
+    if (params.tools?.length) {
+      queryParams.set('tools', params.tools.join(','));
     }
     const response = await apiClient.get(`/api/v1/analytics/users?${queryParams}`);
     return response.data;
@@ -159,6 +177,9 @@ export const analyticsApi = {
     }
     if (params.models?.length) {
       queryParams.set('models', params.models.join(','));
+    }
+    if (params.tools?.length) {
+      queryParams.set('tools', params.tools.join(','));
     }
     if (params.sort_by) queryParams.set('sort_by', params.sort_by);
     if (params.sort_order) queryParams.set('sort_order', params.sort_order);

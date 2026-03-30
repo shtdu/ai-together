@@ -33,13 +33,25 @@ const startDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
 const endDate = ref(dayjs().format('YYYY-MM-DD'))
 const selectedProviders = ref<string[]>([])
 const selectedModels = ref<string[]>([])
+const selectedTools = ref<string[]>([])
 
 const searchParams = ref({
   startDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
   endDate: dayjs().format('YYYY-MM-DD'),
   providers: [] as string[],
   models: [] as string[],
+  tools: [] as string[],
 })
+
+// Helper function to format tool names for display
+function formatToolName(platform: string): string {
+  if (!platform) return ''
+  const lower = platform.toLowerCase()
+  if (lower === 'claude') return 'Claude'
+  if (lower === 'codex') return 'Codex'
+  if (lower === 'opencode') return 'OpenCode'
+  return platform
+}
 
 const filterOptions = ref<FilterOptions | null>(null)
 const data = ref<ProviderAnalyticsResponse | null>(null)
@@ -76,6 +88,7 @@ async function fetchData() {
       end_date: searchParams.value.endDate,
       providers: searchParams.value.providers.length > 0 ? searchParams.value.providers : undefined,
       models: searchParams.value.models.length > 0 ? searchParams.value.models : undefined,
+      tools: searchParams.value.tools.length > 0 ? searchParams.value.tools : undefined,
     })
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load provider analytics'
@@ -95,6 +108,7 @@ function handleSearch() {
     endDate: endDate.value,
     providers: selectedProviders.value,
     models: selectedModels.value,
+    tools: selectedTools.value,
   }
   fetchData()
 }
@@ -151,6 +165,17 @@ const pieChartData = computed(() => {
     datasets: [{
       data: data.value.distribution.by_provider.map(p => p.tokens),
       backgroundColor: COLORS.slice(0, data.value.distribution.by_provider.length)
+    }]
+  }
+})
+
+const toolPieChartData = computed(() => {
+  if (!data.value?.distribution.by_tool) return { labels: [], datasets: [] }
+  return {
+    labels: data.value.distribution.by_tool.map(t => formatToolName(t.name)),
+    datasets: [{
+      data: data.value.distribution.by_tool.map(t => t.tokens),
+      backgroundColor: COLORS.slice(0, data.value.distribution.by_tool.length)
     }]
   }
 })
@@ -236,6 +261,11 @@ onMounted(() => {
           :start-date="startDate"
           :end-date="endDate"
           @change="handleDateChange"
+        />
+        <MultiSelect
+          label="Tools"
+          :options="(filterOptions?.tools || []).map(t => formatToolName(t))"
+          v-model="selectedTools"
         />
         <MultiSelect
           label="Providers"
@@ -329,6 +359,44 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Tool Distribution Section -->
+      <div v-if="data.distribution.by_tool && data.distribution.by_tool.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Tool Distribution Pie Chart -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <h3 class="text-lg font-semibold mb-4">Tool Distribution</h3>
+          <div class="h-[250px]">
+            <Pie :data="toolPieChartData" :options="pieOptions" />
+          </div>
+        </div>
+
+        <!-- Tool Details Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <h3 class="text-lg font-semibold mb-4">Tool Details</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tool</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Requests</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Tokens</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Share</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="tool in data.distribution.by_tool" :key="tool.name">
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ formatToolName(tool.name) }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ tool.requests.toLocaleString() }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(tool.tokens) }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ tool.percentage.toFixed(1) }}%</td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatCost(tool.cost) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

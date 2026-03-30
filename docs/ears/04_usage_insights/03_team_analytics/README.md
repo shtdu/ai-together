@@ -67,7 +67,7 @@ Provide managers with visibility into team-wide AI usage, costs, and trends for 
 
 - **TA-04-501:** `When a manager views provider analytics, the system shall display usage breakdown by provider.`
 - **TA-04-502:** `When a manager views model analytics, the system shall display usage breakdown by model.`
-- **TA-04-503:** `When a manager views tool analytics, the system shall display usage breakdown by AI tool (Claude/Codex/OpenCode).`
+- **TA-04-503:** `When a manager views tool analytics, the system shall display usage breakdown by AI tool (Claude/Codex/OpenCode).` ✅ **Implemented**
 
 ---
 
@@ -80,6 +80,7 @@ Provide managers with visibility into team-wide AI usage, costs, and trends for 
 - **TA-04-601:** `When a manager views team analytics, the system shall display team usage trends over time.`
 - **TA-04-602:** `When a manager views team analytics, the system shall display provider usage distribution.`
 - **TA-04-603:** `When a manager views team analytics, the system shall display model usage distribution.`
+- **TA-04-604:** `When a manager views team analytics, the system shall display tool usage distribution visualization (pie chart and table).` ✅ **Implemented**
 
 ## Data Availability
 

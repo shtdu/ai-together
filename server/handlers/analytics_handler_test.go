@@ -45,7 +45,7 @@ func TestAnalyticsHandler_GetProviderAnalytics_Success(t *testing.T) {
 	mockUsageService.On("GetProviderAnalytics",
 		mock.Anything,
 		int64(1), "2024-01-01", "2024-01-31",
-		[]string(nil), []string(nil)).
+		[]string(nil), []string(nil), []string(nil)).
 		Return(testResult, nil)
 
 	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
@@ -146,7 +146,7 @@ func TestAnalyticsHandler_GetProviderAnalytics_WithFilters(t *testing.T) {
 	mockUsageService.On("GetProviderAnalytics",
 		mock.Anything,
 		int64(1), "2024-01-01", "2024-01-31",
-		[]string{"anthropic"}, []string{"claude-3-opus"}).
+		[]string{"anthropic"}, []string{"claude-3-opus"}, []string(nil)).
 		Return(testResult, nil)
 
 	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
@@ -176,7 +176,7 @@ func TestAnalyticsHandler_GetUserAnalytics_Success(t *testing.T) {
 	mockUsageService.On("GetUserAnalytics",
 		mock.Anything,
 		int64(1), "2024-01-01", "2024-01-31",
-		[]int64{1, 2}, []string(nil)).
+		[]int64{1, 2}, []string(nil), []string(nil)).
 		Return(testResult, nil)
 
 	handler := NewAnalyticsHandler(mockUsageService, mockUserService)
@@ -212,7 +212,7 @@ func TestAnalyticsHandler_GetHistory_Success(t *testing.T) {
 		mock.Anything,
 		int64(1), "2024-01-01", "2024-01-31",
 		1, 50,
-		[]int64(nil), []string(nil), []string(nil),
+		[]int64(nil), []string(nil), []string(nil), []string(nil),
 		"created_at", "desc").
 		Return(testResult, nil)
 
@@ -247,7 +247,7 @@ func TestAnalyticsHandler_GetHistory_CustomPagination(t *testing.T) {
 		mock.Anything,
 		int64(1), "2024-01-01", "2024-01-31",
 		2, 25,
-		[]int64{1}, []string{"anthropic"}, []string{"claude-3-opus"},
+		[]int64{1}, []string{"anthropic"}, []string{"claude-3-opus"}, []string(nil),
 		"total_tokens", "asc").
 		Return(testResult, nil)
 
@@ -283,7 +283,7 @@ func TestAnalyticsHandler_GetHistory_InvalidPage(t *testing.T) {
 		mock.Anything,
 		int64(1), "2024-01-01", "2024-01-31",
 		1, 50, // Default page=1 when page<1
-		[]int64(nil), []string(nil), []string(nil),
+		[]int64(nil), []string(nil), []string(nil), []string(nil),
 		"created_at", "desc").
 		Return(testResult, nil)
 

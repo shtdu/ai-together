@@ -71,7 +71,12 @@ func (h *AnalyticsHandler) GetProviderAnalytics(c *gin.Context) {
 		modelsList = strings.Split(m, ",")
 	}
 
-	result, err := h.usageService.GetProviderAnalytics(c.Request.Context(), authenticatedUser.TenantID, startDate, endDate, providers, modelsList)
+	var tools []string
+	if t := c.Query("tools"); t != "" {
+		tools = strings.Split(t, ",")
+	}
+
+	result, err := h.usageService.GetProviderAnalytics(c.Request.Context(), authenticatedUser.TenantID, startDate, endDate, providers, modelsList, tools)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get provider analytics: " + err.Error()})
 		return
@@ -119,7 +124,12 @@ func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
 		providers = strings.Split(p, ",")
 	}
 
-	result, err := h.usageService.GetUserAnalytics(c.Request.Context(), authenticatedUser.TenantID, startDate, endDate, userIDs, providers)
+	var tools []string
+	if t := c.Query("tools"); t != "" {
+		tools = strings.Split(t, ",")
+	}
+
+	result, err := h.usageService.GetUserAnalytics(c.Request.Context(), authenticatedUser.TenantID, startDate, endDate, userIDs, providers, tools)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user analytics: " + err.Error()})
 		return
@@ -182,10 +192,15 @@ func (h *AnalyticsHandler) GetHistory(c *gin.Context) {
 		modelsList = strings.Split(m, ",")
 	}
 
+	var tools []string
+	if t := c.Query("tools"); t != "" {
+		tools = strings.Split(t, ",")
+	}
+
 	sortBy := c.DefaultQuery("sort_by", "created_at")
 	sortOrder := c.DefaultQuery("sort_order", "desc")
 
-	result, err := h.usageService.GetHistory(c.Request.Context(), authenticatedUser.TenantID, startDate, endDate, page, limit, userIDs, providers, modelsList, sortBy, sortOrder)
+	result, err := h.usageService.GetHistory(c.Request.Context(), authenticatedUser.TenantID, startDate, endDate, page, limit, userIDs, providers, modelsList, tools, sortBy, sortOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get history: " + err.Error()})
 		return

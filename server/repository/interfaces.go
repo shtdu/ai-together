@@ -60,9 +60,9 @@ type UsageRepositoryInterface interface {
 	GetProviderRankingsByTenant(ctx context.Context, tenantID int64) ([]map[string]interface{}, error)
 	GetProviderRankingsByUser(ctx context.Context, userID int64) ([]map[string]interface{}, error)
 	GetMemberStatsByTenant(ctx context.Context, tenantID int64) ([]map[string]interface{}, error)
-	GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models []string) (map[string]interface{}, error)
-	GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers []string) (map[string]interface{}, error)
-	GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models []string, sortBy, sortOrder string) (map[string]interface{}, error)
+	GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error)
+	GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers, tools []string) (map[string]interface{}, error)
+	GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error)
 	GetFilterOptions(ctx context.Context, tenantID int64) (map[string]interface{}, error)
 }
 

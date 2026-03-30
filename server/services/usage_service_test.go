@@ -329,10 +329,10 @@ func TestUsageService_GetProviderAnalytics_Success(t *testing.T) {
 		"total_requests": float64(150),
 	}
 
-	mockRepo.On("GetProviderAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"}).
+	mockRepo.On("GetProviderAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"}, []string(nil)).
 		Return(result, nil)
 
-	analytics, err := service.GetProviderAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"})
+	analytics, err := service.GetProviderAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"}, nil)
 
 	require.NoError(t, err)
 	assert.NotNil(t, analytics)
@@ -349,10 +349,10 @@ func TestUsageService_GetUserAnalytics_Success(t *testing.T) {
 		"total_requests": float64(200),
 	}
 
-	mockRepo.On("GetUserAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"}).
+	mockRepo.On("GetUserAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"}, []string(nil)).
 		Return(result, nil)
 
-	analytics, err := service.GetUserAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"})
+	analytics, err := service.GetUserAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"}, nil)
 
 	require.NoError(t, err)
 	assert.NotNil(t, analytics)
@@ -371,10 +371,10 @@ func TestUsageService_GetHistory_Success(t *testing.T) {
 		"limit":   float64(10),
 	}
 
-	mockRepo.On("GetHistory", mock.Anything, int64(1), "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, "created_at", "desc").
+	mockRepo.On("GetHistory", mock.Anything, int64(1), "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, []string(nil), "created_at", "desc").
 		Return(result, nil)
 
-	history, err := service.GetHistory(context.Background(), 1, "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, "created_at", "desc")
+	history, err := service.GetHistory(context.Background(), 1, "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, nil, "created_at", "desc")
 
 	require.NoError(t, err)
 	assert.NotNil(t, history)
