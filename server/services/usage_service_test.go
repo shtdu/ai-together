@@ -329,10 +329,10 @@ func TestUsageService_GetProviderAnalytics_Success(t *testing.T) {
 		"total_requests": float64(150),
 	}
 
-	mockRepo.On("GetProviderAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"}).
+	mockRepo.On("GetProviderAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"}, []string(nil)).
 		Return(result, nil)
 
-	analytics, err := service.GetProviderAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"})
+	analytics, err := service.GetProviderAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []string{"claude"}, []string{"gpt-4"}, nil)
 
 	require.NoError(t, err)
 	assert.NotNil(t, analytics)
@@ -349,10 +349,10 @@ func TestUsageService_GetUserAnalytics_Success(t *testing.T) {
 		"total_requests": float64(200),
 	}
 
-	mockRepo.On("GetUserAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"}).
+	mockRepo.On("GetUserAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"}, []string(nil)).
 		Return(result, nil)
 
-	analytics, err := service.GetUserAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"})
+	analytics, err := service.GetUserAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", []int64{1, 2}, []string{"claude"}, nil)
 
 	require.NoError(t, err)
 	assert.NotNil(t, analytics)
@@ -371,10 +371,10 @@ func TestUsageService_GetHistory_Success(t *testing.T) {
 		"limit":   float64(10),
 	}
 
-	mockRepo.On("GetHistory", mock.Anything, int64(1), "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, "created_at", "desc").
+	mockRepo.On("GetHistory", mock.Anything, int64(1), "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, []string(nil), "created_at", "desc").
 		Return(result, nil)
 
-	history, err := service.GetHistory(context.Background(), 1, "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, "created_at", "desc")
+	history, err := service.GetHistory(context.Background(), 1, "2024-01-01", "2024-01-31", 1, 10, []int64{1}, []string{"claude"}, []string{"gpt-4"}, nil, "created_at", "desc")
 
 	require.NoError(t, err)
 	assert.NotNil(t, history)
@@ -397,6 +397,70 @@ func TestUsageService_GetFilterOptions_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, options)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUsageService_GetProviderAnalytics_WithToolsFilter(t *testing.T) {
+	mockRepo := new(MockUsageRepository)
+	service := NewUsageService(mockRepo)
+
+	result := map[string]interface{}{
+		"distribution": map[string]interface{}{
+			"by_tool": []map[string]interface{}{
+				{"name": "claude", "tokens": 5000},
+			},
+		},
+	}
+
+	mockRepo.On("GetProviderAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []string(nil), []string(nil), []string{"claude"}).
+		Return(result, nil)
+
+	analytics, err := service.GetProviderAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", nil, nil, []string{"claude"})
+
+	require.NoError(t, err)
+	assert.NotNil(t, analytics)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUsageService_GetUserAnalytics_WithToolsFilter(t *testing.T) {
+	mockRepo := new(MockUsageRepository)
+	service := NewUsageService(mockRepo)
+
+	result := map[string]interface{}{
+		"leaderboard": []map[string]interface{}{
+			{"user_id": int64(1), "total_tokens": 1000},
+		},
+	}
+
+	mockRepo.On("GetUserAnalytics", mock.Anything, int64(1), "2024-01-01", "2024-01-31", []int64(nil), []string(nil), []string{"codex"}).
+		Return(result, nil)
+
+	analytics, err := service.GetUserAnalytics(context.Background(), 1, "2024-01-01", "2024-01-31", nil, nil, []string{"codex"})
+
+	require.NoError(t, err)
+	assert.NotNil(t, analytics)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUsageService_GetHistory_WithToolsFilter(t *testing.T) {
+	mockRepo := new(MockUsageRepository)
+	service := NewUsageService(mockRepo)
+
+	result := map[string]interface{}{
+		"records":    []models.UsageRecord{},
+		"pagination": map[string]interface{}{"total": 0},
+	}
+
+	mockRepo.On("GetHistory", mock.Anything, int64(1), "2024-01-01", "2024-01-31", 1, 10, []int64(nil), []string(nil), []string(nil), []string{"opencode"}, "created_at", "desc").
+		Return(result, nil)
+
+	history, err := service.GetHistory(context.Background(), 1, "2024-01-01", "2024-01-31", 1, 10, nil, nil, nil, []string{"opencode"}, "created_at", "desc")
+
+	require.NoError(t, err)
+	assert.NotNil(t, history)
 
 	mockRepo.AssertExpectations(t)
 }

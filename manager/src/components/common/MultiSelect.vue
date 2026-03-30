@@ -6,6 +6,8 @@ interface Props {
   options: string[]
   modelValue: string[]
   width?: number | string
+  /** Optional map of value -> display label. If provided, shows labels in UI but emits raw values. */
+  labels?: Record<string, string>
 }
 
 interface Emits {
@@ -13,7 +15,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  width: 200
+  width: 200,
+  labels: undefined,
 })
 
 const emit = defineEmits<Emits>()
@@ -21,10 +24,17 @@ const emit = defineEmits<Emits>()
 const isOpen = ref(false)
 const searchQuery = ref('')
 
+function getLabel(value: string): string {
+  return props.labels?.[value] ?? value
+}
+
 const filteredOptions = computed(() => {
   if (!searchQuery.value) return props.options
   const query = searchQuery.value.toLowerCase()
-  return props.options.filter(opt => opt.toLowerCase().includes(query))
+  return props.options.filter(opt => {
+    const display = getLabel(opt).toLowerCase()
+    return display.includes(query) || opt.toLowerCase().includes(query)
+  })
 })
 
 function toggleOption(option: string) {
@@ -64,7 +74,7 @@ function handleClickOutside() {
         :key="val"
         class="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded"
       >
-        {{ val }}
+        {{ getLabel(val) }}
         <button
           @click.stop="toggleOption(val)"
           class="ml-1 hover:text-red-600 dark:hover:text-red-400"
@@ -103,7 +113,7 @@ function handleClickOutside() {
           class="mr-2"
           @click.stop
         />
-        <span class="dark:text-gray-200">{{ option }}</span>
+        <span class="dark:text-gray-200">{{ getLabel(option) }}</span>
       </div>
 
       <div v-if="filteredOptions.length === 0" class="px-3 py-2 text-gray-500 dark:text-gray-400">

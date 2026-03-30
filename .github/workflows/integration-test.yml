@@ -33,7 +33,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            integration/go.sum
+            server/go.sum
+            shared/go.sum
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

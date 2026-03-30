@@ -172,8 +172,8 @@ func (s *UsageService) GetMemberStats(ctx context.Context, tenantID int64) (map[
 }
 
 // GetProviderAnalytics returns provider analytics with filtering
-func (s *UsageService) GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models []string) (map[string]interface{}, error) {
-	result, err := s.usageRepo.GetProviderAnalytics(ctx, tenantID, startDate, endDate, providers, models)
+func (s *UsageService) GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error) {
+	result, err := s.usageRepo.GetProviderAnalytics(ctx, tenantID, startDate, endDate, providers, models, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get provider analytics: %w", err)
 	}
@@ -181,8 +181,8 @@ func (s *UsageService) GetProviderAnalytics(ctx context.Context, tenantID int64,
 }
 
 // GetUserAnalytics returns user analytics with filtering
-func (s *UsageService) GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers []string) (map[string]interface{}, error) {
-	result, err := s.usageRepo.GetUserAnalytics(ctx, tenantID, startDate, endDate, userIDs, providers)
+func (s *UsageService) GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers, tools []string) (map[string]interface{}, error) {
+	result, err := s.usageRepo.GetUserAnalytics(ctx, tenantID, startDate, endDate, userIDs, providers, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user analytics: %w", err)
 	}
@@ -190,8 +190,8 @@ func (s *UsageService) GetUserAnalytics(ctx context.Context, tenantID int64, sta
 }
 
 // GetHistory returns paginated request logs
-func (s *UsageService) GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models []string, sortBy, sortOrder string) (map[string]interface{}, error) {
-	result, err := s.usageRepo.GetHistory(ctx, tenantID, startDate, endDate, page, limit, userIDs, providers, models, sortBy, sortOrder)
+func (s *UsageService) GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error) {
+	result, err := s.usageRepo.GetHistory(ctx, tenantID, startDate, endDate, page, limit, userIDs, providers, models, tools, sortBy, sortOrder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history: %w", err)
 	}

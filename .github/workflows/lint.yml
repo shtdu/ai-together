@@ -7,8 +7,38 @@ on:
     branches: [main, develop]
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      member: ${{ steps.filter.outputs.member }}
+      manager: ${{ steps.filter.outputs.manager }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            server:
+              - '.github/workflows/lint.yml'
+              - 'server/**'
+              - 'shared/**'
+            member:
+              - '.github/workflows/lint.yml'
+              - 'member/**'
+              - 'shared/**'
+            manager:
+              - '.github/workflows/lint.yml'
+              - 'manager/**'
+
   server-lint:
     name: Server Lint
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,7 +48,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: false
+          cache: true
+          cache-dependency-path: server/go.sum
 
       - name: Check formatting
         working-directory: ./server
@@ -39,6 +70,8 @@ jobs:
 
   member-lint:
     name: Member Lint
+    needs: changes
+    if: needs.changes.outputs.member == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -51,12 +84,17 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            member/go.sum
+            shared/go.sum
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: member/frontend/package-lock.json
 
       - name: Install system dependencies
         run: |
@@ -97,6 +135,8 @@ jobs:
 
   typescript-lint:
     name: TypeScript Lint
+    needs: changes
+    if: needs.changes.outputs.manager == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

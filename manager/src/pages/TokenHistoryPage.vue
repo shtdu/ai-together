@@ -11,6 +11,7 @@ const startDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
 const endDate = ref(dayjs().format('YYYY-MM-DD'))
 const selectedProviders = ref<string[]>([])
 const selectedModels = ref<string[]>([])
+const selectedTools = ref<string[]>([])
 const selectedUsers = ref<number[]>([])
 
 const paginationModel = ref({ page: 0, pageSize: 25 })
@@ -21,6 +22,7 @@ const searchParams = ref({
   endDate: dayjs().format('YYYY-MM-DD'),
   providers: [] as string[],
   models: [] as string[],
+  tools: [] as string[],
   userIds: [] as number[],
 })
 
@@ -43,6 +45,16 @@ function formatDuration(sec: number): string {
   return `${sec * 1000}ms`
 }
 
+function formatToolName(platform: string): string {
+  // Convert platform to display name: claude -> Claude, codex -> Codex, opencode -> OpenCode
+  if (!platform) return ''
+  const lower = platform.toLowerCase()
+  if (lower === 'claude') return 'Claude'
+  if (lower === 'codex') return 'Codex'
+  if (lower === 'opencode') return 'OpenCode'
+  return platform
+}
+
 async function fetchFilterOptions() {
   filterLoading.value = true
   try {
@@ -63,6 +75,7 @@ async function fetchData() {
       limit: paginationModel.value.pageSize,
       providers: searchParams.value.providers.length > 0 ? searchParams.value.providers : undefined,
       models: searchParams.value.models.length > 0 ? searchParams.value.models : undefined,
+      tools: searchParams.value.tools.length > 0 ? searchParams.value.tools : undefined,
       user_ids: searchParams.value.userIds.length > 0 ? searchParams.value.userIds : undefined,
       sort_by: sortModel.value.field,
       sort_order: sortModel.value.order,
@@ -86,6 +99,7 @@ function handleSearch() {
     endDate: endDate.value,
     providers: selectedProviders.value,
     models: selectedModels.value,
+    tools: selectedTools.value,
     userIds: selectedUsers.value,
   }
   fetchData()
@@ -119,10 +133,11 @@ function handlePageSizeChange(newSize: number) {
 function handleExportCSV() {
   if (!data.value) return
 
-  const headers = ['ID', 'User', 'Provider', 'Model', 'Input Tokens', 'Output Tokens', 'Duration', 'Est. Cost', 'Timestamp']
+  const headers = ['ID', 'User', 'Tool', 'Provider', 'Model', 'Input Tokens', 'Output Tokens', 'Duration', 'Est. Cost', 'Timestamp']
   const rows = data.value.records.map(r => [
     r.id,
     r.user_name,
+    formatToolName(r.platform),
     r.provider,
     r.model,
     r.input_tokens,
@@ -209,6 +224,12 @@ onMounted(() => {
           v-model="selectedUsers"
         />
         <MultiSelect
+          label="Tools"
+          :options="filterOptions?.tools || []"
+          v-model="selectedTools"
+          :labels="{ claude: 'Claude', codex: 'Codex', opencode: 'OpenCode' }"
+        />
+        <MultiSelect
           label="Providers"
           :options="filterOptions?.providers || []"
           v-model="selectedProviders"
@@ -239,6 +260,9 @@ onMounted(() => {
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 User
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Tool
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 Provider
@@ -281,18 +305,19 @@ onMounted(() => {
           </thead>
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-if="isLoading">
-              <td colspan="9" class="px-6 py-20 text-center">
+              <td colspan="10" class="px-6 py-20 text-center">
                 <div class="animate-spin text-4xl inline-block">⟳</div>
               </td>
             </tr>
             <tr v-else-if="!data?.records || data.records.length === 0">
-              <td colspan="9" class="px-6 py-20 text-center text-gray-500 dark:text-gray-400">
+              <td colspan="10" class="px-6 py-20 text-center text-gray-500 dark:text-gray-400">
                 No records found
               </td>
             </tr>
             <tr v-else v-for="record in data.records" :key="record.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ record.id }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ record.user_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatToolName(record.platform) }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ record.provider }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ record.model }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(record.input_tokens) }}</td>

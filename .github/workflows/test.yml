@@ -7,8 +7,38 @@ on:
     branches: [main, develop]
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      shared: ${{ steps.filter.outputs.shared }}
+      member: ${{ steps.filter.outputs.member }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            server:
+              - '.github/workflows/test.yml'
+              - 'server/**'
+              - 'shared/**'
+            shared:
+              - '.github/workflows/test.yml'
+              - 'shared/**'
+            member:
+              - '.github/workflows/test.yml'
+              - 'member/**'
+              - 'shared/**'
+
   go-test:
     name: Go Test
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,7 +48,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: false
+          cache: true
+          cache-dependency-path: server/go.sum
 
       - name: Run server tests
         working-directory: ./server
@@ -41,6 +72,8 @@ jobs:
 
   shared-test:
     name: Shared Test
+    needs: changes
+    if: needs.changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -50,7 +83,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: false
+          cache: true
+          cache-dependency-path: shared/go.sum
 
       - name: Run shared tests
         working-directory: ./shared
@@ -72,6 +106,8 @@ jobs:
 
   member-test:
     name: Member Test
+    needs: changes
+    if: needs.changes.outputs.member == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -81,12 +117,17 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            member/go.sum
+            shared/go.sum
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: member/frontend/package-lock.json
 
       - name: Install system dependencies
         run: |

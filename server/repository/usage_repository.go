@@ -665,7 +665,7 @@ func (r *UsageRepository) GetProviderStats(ctx context.Context, providerName str
 }
 
 // GetProviderAnalytics returns provider analytics with filtering
-func (r *UsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models []string) (map[string]interface{}, error) {
+func (r *UsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error) {
 	// Parse date range
 	startTime, endTime, err := parseDateRange(startDate, endDate)
 	if err != nil {
@@ -686,6 +686,12 @@ func (r *UsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int
 	if len(models) > 0 {
 		whereClause += fmt.Sprintf(" AND model = ANY($%d)", argIndex)
 		args = append(args, models)
+		argIndex++
+	}
+	if len(tools) > 0 {
+		whereClause += fmt.Sprintf(" AND platform = ANY($%d)", argIndex)
+		args = append(args, tools)
+		argIndex++
 	}
 
 	// Get summary
@@ -827,6 +833,44 @@ func (r *UsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int
 		})
 	}
 
+	// Get distribution by tool (platform)
+	toolDistQuery := fmt.Sprintf(`
+		SELECT
+			platform,
+			COALESCE(SUM(input_tokens + output_tokens), 0) AS tokens,
+			COUNT(*) AS requests
+		FROM request_log
+		WHERE %s AND platform IS NOT NULL AND platform != ''
+		GROUP BY platform
+		ORDER BY tokens DESC
+	`, whereClause)
+
+	rows4, err := r.db.Conn().Query(ctx, toolDistQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tool distribution: %w", err)
+	}
+	defer rows4.Close()
+
+	var byTool []map[string]interface{}
+	for rows4.Next() {
+		var tool string
+		var tokens, requests int64
+		if err := rows4.Scan(&tool, &tokens, &requests); err != nil {
+			return nil, fmt.Errorf("failed to scan tool distribution: %w", err)
+		}
+		percentage := float64(0)
+		if totalTokens > 0 {
+			percentage = float64(tokens) * 100 / float64(totalTokens)
+		}
+		byTool = append(byTool, map[string]interface{}{
+			"name":       tool,
+			"tokens":     tokens,
+			"requests":   requests,
+			"percentage": percentage,
+			"cost":       (float64(tokens) * 0.0015) / 1000,
+		})
+	}
+
 	return map[string]interface{}{
 		"period": map[string]interface{}{
 			"start": startDate,
@@ -843,12 +887,13 @@ func (r *UsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int
 		"distribution": map[string]interface{}{
 			"by_provider": byProvider,
 			"by_model":    byModel,
+			"by_tool":     byTool,
 		},
 	}, nil
 }
 
 // GetUserAnalytics returns user analytics with filtering
-func (r *UsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers []string) (map[string]interface{}, error) {
+func (r *UsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers, tools []string) (map[string]interface{}, error) {
 	// Parse date range
 	startTime, endTime, err := parseDateRange(startDate, endDate)
 	if err != nil {
@@ -868,6 +913,11 @@ func (r *UsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, 
 	if len(providers) > 0 {
 		whereClause += fmt.Sprintf(" AND r.provider = ANY($%d)", argIndex)
 		args = append(args, providers)
+		argIndex++
+	}
+	if len(tools) > 0 {
+		whereClause += fmt.Sprintf(" AND r.platform = ANY($%d)", argIndex)
+		args = append(args, tools)
 	}
 
 	// Get leaderboard
@@ -990,7 +1040,7 @@ func (r *UsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, 
 }
 
 // GetHistory returns paginated request logs
-func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models []string, sortBy, sortOrder string) (map[string]interface{}, error) {
+func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error) {
 	// Parse date range
 	startTime, endTime, err := parseDateRange(startDate, endDate)
 	if err != nil {
@@ -1015,6 +1065,11 @@ func (r *UsageRepository) GetHistory(ctx context.Context, tenantID int64, startD
 	if len(models) > 0 {
 		whereClause += fmt.Sprintf(" AND r.model = ANY($%d)", argIndex)
 		args = append(args, models)
+		argIndex++
+	}
+	if len(tools) > 0 {
+		whereClause += fmt.Sprintf(" AND r.platform = ANY($%d)", argIndex)
+		args = append(args, tools)
 	}
 
 	// Validate sort column
@@ -1158,6 +1213,27 @@ func (r *UsageRepository) GetFilterOptions(ctx context.Context, tenantID int64) 
 		modelsList = append(modelsList, model)
 	}
 
+	// Get unique tools (platforms)
+	toolsQuery := `
+		SELECT DISTINCT platform FROM request_log
+		WHERE tenant_id = $1 AND platform IS NOT NULL AND platform != ''
+		ORDER BY platform
+	`
+	rows4, err := r.db.Conn().Query(ctx, toolsQuery, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tools: %w", err)
+	}
+	defer rows4.Close()
+
+	var tools []string
+	for rows4.Next() {
+		var tool string
+		if err := rows4.Scan(&tool); err != nil {
+			return nil, fmt.Errorf("failed to scan tool: %w", err)
+		}
+		tools = append(tools, tool)
+	}
+
 	// Get users
 	usersQuery := `
 		SELECT id, name, email FROM users WHERE tenant_id = $1 ORDER BY name
@@ -1185,6 +1261,7 @@ func (r *UsageRepository) GetFilterOptions(ctx context.Context, tenantID int64) 
 	return map[string]interface{}{
 		"providers": providers,
 		"models":    modelsList,
+		"tools":     tools,
 		"users":     users,
 	}, nil
 }

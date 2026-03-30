@@ -233,24 +233,24 @@ func (m *MockUsageRepository) GetMemberStatsByTenant(ctx context.Context, tenant
 	return args.Get(0).([]map[string]interface{}), args.Error(1)
 }
 
-func (m *MockUsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models []string) (map[string]interface{}, error) {
-	args := m.Called(ctx, tenantID, startDate, endDate, providers, models)
+func (m *MockUsageRepository) GetProviderAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error) {
+	args := m.Called(ctx, tenantID, startDate, endDate, providers, models, tools)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
-func (m *MockUsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers []string) (map[string]interface{}, error) {
-	args := m.Called(ctx, tenantID, startDate, endDate, userIDs, providers)
+func (m *MockUsageRepository) GetUserAnalytics(ctx context.Context, tenantID int64, startDate, endDate string, userIDs []int64, providers, tools []string) (map[string]interface{}, error) {
+	args := m.Called(ctx, tenantID, startDate, endDate, userIDs, providers, tools)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
-func (m *MockUsageRepository) GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models []string, sortBy, sortOrder string) (map[string]interface{}, error) {
-	args := m.Called(ctx, tenantID, startDate, endDate, page, limit, userIDs, providers, models, sortBy, sortOrder)
+func (m *MockUsageRepository) GetHistory(ctx context.Context, tenantID int64, startDate, endDate string, page, limit int, userIDs []int64, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error) {
+	args := m.Called(ctx, tenantID, startDate, endDate, page, limit, userIDs, providers, models, tools, sortBy, sortOrder)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
