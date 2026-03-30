@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAutoRefresh } from '../composables/useAutoRefresh'
 import dayjs from 'dayjs'
 import DateRangePicker from '../components/common/DateRangePicker.vue'
 import MultiSelect from '../components/common/MultiSelect.vue'
@@ -141,6 +142,8 @@ function handleExportJSON() {
   exportJSON(data.value.records, `token-history-${searchParams.value.startDate}-${searchParams.value.endDate}`)
 }
 
+const { lastUpdated } = useAutoRefresh(fetchData, () => isLoading.value)
+
 onMounted(() => {
   fetchFilterOptions()
   fetchData()
@@ -158,6 +161,12 @@ onMounted(() => {
         >
           ⟳ Refresh
         </button>
+        <span
+          v-if="lastUpdated"
+          class="text-xs text-gray-400 dark:text-gray-500 self-center whitespace-nowrap"
+        >
+          Updated {{ lastUpdated.toLocaleTimeString() }}
+        </span>
         <div class="relative">
           <button
             @click="showExportMenu = !showExportMenu"

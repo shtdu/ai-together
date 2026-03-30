@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useAutoRefresh } from '../composables/useAutoRefresh'
 import dayjs from 'dayjs'
 import {
   Chart as ChartJS,
@@ -175,6 +176,8 @@ const pieOptions = {
   }
 }
 
+const { lastUpdated } = useAutoRefresh(fetchData, () => isLoading.value)
+
 onMounted(() => {
   fetchFilterOptions()
   fetchData()
@@ -192,6 +195,12 @@ onMounted(() => {
         >
           ⟳ Refresh
         </button>
+        <span
+          v-if="lastUpdated"
+          class="text-xs text-gray-400 dark:text-gray-500 self-center whitespace-nowrap"
+        >
+          Updated {{ lastUpdated.toLocaleTimeString() }}
+        </span>
         <div class="relative">
           <button
             @click="showExportMenu = !showExportMenu"
