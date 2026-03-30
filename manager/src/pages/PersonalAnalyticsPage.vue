@@ -76,17 +76,18 @@ async function fetchFilterOptions() {
   }
 }
 
-async function fetchData() {
-  isLoading.value = true
+async function fetchData(silent = false) {
+  if (!silent) isLoading.value = true
   error.value = null
   try {
-    data.value = await analyticsApi.getPersonalAnalytics({
+    const result = await analyticsApi.getPersonalAnalytics({
       start_date: searchParams.value.startDate,
       end_date: searchParams.value.endDate,
       providers: searchParams.value.providers.length > 0 ? searchParams.value.providers : undefined,
       models: searchParams.value.models.length > 0 ? searchParams.value.models : undefined,
       tools: searchParams.value.tools.length > 0 ? searchParams.value.tools : undefined,
     })
+    data.value = result
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load personal analytics'
   } finally {
@@ -140,19 +141,13 @@ const trendChartData = computed(() => {
   if (!data.value?.trend_data) return { labels: [], datasets: [] }
 
   const labels = data.value.trend_data.map(item => dayjs(item.date).format('MM/DD'))
-  const providers = new Set<string>()
-  data.value.trend_data.forEach(item => {
-    Object.keys(item.by_provider).forEach(p => providers.add(p))
-  })
+  const dataset = {
+    label: 'Tokens',
+    data: data.value.trend_data.map(item => item.tokens),
+    backgroundColor: '#0088FE',
+  }
 
-  const datasets = Array.from(providers).map((provider, idx) => ({
-    label: provider,
-    data: data.value!.trend_data!.map(item => item.by_provider[provider] || 0),
-    backgroundColor: COLORS[idx % COLORS.length],
-    stack: 'Stack 0'
-  }))
-
-  return { labels, datasets }
+  return { labels, datasets: [dataset] }
 })
 
 const pieChartData = computed(() => {
@@ -205,7 +200,7 @@ function startAutoRefresh() {
   if (autoRefresh.value) {
     refreshTimer = setInterval(() => {
       if (searchParams.value.startDate && searchParams.value.endDate) {
-        fetchData()
+        fetchData(true)
       }
     }, AUTO_REFRESH_INTERVAL)
   }

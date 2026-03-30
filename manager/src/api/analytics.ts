@@ -69,7 +69,10 @@ export interface ProviderAnalyticsResponse {
   };
   trend_data: Array<{
     date: string;
-    by_provider: Record<string, number>;
+    tokens: number;
+    input_tokens: number;
+    output_tokens: number;
+    requests: number;
   }>;
   period: {
     start: string;
