@@ -90,6 +90,19 @@ func (m *MockUserService) DeleteUser(userID int64) error {
 	return args.Error(0)
 }
 
+func (m *MockUserService) UpdateProfileName(userID int64, name string) (*models.User, error) {
+	args := m.Called(userID, name)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
+func (m *MockUserService) ChangePassword(userID int64, currentPassword, newPassword string) error {
+	args := m.Called(userID, currentPassword, newPassword)
+	return args.Error(0)
+}
+
 // MockTeamService is a mock implementation of TeamServiceInterface
 type MockTeamService struct {
 	mock.Mock

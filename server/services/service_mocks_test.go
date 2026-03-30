@@ -74,6 +74,16 @@ func (m *MockUserRepository) DeleteUser(ctx context.Context, userID int64) error
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) UpdateUserName(ctx context.Context, userID int64, name string) error {
+	args := m.Called(ctx, userID, name)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateUserPassword(ctx context.Context, userID int64, hashedPassword string) error {
+	args := m.Called(ctx, userID, hashedPassword)
+	return args.Error(0)
+}
+
 // MockProviderRepository is a mock implementation of ProviderRepository
 type MockProviderRepository struct {
 	mock.Mock
