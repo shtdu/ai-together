@@ -16,12 +16,16 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 	"switch-server/models"
 	"switch-server/repository"
 )
+
+// ErrIncorrectPassword is returned when the current password doesn't match.
+var ErrIncorrectPassword = errors.New("current password is incorrect")
 
 type UserService struct {
 	userRepo repository.UserRepositoryInterface
@@ -170,7 +174,7 @@ func (s *UserService) ChangePassword(userID int64, currentPassword, newPassword 
 	}
 
 	if !s.ValidatePassword(user, currentPassword) {
-		return fmt.Errorf("current password is incorrect")
+		return ErrIncorrectPassword
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)

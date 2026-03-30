@@ -15,6 +15,7 @@
 package services
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -516,7 +517,7 @@ func TestUserService_ChangePassword_WrongCurrentPassword(t *testing.T) {
 	err = service.ChangePassword(1, "wrongPassword", "newPassword456")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "current password is incorrect")
+	assert.True(t, errors.Is(err, ErrIncorrectPassword), "expected ErrIncorrectPassword")
 
 	mockRepo.AssertExpectations(t)
 }
