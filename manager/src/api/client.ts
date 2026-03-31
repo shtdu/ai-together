@@ -31,6 +31,11 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && originalRequest) {
+      // Don't intercept 401 from login — it means wrong credentials, not expired token
+      if (originalRequest.url?.includes('/auth/login')) {
+        return Promise.reject(error)
+      }
+
       const refreshToken = localStorage.getItem('refresh_token')
 
       if (refreshToken && !originalRequest.url?.includes('/auth/refresh')) {
