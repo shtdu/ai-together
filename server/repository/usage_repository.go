@@ -1291,7 +1291,6 @@ func (r *UsageRepository) GetPersonalAnalytics(ctx context.Context, userID, tena
 	if len(tools) > 0 {
 		whereClause += fmt.Sprintf(" AND platform = ANY($%d)", argIndex)
 		args = append(args, tools)
-		argIndex++
 	}
 
 	// Get summary

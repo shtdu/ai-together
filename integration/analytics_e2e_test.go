@@ -23,6 +23,7 @@ import (
 
 	integrationclient "github.com/code-together/shared/integration"
 	integration_manager "github.com/code-together/integration_manager"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -831,7 +832,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 
 	// Query personal analytics as admin via manager client - should only see admin's 2 records
 	adminAnalyticsResp, err := s.ManagerClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalParams{
-		StartDate: startDate,
+		StartDate: openapi_types.Date(startDate),
 		EndDate:   endDate,
 	})
 	require.NoError(s.T(), err, "Manager personal analytics request failed")
@@ -878,7 +879,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 
 	// Personal analytics requires auth
 	personalResp, err := anonManagerClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalParams{
-		StartDate: startDate,
+		StartDate: openapi_types.Date(startDate),
 		EndDate:   endDate,
 	})
 	require.NoError(s.T(), err)
@@ -886,7 +887,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 
 	// Personal history requires auth
 	historyResp, err := anonManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
-		StartDate: startDate,
+		StartDate: openapi_types.Date(startDate),
 		EndDate:   endDate,
 	})
 	require.NoError(s.T(), err)
@@ -956,7 +957,7 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 	sortBy := integration_manager.CreatedAt
 	sortOrder := integration_manager.Desc
 	page1Resp, err := s.ManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
-		StartDate: startDate,
+		StartDate: openapi_types.Date(startDate),
 		EndDate:   endDate,
 		Page:      intPointer(1),
 		Limit:     intPointer(2),
@@ -968,13 +969,13 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 	require.NotNil(s.T(), page1Resp.JSON200)
 	require.NotNil(s.T(), page1Resp.JSON200.Pagination)
 
-	assert.Equal(s.T(), 2, len(page1Resp.JSON200.Records), "Page 1 should have 2 records")
+	assert.Equal(s.T(), 2, len(*page1Resp.JSON200.Records), "Page 1 should have 2 records")
 	assert.Equal(s.T(), 5, *page1Resp.JSON200.Pagination.TotalCount, "Total should be 5 records")
 	assert.Equal(s.T(), 3, *page1Resp.JSON200.Pagination.TotalPages, "Should have 3 total pages")
 
 	// Page 2 with limit=2
 	page2Resp, err := s.ManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
-		StartDate: startDate,
+		StartDate: openapi_types.Date(startDate),
 		EndDate:   endDate,
 		Page:      intPointer(2),
 		Limit:     intPointer(2),
@@ -983,8 +984,8 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 	})
 	require.NoError(s.T(), err, "Personal history page 2 request failed")
 	require.Equal(s.T(), 200, page2Resp.StatusCode())
-	assert.Equal(s.T(), 2, len(page2Resp.JSON200.Records), "Page 2 should have 2 records")
+	assert.Equal(s.T(), 2, len(*page2Resp.JSON200.Records), "Page 2 should have 2 records")
 
 	s.T().Logf("Personal history pagination (manager client): page1=%d records, page2=%d records, total=%d",
-		len(page1Resp.JSON200.Records), len(page2Resp.JSON200.Records), *page1Resp.JSON200.Pagination.TotalCount)
+		len(*page1Resp.JSON200.Records), len(*page2Resp.JSON200.Records), *page1Resp.JSON200.Pagination.TotalCount)
 }
