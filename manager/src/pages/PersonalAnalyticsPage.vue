@@ -143,7 +143,7 @@ const trendChartData = computed(() => {
   const labels = data.value.trend_data.map(item => dayjs(item.date).format('MM/DD'))
   const dataset = {
     label: 'Tokens',
-    data: data.value.trend_data.map(item => item.tokens),
+    data: data.value.trend_data.map(item => item.tokens ?? 0),
     backgroundColor: '#0088FE',
   }
 

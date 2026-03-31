@@ -143,13 +143,21 @@ const trendChartData = computed(() => {
   if (!data.value?.trend_data) return { labels: [], datasets: [] }
 
   const labels = data.value.trend_data.map(item => dayjs(item.date).format('MM/DD'))
-  const dataset = {
-    label: 'Tokens',
-    data: data.value.trend_data.map(item => item.tokens),
-    backgroundColor: '#0088FE',
-  }
+  const providers = new Set<string>()
+  data.value.trend_data.forEach(item => {
+    if (item.by_provider) {
+      Object.keys(item.by_provider).forEach(p => providers.add(p))
+    }
+  })
 
-  return { labels, datasets: [dataset] }
+  const datasets = Array.from(providers).map((provider, idx) => ({
+    label: provider,
+    data: data.value!.trend_data!.map(item => item.by_provider?.[provider] || 0),
+    backgroundColor: COLORS[idx % COLORS.length],
+    stack: 'Stack 0'
+  }))
+
+  return { labels, datasets }
 })
 
 const pieChartData = computed(() => {
@@ -311,7 +319,7 @@ onMounted(() => {
       <div v-if="data.distribution.by_provider && data.distribution.by_provider.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Daily Trend Chart -->
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <h3 class="text-lg font-semibold mb-4">Daily Token Usage</h3>
+          <h3 class="text-lg font-semibold mb-4">Daily Token Usage by Provider</h3>
           <div class="h-[330px]">
             <Bar :data="trendChartData" :options="barOptions" />
           </div>
