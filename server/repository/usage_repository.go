@@ -1562,7 +1562,7 @@ func (r *UsageRepository) GetPersonalHistory(ctx context.Context, userID, tenant
 			"http_code":      intOrZero(httpCode),
 			"duration_sec":   floatOrZero(durationSec),
 			"is_stream":      boolOrFalse(isStream),
-			"estimated_cost": cost,
+			"cost": cost,
 		}
 		records = append(records, record)
 	}

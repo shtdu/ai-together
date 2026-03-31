@@ -480,13 +480,18 @@ components:
               date:
                 type: string
                 example: "2024-01-15"
-              by_provider:
-                type: object
-                additionalProperties:
-                  type: integer
-                example:
-                  anthropic: 15000
-                  openai: 5000
+              tokens:
+                type: integer
+                example: 20000
+              input_tokens:
+                type: integer
+                example: 15000
+              output_tokens:
+                type: integer
+                example: 5000
+              requests:
+                type: integer
+                example: 100
         distribution:
           type: object
           properties:
