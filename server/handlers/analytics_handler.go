@@ -226,3 +226,116 @@ func (h *AnalyticsHandler) GetFilterOptions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+// GetPersonalAnalytics returns personal analytics for the authenticated user
+func (h *AnalyticsHandler) GetPersonalAnalytics(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+		return
+	}
+	authenticatedUser := user.(*models.User)
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+
+	if startDate == "" || endDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start_date and end_date are required"})
+		return
+	}
+
+	var providers []string
+	if p := c.Query("providers"); p != "" {
+		providers = strings.Split(p, ",")
+	}
+
+	var modelsList []string
+	if m := c.Query("models"); m != "" {
+		modelsList = strings.Split(m, ",")
+	}
+
+	var tools []string
+	if t := c.Query("tools"); t != "" {
+		tools = strings.Split(t, ",")
+	}
+
+	result, err := h.usageService.GetPersonalAnalytics(c.Request.Context(), authenticatedUser.ID, authenticatedUser.TenantID, startDate, endDate, providers, modelsList, tools)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get personal analytics: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// GetPersonalHistory returns paginated request logs for the authenticated user
+func (h *AnalyticsHandler) GetPersonalHistory(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+		return
+	}
+	authenticatedUser := user.(*models.User)
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+
+	if startDate == "" || endDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start_date and end_date are required"})
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 100
+	}
+
+	var providers []string
+	if p := c.Query("providers"); p != "" {
+		providers = strings.Split(p, ",")
+	}
+
+	var modelsList []string
+	if m := c.Query("models"); m != "" {
+		modelsList = strings.Split(m, ",")
+	}
+
+	var tools []string
+	if t := c.Query("tools"); t != "" {
+		tools = strings.Split(t, ",")
+	}
+
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
+
+	result, err := h.usageService.GetPersonalHistory(c.Request.Context(), authenticatedUser.ID, authenticatedUser.TenantID, startDate, endDate, page, limit, providers, modelsList, tools, sortBy, sortOrder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get personal history: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// GetPersonalFilterOptions returns filter options scoped to the authenticated user
+func (h *AnalyticsHandler) GetPersonalFilterOptions(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+		return
+	}
+	authenticatedUser := user.(*models.User)
+
+	result, err := h.usageService.GetPersonalFilterOptions(c.Request.Context(), authenticatedUser.ID, authenticatedUser.TenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get personal filter options: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

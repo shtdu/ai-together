@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import dayjs from 'dayjs'
 import {
   Chart as ChartJS,
@@ -29,6 +29,8 @@ ChartJS.register(
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#4ECDC4']
 
+const AUTO_REFRESH_INTERVAL = 5000
+
 const startDate = ref(dayjs().subtract(7, 'day').format('YYYY-MM-DD'))
 const endDate = ref(dayjs().format('YYYY-MM-DD'))
 const selectedProviders = ref<string[]>([])
@@ -43,15 +45,9 @@ const searchParams = ref({
   tools: [] as string[],
 })
 
-// Helper function to format tool names for display
-function formatToolName(platform: string): string {
-  if (!platform) return ''
-  const lower = platform.toLowerCase()
-  if (lower === 'claude') return 'Claude'
-  if (lower === 'codex') return 'Codex'
-  if (lower === 'opencode') return 'OpenCode'
-  return platform
-}
+// History pagination (for future request history feature)
+// const historyPage = ref(1)
+// const historyLimit = ref(50)
 
 const filterOptions = ref<FilterOptions | null>(null)
 const data = ref<ProviderAnalyticsResponse | null>(null)
@@ -59,6 +55,7 @@ const isLoading = ref(false)
 const filterLoading = ref(false)
 const error = ref<string | null>(null)
 const showExportMenu = ref(false)
+const autoRefresh = ref(true)
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
@@ -73,25 +70,26 @@ function formatCost(cost: number): string {
 async function fetchFilterOptions() {
   filterLoading.value = true
   try {
-    filterOptions.value = await analyticsApi.getFilterOptions()
+    filterOptions.value = await analyticsApi.getPersonalFilterOptions()
   } finally {
     filterLoading.value = false
   }
 }
 
-async function fetchData() {
-  isLoading.value = true
+async function fetchData(silent = false) {
+  if (!silent) isLoading.value = true
   error.value = null
   try {
-    data.value = await analyticsApi.getProviderAnalytics({
+    const result = await analyticsApi.getPersonalAnalytics({
       start_date: searchParams.value.startDate,
       end_date: searchParams.value.endDate,
       providers: searchParams.value.providers.length > 0 ? searchParams.value.providers : undefined,
       models: searchParams.value.models.length > 0 ? searchParams.value.models : undefined,
       tools: searchParams.value.tools.length > 0 ? searchParams.value.tools : undefined,
     })
+    data.value = result
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load provider analytics'
+    error.value = err instanceof Error ? err.message : 'Failed to load personal analytics'
   } finally {
     isLoading.value = false
   }
@@ -129,13 +127,13 @@ function handleExportCSV() {
     `${p.percentage.toFixed(2)}%`
   ])
 
-  exportCSV(headers, rows, `provider-analytics-${searchParams.value.startDate}-${searchParams.value.endDate}`)
+  exportCSV(headers, rows, `personal-analytics-${searchParams.value.startDate}-${searchParams.value.endDate}`)
 }
 
 function handleExportJSON() {
   if (!data.value) return
 
-  exportJSON(data.value.distribution.by_provider, `provider-analytics-${searchParams.value.startDate}-${searchParams.value.endDate}`)
+  exportJSON(data.value.distribution.by_provider, `personal-analytics-${searchParams.value.startDate}-${searchParams.value.endDate}`)
 }
 
 // Chart data
@@ -143,21 +141,13 @@ const trendChartData = computed(() => {
   if (!data.value?.trend_data) return { labels: [], datasets: [] }
 
   const labels = data.value.trend_data.map(item => dayjs(item.date).format('MM/DD'))
-  const providers = new Set<string>()
-  data.value.trend_data.forEach(item => {
-    if (item.by_provider) {
-      Object.keys(item.by_provider).forEach(p => providers.add(p))
-    }
-  })
+  const dataset = {
+    label: 'Tokens',
+    data: data.value.trend_data.map(item => item.tokens ?? 0),
+    backgroundColor: '#0088FE',
+  }
 
-  const datasets = Array.from(providers).map((provider, idx) => ({
-    label: provider,
-    data: data.value!.trend_data!.map(item => item.by_provider?.[provider] || 0),
-    backgroundColor: COLORS[idx % COLORS.length],
-    stack: 'Stack 0'
-  }))
-
-  return { labels, datasets }
+  return { labels, datasets: [dataset] }
 })
 
 const pieChartData = computed(() => {
@@ -167,17 +157,6 @@ const pieChartData = computed(() => {
     datasets: [{
       data: data.value.distribution.by_provider.map(p => p.tokens),
       backgroundColor: COLORS.slice(0, data.value.distribution.by_provider.length)
-    }]
-  }
-})
-
-const toolPieChartData = computed(() => {
-  if (!data.value?.distribution.by_tool) return { labels: [], datasets: [] }
-  return {
-    labels: data.value.distribution.by_tool.map(t => formatToolName(t.name)),
-    datasets: [{
-      data: data.value.distribution.by_tool.map(t => t.tokens),
-      backgroundColor: COLORS.slice(0, data.value.distribution.by_tool.length)
     }]
   }
 })
@@ -213,17 +192,62 @@ const pieOptions = {
   }
 }
 
+// Auto-refresh
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  if (autoRefresh.value) {
+    refreshTimer = setInterval(() => {
+      if (searchParams.value.startDate && searchParams.value.endDate) {
+        fetchData(true)
+      }
+    }, AUTO_REFRESH_INTERVAL)
+  }
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+function toggleAutoRefresh() {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    startAutoRefresh()
+  } else {
+    stopAutoRefresh()
+  }
+}
+
 onMounted(() => {
   fetchFilterOptions()
   fetchData()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
 <template>
   <div>
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">Provider Analytics</h1>
+      <h1 class="text-3xl font-bold">Personal Analytics</h1>
       <div class="flex gap-2">
+        <button
+          @click="toggleAutoRefresh"
+          class="px-4 py-2 border rounded-md transition-colors"
+          :class="autoRefresh
+            ? 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300'
+            : 'border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700'"
+          :title="autoRefresh ? 'Auto-refresh on (5s)' : 'Auto-refresh off'"
+        >
+          {{ autoRefresh ? '⟳ Auto' : '⟳ Manual' }}
+        </button>
         <button
           @click="handleRefresh"
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -330,7 +354,7 @@ onMounted(() => {
       <div v-if="data.distribution.by_provider && data.distribution.by_provider.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Daily Trend Chart -->
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <h3 class="text-lg font-semibold mb-4">Daily Token Usage by Provider</h3>
+          <h3 class="text-lg font-semibold mb-4">Daily Token Usage</h3>
           <div class="h-[330px]">
             <Bar :data="trendChartData" :options="barOptions" />
           </div>
@@ -346,11 +370,11 @@ onMounted(() => {
       </div>
 
       <div v-else class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded-lg">
-        No usage data available for the selected time period. Start using AI providers to see analytics here.
+        No usage data available for the selected time period. Start using AI providers to see your analytics here.
       </div>
 
       <!-- Provider Details Table -->
-      <div v-if="data.distribution.by_provider && data.distribution.by_provider.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div v-if="data.distribution.by_provider && data.distribution.by_provider.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <h3 class="text-lg font-semibold mb-4">Provider Details</h3>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -373,44 +397,6 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <!-- Tool Distribution Section -->
-      <div v-if="data.distribution.by_tool && data.distribution.by_tool.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Tool Distribution Pie Chart -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <h3 class="text-lg font-semibold mb-4">Tool Distribution</h3>
-          <div class="h-[250px]">
-            <Pie :data="toolPieChartData" :options="pieOptions" />
-          </div>
-        </div>
-
-        <!-- Tool Details Table -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <h3 class="text-lg font-semibold mb-4">Tool Details</h3>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tool</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Requests</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Tokens</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Share</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-for="tool in data.distribution.by_tool" :key="tool.name">
-                  <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ formatToolName(tool.name) }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ tool.requests.toLocaleString() }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatNumber(tool.tokens) }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ tool.percentage.toFixed(1) }}%</td>
-                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatCost(tool.cost) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
 

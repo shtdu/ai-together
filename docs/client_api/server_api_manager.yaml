@@ -441,6 +441,167 @@ components:
           type: boolean
           example: true
 
+    AnalyticsResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              example: "2024-01-01"
+            end:
+              type: string
+              example: "2024-01-31"
+        summary:
+          type: object
+          properties:
+            total_tokens:
+              type: integer
+              example: 150000
+            total_input:
+              type: integer
+              example: 100000
+            total_output:
+              type: integer
+              example: 50000
+            total_cost:
+              type: number
+              format: double
+              example: 0.75
+            total_requests:
+              type: integer
+              example: 500
+        trend_data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "2024-01-15"
+              tokens:
+                type: integer
+                example: 20000
+              input_tokens:
+                type: integer
+                example: 15000
+              output_tokens:
+                type: integer
+                example: 5000
+              requests:
+                type: integer
+                example: 100
+        distribution:
+          type: object
+          properties:
+            by_provider:
+              type: array
+              items:
+                $ref: '#/components/schemas/DistributionItem'
+            by_model:
+              type: array
+              items:
+                $ref: '#/components/schemas/DistributionItem'
+            by_tool:
+              type: array
+              items:
+                $ref: '#/components/schemas/DistributionItem'
+
+    DistributionItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "anthropic"
+        tokens:
+          type: integer
+          example: 50000
+        requests:
+          type: integer
+          example: 100
+        percentage:
+          type: number
+          format: double
+          example: 65.5
+        cost:
+          type: number
+          format: double
+          example: 0.25
+
+    HistoryResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              timestamp:
+                type: string
+                format: date-time
+                example: "2024-01-15T10:30:00Z"
+              platform:
+                type: string
+                example: "claude"
+              model:
+                type: string
+                example: "claude-3-opus"
+              provider:
+                type: string
+                example: "anthropic"
+              input_tokens:
+                type: integer
+                example: 1500
+              output_tokens:
+                type: integer
+                example: 800
+              duration_sec:
+                type: number
+                format: double
+                example: 2.5
+              cost:
+                type: number
+                format: double
+                example: 0.015
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 50
+            total_count:
+              type: integer
+              example: 250
+            total_pages:
+              type: integer
+              example: 5
+
+    FilterOptionsResponse:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            type: string
+          example: ["anthropic", "openai"]
+        models:
+          type: array
+          items:
+            type: string
+          example: ["claude-3-opus", "gpt-4"]
+        tools:
+          type: array
+          items:
+            type: string
+          example: ["claude", "codex", "opencode"]
+
   parameters:
     teamId:
       name: teamId
@@ -1378,3 +1539,157 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SetupStatusResponse'
+
+  /api/v1/analytics/personal:
+    get:
+      tags:
+        - Analytics
+      summary: Get personal analytics
+      description: |
+        Get analytics data scoped to the authenticated user only.
+        Returns summary statistics, trend data, and distribution breakdowns
+        by provider, model, and tool. Available to all authenticated users.
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD)
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD)
+        - name: providers
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of provider names to filter by
+        - name: models
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of model names to filter by
+        - name: tools
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of tool/platform names to filter by
+      responses:
+        '200':
+          description: Personal analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/analytics/personal/history:
+    get:
+      tags:
+        - Analytics
+      summary: Get personal request history
+      description: |
+        Get paginated request history scoped to the authenticated user only.
+        Supports filtering, sorting, and pagination.
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD)
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number (1-indexed)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 100
+          description: Records per page
+        - name: providers
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of provider names to filter by
+        - name: models
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of model names to filter by
+        - name: tools
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of tool/platform names to filter by
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [created_at, input_tokens, output_tokens, duration_sec]
+            default: created_at
+          description: Column to sort by
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort direction
+      responses:
+        '200':
+          description: Paginated request history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/analytics/personal/filters:
+    get:
+      tags:
+        - Analytics
+      summary: Get personal filter options
+      description: |
+        Get available filter options (providers, models, tools) scoped
+        to the authenticated user's own data. Available to all authenticated users.
+      responses:
+        '200':
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOptionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'

@@ -22,6 +22,8 @@ import (
 	"time"
 
 	integrationclient "github.com/code-together/shared/integration"
+	integration_manager "github.com/code-together/integration_manager"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -737,4 +739,253 @@ func (s *IntegrationTestSuite) TestErrorRecordsInAnalytics() {
 // Helper function for creating float32 pointers
 func float32Pointer(f float32) *float32 {
 	return &f
+}
+
+// ============================================================================
+// Personal Analytics E2E Tests (issue #101)
+// Uses integration_manager (manager spec) since personal analytics is manager business.
+// ============================================================================
+
+// TestPersonalAnalyticsDataIsolation verifies that a manager user can only
+// see their own data in personal analytics, not other users' data.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
+	ctx := context.Background()
+
+	// Bootstrap standard fixture (creates admin + member users)
+	s.bootstrapStandardFixture()
+
+	// Create provider
+	uniqueName := generateUniqueProviderName("e2e-personal-isolation")
+	kind := integrationclient.CreateProviderRequestKindClaude
+	provReq := integrationclient.PostApiV1ProvidersJSONRequestBody{
+		Name:            uniqueName,
+		Kind:            &kind,
+		ApiKey:          "sk-ant-test-key",
+		ApiUrl:          "https://api.anthropic.com",
+		Enabled:         &[]bool{true}[0],
+		Level:           &[]int{1}[0],
+		SupportedModels: &[]string{"claude-3-opus"},
+	}
+
+	provResp, err := s.Client.PostApiV1ProvidersWithResponse(ctx, provReq)
+	require.NoError(s.T(), err, "Failed to create provider")
+	require.Equal(s.T(), 201, provResp.StatusCode())
+	providerID := provResp.JSON201.Id
+	defer s.Client.DeleteApiV1ProvidersProviderIdWithResponse(ctx, providerID)
+
+	now := time.Now()
+
+	// Upload records for admin user (user_id = 1)
+	adminRecords := []integrationclient.UsageRecord{
+		{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(5000),
+			OutputTokens: intPointer(3000),
+			DurationSec:  float32Pointer(3.0),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1), // admin
+			CreatedAt:    now,
+		},
+		{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(2000),
+			OutputTokens: intPointer(1000),
+			DurationSec:  float32Pointer(1.5),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1), // admin
+			CreatedAt:    now.Add(-5 * time.Minute),
+		},
+	}
+
+	// Upload records for member user (different user_id)
+	memberRecords := []integrationclient.UsageRecord{
+		{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(300),
+			OutputTokens: intPointer(200),
+			DurationSec:  float32Pointer(0.5),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(2), // member
+			CreatedAt:    now,
+		},
+	}
+
+	// Upload all records using client spec (for batch upload)
+	allRecords := append(adminRecords, memberRecords...)
+	batchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(allRecords)
+	batchResp, err := s.Client.PostApiV1UsageBatchWithResponse(ctx, batchReq)
+	require.NoError(s.T(), err, "Failed to upload usage records")
+	require.Equal(s.T(), 200, batchResp.StatusCode())
+	require.Equal(s.T(), 3, batchResp.JSON200.SyncedCount, "Should sync all 3 records")
+
+	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	endDate := time.Now().Format("2006-01-02")
+
+	// Query personal analytics as admin via manager client - should only see admin's 2 records
+	adminAnalyticsResp, err := s.ManagerClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalParams{
+		StartDate: openapi_types.Date(startDate),
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err, "Manager personal analytics request failed")
+	require.Equal(s.T(), 200, adminAnalyticsResp.StatusCode(), "Manager should be able to access personal analytics")
+	require.NotNil(s.T(), adminAnalyticsResp.JSON200)
+	require.NotNil(s.T(), adminAnalyticsResp.JSON200.Summary)
+
+	adminSummary := adminAnalyticsResp.JSON200.Summary
+	assert.Equal(s.T(), 2, *adminSummary.TotalRequests, "Admin should see exactly 2 requests")
+	assert.Equal(s.T(), 11000, *adminSummary.TotalTokens, "Admin should see 11000 total tokens (5000+2000 input + 3000+1000 output)")
+
+	s.T().Logf("Admin personal analytics (manager client): requests=%d, tokens=%d, cost=%.4f",
+		*adminSummary.TotalRequests, *adminSummary.TotalTokens, *adminSummary.TotalCost)
+}
+
+// TestPersonalAnalyticsFilterOptions verifies that personal filter options
+// are returned for any authenticated user via the manager client.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsFilterOptions() {
+	ctx := context.Background()
+
+	s.bootstrapStandardFixture()
+
+	// Manager client can access personal filter options
+	filterResp, err := s.ManagerClient.GetApiV1AnalyticsPersonalFiltersWithResponse(ctx)
+	require.NoError(s.T(), err, "Personal filter options request failed")
+	require.Equal(s.T(), 200, filterResp.StatusCode(), "Manager should be able to access personal filter options")
+	require.NotNil(s.T(), filterResp.JSON200)
+
+	s.T().Logf("Personal filter options (manager client): providers=%v, models=%v, tools=%v",
+		filterResp.JSON200.Providers, filterResp.JSON200.Models, filterResp.JSON200.Tools)
+}
+
+// TestPersonalAnalyticsRequiresAuth verifies that personal analytics
+// endpoints require authentication.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
+	ctx := context.Background()
+
+	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	endDate := time.Now().Format("2006-01-02")
+
+	// Create anonymous (unauthenticated) manager client
+	anonManagerClient, err := integration_manager.NewClientWithResponses(s.ServerURL)
+	require.NoError(s.T(), err)
+
+	// Personal analytics requires auth
+	personalResp, err := anonManagerClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalParams{
+		StartDate: openapi_types.Date(startDate),
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 401, personalResp.StatusCode(), "Personal analytics should require auth")
+
+	// Personal history requires auth
+	historyResp, err := anonManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
+		StartDate: openapi_types.Date(startDate),
+		EndDate:   endDate,
+	})
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 401, historyResp.StatusCode(), "Personal history should require auth")
+
+	// Personal filters requires auth
+	filtersResp, err := anonManagerClient.GetApiV1AnalyticsPersonalFiltersWithResponse(ctx)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), 401, filtersResp.StatusCode(), "Personal filters should require auth")
+}
+
+// TestPersonalAnalyticsHistoryPagination verifies that personal history
+// supports pagination using the manager client.
+func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
+	ctx := context.Background()
+
+	s.bootstrapStandardFixture()
+
+	// Create provider
+	uniqueName := generateUniqueProviderName("e2e-personal-history")
+	kind := integrationclient.CreateProviderRequestKindClaude
+	provReq := integrationclient.PostApiV1ProvidersJSONRequestBody{
+		Name:            uniqueName,
+		Kind:            &kind,
+		ApiKey:          "sk-ant-test-key",
+		ApiUrl:          "https://api.anthropic.com",
+		Enabled:         &[]bool{true}[0],
+		Level:           &[]int{1}[0],
+		SupportedModels: &[]string{"claude-3-opus"},
+	}
+
+	provResp, err := s.Client.PostApiV1ProvidersWithResponse(ctx, provReq)
+	require.NoError(s.T(), err, "Failed to create provider")
+	require.Equal(s.T(), 201, provResp.StatusCode())
+	providerID := provResp.JSON201.Id
+	defer s.Client.DeleteApiV1ProvidersProviderIdWithResponse(ctx, providerID)
+
+	now := time.Now()
+
+	// Upload 5 records for admin user
+	records := make([]integrationclient.UsageRecord, 5)
+	for i := 0; i < 5; i++ {
+		records[i] = integrationclient.UsageRecord{
+			Platform:     "claude",
+			Model:        "claude-3-opus",
+			Provider:     uniqueName,
+			HttpCode:     200,
+			InputTokens:  intPointer(1000),
+			OutputTokens: intPointer(500),
+			DurationSec:  float32Pointer(1.0),
+			TenantId:     int64Pointer(1),
+			UserId:       int64Pointer(1),
+			CreatedAt:    now.Add(time.Duration(i) * 10 * time.Minute),
+		}
+	}
+
+	batchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(records)
+	batchResp, err := s.Client.PostApiV1UsageBatchWithResponse(ctx, batchReq)
+	require.NoError(s.T(), err, "Failed to upload usage records")
+	require.Equal(s.T(), 200, batchResp.StatusCode())
+	require.Equal(s.T(), 5, batchResp.JSON200.SyncedCount, "Should sync all 5 records")
+
+	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
+	endDate := time.Now().Format("2006-01-02")
+
+	// Page 1 with limit=2 via manager client
+	sortBy := integration_manager.CreatedAt
+	sortOrder := integration_manager.Desc
+	page1Resp, err := s.ManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
+		StartDate: openapi_types.Date(startDate),
+		EndDate:   endDate,
+		Page:      intPointer(1),
+		Limit:     intPointer(2),
+		SortBy:    &sortBy,
+		SortOrder: &sortOrder,
+	})
+	require.NoError(s.T(), err, "Personal history page 1 request failed")
+	require.Equal(s.T(), 200, page1Resp.StatusCode())
+	require.NotNil(s.T(), page1Resp.JSON200)
+	require.NotNil(s.T(), page1Resp.JSON200.Pagination)
+
+	assert.Equal(s.T(), 2, len(*page1Resp.JSON200.Records), "Page 1 should have 2 records")
+	assert.Equal(s.T(), 5, *page1Resp.JSON200.Pagination.TotalCount, "Total should be 5 records")
+	assert.Equal(s.T(), 3, *page1Resp.JSON200.Pagination.TotalPages, "Should have 3 total pages")
+
+	// Page 2 with limit=2
+	page2Resp, err := s.ManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
+		StartDate: openapi_types.Date(startDate),
+		EndDate:   endDate,
+		Page:      intPointer(2),
+		Limit:     intPointer(2),
+		SortBy:    &sortBy,
+		SortOrder: &sortOrder,
+	})
+	require.NoError(s.T(), err, "Personal history page 2 request failed")
+	require.Equal(s.T(), 200, page2Resp.StatusCode())
+	assert.Equal(s.T(), 2, len(*page2Resp.JSON200.Records), "Page 2 should have 2 records")
+
+	s.T().Logf("Personal history pagination (manager client): page1=%d records, page2=%d records, total=%d",
+		len(*page1Resp.JSON200.Records), len(*page2Resp.JSON200.Records), *page1Resp.JSON200.Pagination.TotalCount)
 }

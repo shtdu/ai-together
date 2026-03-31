@@ -265,6 +265,30 @@ func (m *MockUsageRepository) GetFilterOptions(ctx context.Context, tenantID int
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
+func (m *MockUsageRepository) GetPersonalAnalytics(ctx context.Context, userID, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error) {
+	args := m.Called(ctx, userID, tenantID, startDate, endDate, providers, models, tools)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockUsageRepository) GetPersonalHistory(ctx context.Context, userID, tenantID int64, startDate, endDate string, page, limit int, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error) {
+	args := m.Called(ctx, userID, tenantID, startDate, endDate, page, limit, providers, models, tools, sortBy, sortOrder)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockUsageRepository) GetPersonalFilterOptions(ctx context.Context, userID, tenantID int64) (map[string]interface{}, error) {
+	args := m.Called(ctx, userID, tenantID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
 // MockTeamRepository is a mock implementation of TeamRepository
 type MockTeamRepository struct {
 	mock.Mock

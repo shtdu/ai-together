@@ -166,6 +166,10 @@ func startServer() {
 		protected.GET("/analytics/users", middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetUserAnalytics)
 		protected.GET("/analytics/history", middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetHistory)
 		protected.GET("/analytics/filters", analyticsHandlers.GetFilterOptions)
+		// Personal analytics (any authenticated user)
+		protected.GET("/analytics/personal", analyticsHandlers.GetPersonalAnalytics)
+		protected.GET("/analytics/personal/history", analyticsHandlers.GetPersonalHistory)
+		protected.GET("/analytics/personal/filters", analyticsHandlers.GetPersonalFilterOptions)
 
 		// User management (managers only)
 		protected.GET("/users", middleware.RequirePermission(rbacEnforcer, "users", "read"), userHandlers.ListUsers)

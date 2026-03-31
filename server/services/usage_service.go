@@ -206,3 +206,30 @@ func (s *UsageService) GetFilterOptions(ctx context.Context, tenantID int64) (ma
 	}
 	return result, nil
 }
+
+// GetPersonalAnalytics returns personal analytics for a specific user
+func (s *UsageService) GetPersonalAnalytics(ctx context.Context, userID, tenantID int64, startDate, endDate string, providers, models, tools []string) (map[string]interface{}, error) {
+	result, err := s.usageRepo.GetPersonalAnalytics(ctx, userID, tenantID, startDate, endDate, providers, models, tools)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get personal analytics: %w", err)
+	}
+	return result, nil
+}
+
+// GetPersonalHistory returns paginated request logs for a specific user
+func (s *UsageService) GetPersonalHistory(ctx context.Context, userID, tenantID int64, startDate, endDate string, page, limit int, providers, models, tools []string, sortBy, sortOrder string) (map[string]interface{}, error) {
+	result, err := s.usageRepo.GetPersonalHistory(ctx, userID, tenantID, startDate, endDate, page, limit, providers, models, tools, sortBy, sortOrder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get personal history: %w", err)
+	}
+	return result, nil
+}
+
+// GetPersonalFilterOptions returns filter options scoped to a specific user
+func (s *UsageService) GetPersonalFilterOptions(ctx context.Context, userID, tenantID int64) (map[string]interface{}, error) {
+	result, err := s.usageRepo.GetPersonalFilterOptions(ctx, userID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get personal filter options: %w", err)
+	}
+	return result, nil
+}
