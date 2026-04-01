@@ -23,6 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+	"switch-server/models"
 )
 
 type SetupHandler struct {
@@ -84,9 +85,12 @@ func (h *SetupHandler) CreateInitialAdmin(c *gin.Context) {
 		return
 	}
 
-	// Validate password length (already checked by binding, but double-check)
-	if len(req.AdminPassword) < 8 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 8 characters"})
+	// Validate password strength
+	if err := ValidatePasswordStrength(req.AdminPassword); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Password must contain at least 8 characters, including uppercase, lowercase, number, and special character",
+			Code:  models.ErrCodeInvalidPassword,
+		})
 		return
 	}
 
