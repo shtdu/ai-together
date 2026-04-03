@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -369,6 +370,312 @@ func (s *RelayTokenTestSuite) TestRelayTokenNoAuthHeader() {
 	defer resp.Body.Close()
 
 	assert.Equal(s.T(), http.StatusUnauthorized, resp.StatusCode, "Request without auth header should be rejected")
+}
+
+// --- Token Format & Validation Tests ---
+
+// TestRelayTokenFormat tests that generated tokens have the expected format.
+func (s *RelayTokenTestSuite) TestRelayTokenFormat() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	resp, body := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+
+	rawToken := body["token"].(string)
+	prefix := body["prefix"].(string)
+
+	// Token should be 64 hex characters (32 bytes = SHA256 input length for display)
+	assert.Len(s.T(), rawToken, 64, "Raw token should be 64 hex characters")
+	assert.Regexp(s.T(), `^[0-9a-f]{64}$`, rawToken, "Token should be lowercase hex only")
+
+	// Prefix should be first 8 chars of token
+	assert.Len(s.T(), prefix, 8, "Prefix should be 8 characters")
+	assert.Equal(s.T(), rawToken[:8], prefix, "Prefix should match first 8 chars of token")
+
+	// Token should NOT contain dots (not a JWT)
+	assert.NotContains(s.T(), rawToken, ".", "Relay token should not contain dots (JWT separator)")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+}
+
+// TestRelayTokenTooShort tests that a token shorter than the minimum length is rejected.
+func (s *RelayTokenTestSuite) TestRelayTokenTooShort() {
+	// Token shorter than 8 chars (TokenPrefixLength) should be rejected
+	resp, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", "abc123")
+	assert.Equal(s.T(), http.StatusUnauthorized, resp.StatusCode, "Short token should be rejected")
+}
+
+// --- Lifecycle Tests ---
+
+// TestRelayTokenRevokeThenRegenerate tests revoking a token then generating a new one.
+func (s *RelayTokenTestSuite) TestRelayTokenRevokeThenRegenerate() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate first token
+	resp1, body1 := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp1.StatusCode)
+	token1 := body1["token"].(string)
+
+	// Revoke it
+	resp2, _ := s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, resp2.StatusCode)
+
+	// Generate new token
+	resp3, body3 := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp3.StatusCode)
+	token2 := body3["token"].(string)
+
+	// New token should be different from the revoked one
+	assert.NotEqual(s.T(), token1, token2, "New token after revoke should differ")
+
+	// Old token should not work
+	resp4, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", token1)
+	assert.Equal(s.T(), http.StatusUnauthorized, resp4.StatusCode, "Revoked token should not work")
+
+	// New token should work
+	resp5, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", token2)
+	assert.NotEqual(s.T(), http.StatusUnauthorized, resp5.StatusCode, "New token should authenticate")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+}
+
+// TestRelayTokenReuseAfterRegenerate tests that generating a new token invalidates the old one.
+func (s *RelayTokenTestSuite) TestRelayTokenReuseAfterRegenerate() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate first token
+	resp1, body1 := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp1.StatusCode)
+	token1 := body1["token"].(string)
+
+	// Verify it works
+	resp2, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", token1)
+	assert.NotEqual(s.T(), http.StatusUnauthorized, resp2.StatusCode, "First token should work")
+
+	// Generate second token (replaces first)
+	resp3, _ := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp3.StatusCode)
+
+	// First token should no longer work (replaced by second)
+	resp4, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", token1)
+	assert.Equal(s.T(), http.StatusUnauthorized, resp4.StatusCode, "Old token should be invalid after regeneration")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+}
+
+// --- Relay Endpoint Tests ---
+
+// TestRelayTokenChatCompletionsEndpoint tests that relay tokens work on chat completions endpoint too.
+func (s *RelayTokenTestSuite) TestRelayTokenChatCompletionsEndpoint() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate token
+	resp, body := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+	rawToken := body["token"].(string)
+
+	// Use on chat completions endpoint
+	req, err := http.NewRequestWithContext(ctx, "POST", s.ServerURL+"/api/v1/relay/openai/v1/chat/completions", nil)
+	require.NoError(s.T(), err)
+	req.Header.Set("Authorization", "Bearer "+rawToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	authResp, err := client.Do(req)
+	require.NoError(s.T(), err)
+	defer authResp.Body.Close()
+
+	// Should NOT be 401 — auth should work
+	assert.NotEqual(s.T(), http.StatusUnauthorized, authResp.StatusCode, "Relay token should work on chat completions endpoint")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+}
+
+// TestRelayTokenWithDifferentTools tests that the :tool parameter is properly routed.
+func (s *RelayTokenTestSuite) TestRelayTokenWithDifferentTools() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate token
+	resp, body := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+	rawToken := body["token"].(string)
+
+	client := &http.Client{}
+
+	// Test multiple tool names — all should authenticate (not 401)
+	tools := []string{"claude", "openai", "anthropic", "gemini"}
+	for _, tool := range tools {
+		req, err := http.NewRequestWithContext(ctx, "POST", s.ServerURL+"/api/v1/relay/"+tool+"/v1/messages", nil)
+		require.NoError(s.T(), err)
+		req.Header.Set("Authorization", "Bearer "+rawToken)
+		req.Header.Set("Content-Type", "application/json")
+
+		authResp, err := client.Do(req)
+		require.NoError(s.T(), err)
+		defer authResp.Body.Close()
+
+		assert.NotEqual(s.T(), http.StatusUnauthorized, authResp.StatusCode,
+			"Relay token should work for tool=%s", tool)
+	}
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+}
+
+// --- Edge Case Tests ---
+
+// TestRelayTokenNegativeUserID tests that negative user IDs are handled.
+func (s *RelayTokenTestSuite) TestRelayTokenNegativeUserID() {
+	resp, _ := s.adminRequest("POST", "/api/v1/users/-1/relay-token", nil)
+	// Negative IDs should either be 400 (invalid) or 404 (user not found)
+	assert.True(s.T(), resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound,
+		"Negative user ID should return 400 or 404, got %d", resp.StatusCode)
+}
+
+// TestRelayTokenZeroUserID tests that zero user ID is handled.
+func (s *RelayTokenTestSuite) TestRelayTokenZeroUserID() {
+	resp, _ := s.adminRequest("POST", "/api/v1/users/0/relay-token", nil)
+	// Zero ID should either be 400 or 404
+	assert.True(s.T(), resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound,
+		"Zero user ID should return 400 or 404, got %d", resp.StatusCode)
+}
+
+// TestRelayTokenWrongHTTPMethod tests that only allowed HTTP methods work on token endpoints.
+func (s *RelayTokenTestSuite) TestRelayTokenWrongHTTPMethod() {
+	adminID := int64(1)
+
+	// PUT should not be allowed on generate endpoint (Gin returns 404 for unregistered method routes)
+	resp, _ := s.adminRequest("PUT", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	assert.True(s.T(), resp.StatusCode == http.StatusMethodNotAllowed || resp.StatusCode == http.StatusNotFound,
+		"PUT should return 405 or 404, got %d", resp.StatusCode)
+
+	// PATCH should not be allowed
+	resp, _ = s.adminRequest("PATCH", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	assert.True(s.T(), resp.StatusCode == http.StatusMethodNotAllowed || resp.StatusCode == http.StatusNotFound,
+		"PATCH should return 405 or 404, got %d", resp.StatusCode)
+}
+
+// TestRelayTokenDoubleRevoke tests that revoking an already-revoked token is idempotent.
+func (s *RelayTokenTestSuite) TestRelayTokenDoubleRevoke() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate token
+	resp, _ := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+
+	// Revoke once
+	resp2, _ := s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, resp2.StatusCode)
+
+	// Revoke again — should be idempotent (200 OK)
+	resp3, _ := s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	assert.Equal(s.T(), http.StatusOK, resp3.StatusCode, "Double revoke should be idempotent (200 OK)")
+}
+
+// TestRelayTokenLastUsedAtField tests that last_used_at is returned after token usage.
+func (s *RelayTokenTestSuite) TestRelayTokenLastUsedAtField() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate token
+	resp, body := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+	rawToken := body["token"].(string)
+
+	// Get info before use — last_used_at may or may not be present initially
+	s.adminRequest("GET", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+
+	// Use the token on a relay endpoint
+	s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", rawToken)
+
+	// Wait for async last-used update to complete (runs in a goroutine)
+	time.Sleep(200 * time.Millisecond)
+
+	// Get info after use — last_used_at should now be present
+	infoResp2, infoBody2 := s.adminRequest("GET", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, infoResp2.StatusCode)
+	_, hasLastUsed2 := infoBody2["last_used_at"]
+	assert.True(s.T(), hasLastUsed2, "last_used_at should be set after token usage")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+}
+
+// TestRelayTokenResponseStructure tests that all response fields have the correct types.
+func (s *RelayTokenTestSuite) TestRelayTokenResponseStructure() {
+	ctx := context.Background()
+
+	profileResp, err := s.Client.GetApiV1UserProfileWithResponse(ctx)
+	require.NoError(s.T(), err)
+	adminID := profileResp.JSON200.User.Id
+
+	// Generate — check response structure
+	resp, body := s.adminRequest("POST", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+
+	_, isString := body["token"].(string)
+	assert.True(s.T(), isString, "token should be a string")
+
+	_, isString = body["prefix"].(string)
+	assert.True(s.T(), isString, "prefix should be a string")
+
+	_, isString = body["message"].(string)
+	assert.True(s.T(), isString, "message should be a string")
+
+	_, isString = body["created_at"].(string)
+	assert.True(s.T(), isString, "created_at should be a string")
+
+	// Info — check response structure
+	infoResp, infoBody := s.adminRequest("GET", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, infoResp.StatusCode)
+
+	// Raw token should NOT be in info response
+	_, hasToken := infoBody["token"]
+	assert.False(s.T(), hasToken, "Info response should not contain raw token")
+
+	_, isString = infoBody["prefix"].(string)
+	assert.True(s.T(), isString, "info prefix should be a string")
+
+	_, isString = infoBody["created_at"].(string)
+	assert.True(s.T(), isString, "info created_at should be a string")
+
+	// Revoke — check response structure
+	revokeResp, revokeBody := s.adminRequest("DELETE", "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, revokeResp.StatusCode)
+
+	_, isString = revokeBody["message"].(string)
+	assert.True(s.T(), isString, "revoke message should be a string")
 }
 
 // TestRelayTokenTestSuite is the testify entry point.
