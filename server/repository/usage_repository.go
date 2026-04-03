@@ -1552,17 +1552,17 @@ func (r *UsageRepository) GetPersonalHistory(ctx context.Context, userID, tenant
 		cost := pricing.EstimateCost(modelName, int64(intOrZero(inputTokens)), int64(intOrZero(outputTokens)))
 
 		record := map[string]interface{}{
-			"id":             id,
-			"timestamp":      createdAt,
-			"provider":       stringOrEmpty(provider),
-			"model":          modelName,
-			"platform":       stringOrEmpty(platform),
-			"input_tokens":   intOrZero(inputTokens),
-			"output_tokens":  intOrZero(outputTokens),
-			"http_code":      intOrZero(httpCode),
-			"duration_sec":   floatOrZero(durationSec),
-			"is_stream":      boolOrFalse(isStream),
-			"cost": cost,
+			"id":            id,
+			"timestamp":     createdAt,
+			"provider":      stringOrEmpty(provider),
+			"model":         modelName,
+			"platform":      stringOrEmpty(platform),
+			"input_tokens":  intOrZero(inputTokens),
+			"output_tokens": intOrZero(outputTokens),
+			"http_code":     intOrZero(httpCode),
+			"duration_sec":  floatOrZero(durationSec),
+			"is_stream":     boolOrFalse(isStream),
+			"cost":          cost,
 		}
 		records = append(records, record)
 	}

@@ -17,6 +17,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"switch-server/config"
 	"switch-server/handlers"
@@ -58,6 +59,7 @@ func startServer() {
 	providerRepo := repository.NewProviderRepository(database)
 	usageRepo := repository.NewUsageRepository(database)
 	licenseRepo := repository.NewLicenseRepository(database)
+	relayTokenRepo := repository.NewRelayTokenRepository(database)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo)
@@ -68,6 +70,8 @@ func startServer() {
 	if err != nil {
 		log.Fatal("Failed to initialize license service:", err)
 	}
+	relayTokenService := services.NewRelayTokenService(relayTokenRepo)
+	relayRateLimiter := services.NewRateLimiter(60, time.Minute) // 60 req/min per token
 
 	// Initialize Gin router
 	gin.SetMode(gin.ReleaseMode)
@@ -92,6 +96,7 @@ func startServer() {
 	analyticsHandlers := handlers.NewAnalyticsHandler(usageService, userService)
 	userHandlers := handlers.NewUserHandler(userService)
 	licenseHandlers := handlers.NewLicenseHandler(licenseService)
+	relayTokenHandlers := handlers.NewRelayTokenHandler(relayTokenService, userService)
 
 	// Health check endpoint (public)
 	router.GET("/health", healthHandlers.HealthCheck)
@@ -183,9 +188,15 @@ func startServer() {
 		// Public tier info
 		router.GET("/tiers", licenseHandlers.GetTiers)
 
+		// Relay token management (managers only)
+		protected.POST("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "write"), relayTokenHandlers.GenerateRelayToken)
+		protected.DELETE("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "write"), relayTokenHandlers.RevokeRelayToken)
+		protected.GET("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "read"), relayTokenHandlers.GetRelayTokenInfo)
+
 		// Relay endpoints (tool-based routing with failover)
-		protected.POST("/relay/:tool/v1/messages", relayHandlers.RelayMessages)
-		protected.POST("/relay/:tool/v1/chat/completions", relayHandlers.RelayChatCompletions)
+		// Supports both relay token auth and session JWT auth
+		protected.POST("/relay/:tool/v1/messages", middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter), relayHandlers.RelayMessages)
+		protected.POST("/relay/:tool/v1/chat/completions", middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter), relayHandlers.RelayChatCompletions)
 	}
 
 	// Start the server
