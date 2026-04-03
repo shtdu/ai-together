@@ -96,7 +96,7 @@ func startServer() {
 	analyticsHandlers := handlers.NewAnalyticsHandler(usageService, userService)
 	userHandlers := handlers.NewUserHandler(userService)
 	licenseHandlers := handlers.NewLicenseHandler(licenseService)
-	relayTokenHandlers := handlers.NewRelayTokenHandler(relayTokenService, userService)
+	relayTokenHandlers := handlers.NewRelayTokenHandler(relayTokenService)
 
 	// Health check endpoint (public)
 	router.GET("/health", healthHandlers.HealthCheck)
@@ -204,10 +204,6 @@ func startServer() {
 		// Public tier info
 		router.GET("/tiers", licenseHandlers.GetTiers)
 
-		// Relay token management (managers only)
-		protected.POST("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "write"), relayTokenHandlers.GenerateRelayToken)
-		protected.DELETE("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "write"), relayTokenHandlers.RevokeRelayToken)
-		protected.GET("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "read"), relayTokenHandlers.GetRelayTokenInfo)
 	}
 
 	// Start the server

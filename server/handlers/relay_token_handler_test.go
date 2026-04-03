@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"switch-server/models"
-	"switch-server/services"
 )
 
 // ==================== Mock Relay Token Service ====================
@@ -54,30 +53,23 @@ func (m *MockRelayTokenService) ValidateToken(ctx context.Context, rawToken stri
 
 // ==================== Helper ====================
 
-func setupRelayTokenRouter(handler *RelayTokenHandler) *gin.Engine {
+func setupMemberRelayTokenRouter(handler *RelayTokenHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
-	// Middleware to set up user context for admin
 	router.Use(func(c *gin.Context) {
-		userEmail := c.GetHeader("X-Test-User-Email")
-		if userEmail != "" {
-			userID := c.GetHeader("X-Test-User-ID")
-			userRole := c.GetHeader("X-Test-User-Role")
-			tenantID := c.GetHeader("X-Test-User-Tenant-ID")
+		userID := c.GetHeader("X-Test-User-ID")
+		tenantID := c.GetHeader("X-Test-User-Tenant-ID")
+		role := c.GetHeader("X-Test-User-Role")
 
+		if userID != "" {
 			var id, tenant int64
-			if userID != "" {
-				_, _ = fmt.Sscanf(userID, "%d", &id)
-			}
-			if tenantID != "" {
-				_, _ = fmt.Sscanf(tenantID, "%d", &tenant)
-			}
+			_, _ = fmt.Sscanf(userID, "%d", &id)
+			_, _ = fmt.Sscanf(tenantID, "%d", &tenant)
 
 			user := &models.User{
 				ID:       id,
-				Email:    userEmail,
-				Role:     userRole,
+				Role:     role,
 				TenantID: tenant,
 			}
 			c.Set("user", user)
@@ -85,57 +77,50 @@ func setupRelayTokenRouter(handler *RelayTokenHandler) *gin.Engine {
 		c.Next()
 	})
 
-	router.POST("/api/v1/users/:id/relay-token", handler.GenerateRelayToken)
-	router.DELETE("/api/v1/users/:id/relay-token", handler.RevokeRelayToken)
-	router.GET("/api/v1/users/:id/relay-token", handler.GetRelayTokenInfo)
+	router.POST("/api/v1/user/relay-token", handler.MyRelayToken)
+	router.GET("/api/v1/user/relay-token", handler.GetMyRelayTokenInfo)
+	router.DELETE("/api/v1/user/relay-token", handler.RevokeMyRelayToken)
 
 	return router
 }
 
-func setupRelayTokenHandlerWithUser(relayTokenService services.RelayTokenServiceInterface, user *models.User) (*RelayTokenHandler, *gin.Engine) {
-	mockUserService := new(MockUserService)
-	// Set up mock for GetUserByID
-	mockUserService.On("GetUserByID", mock.AnythingOfType("int64")).Return(
-		&models.User{
-			ID:       2,
-			Email:    "member@example.com",
-			Name:     "Member",
-			Role:     "member",
-			TenantID: user.TenantID,
-		}, nil,
-	)
-
-	handler := NewRelayTokenHandler(relayTokenService, mockUserService)
-	router := setupRelayTokenRouter(handler)
-	return handler, router
+func newTestHandler() (*RelayTokenHandler, *MockRelayTokenService, *gin.Engine) {
+	mockService := new(MockRelayTokenService)
+	handler := NewRelayTokenHandler(mockService)
+	router := setupMemberRelayTokenRouter(handler)
+	return handler, mockService, router
 }
 
-// ==================== GenerateRelayToken Tests ====================
+func memberHeaders(id, tenant int64, role string) map[string]string {
+	return map[string]string{
+		"X-Test-User-ID":        fmt.Sprintf("%d", id),
+		"X-Test-User-Tenant-ID": fmt.Sprintf("%d", tenant),
+		"X-Test-User-Role":      role,
+	}
+}
 
-func TestRelayTokenHandler_GenerateRelayToken_Success(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
+// ==================== MyRelayToken Tests ====================
 
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-	_, router := setupRelayTokenHandlerWithUser(mockRelayTokenService, adminUser)
+func TestMyRelayToken_Success(t *testing.T) {
+	_, mockService, router := newTestHandler()
 
 	now := time.Now()
-	mockRelayTokenService.On("GenerateToken", mock.Anything, int64(2), int64(1)).Return(
+	mockService.On("GenerateToken", mock.Anything, int64(42), int64(1)).Return(
 		&models.RelayToken{
 			ID:          1,
-			UserID:      2,
+			UserID:      42,
 			TenantID:    1,
 			TokenPrefix: "abc12345",
 			CreatedAt:   now,
 		},
-		"abc12345def67890...",
+		"abc12345def67890abcdef1234567890abcdef1234567890abcdef1234567890",
 		nil,
 	)
 
-	req, _ := http.NewRequest("POST", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
+	req, _ := http.NewRequest("POST", "/api/v1/user/relay-token", nil)
+	for k, v := range memberHeaders(42, 1, "member") {
+		req.Header.Set(k, v)
+	}
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -147,177 +132,64 @@ func TestRelayTokenHandler_GenerateRelayToken_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, response, "token")
 	assert.Contains(t, response, "prefix")
+	assert.Contains(t, response, "message")
 	assert.Equal(t, "abc12345", response["prefix"])
 
-	mockRelayTokenService.AssertExpectations(t)
+	mockService.AssertExpectations(t)
 }
 
-func TestRelayTokenHandler_GenerateRelayToken_InvalidUserID(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-	mockUserService := new(MockUserService)
+func TestMyRelayToken_NoUserContext(t *testing.T) {
+	_, _, router := newTestHandler()
 
-	handler := NewRelayTokenHandler(mockRelayTokenService, mockUserService)
-	router := setupRelayTokenRouter(handler)
-
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-
-	req, _ := http.NewRequest("POST", "/api/v1/users/invalid/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
+	req, _ := http.NewRequest("POST", "/api/v1/user/relay-token", nil)
+	// No user context headers
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-func TestRelayTokenHandler_GenerateRelayToken_UserNotFound(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-	mockUserService := new(MockUserService)
+func TestMyRelayToken_ServiceError(t *testing.T) {
+	_, mockService, router := newTestHandler()
 
-	mockUserService.On("GetUserByID", int64(999)).Return((*models.User)(nil), fmt.Errorf("not found"))
+	mockService.On("GenerateToken", mock.Anything, int64(42), int64(1)).
+		Return((*models.RelayToken)(nil), "", fmt.Errorf("db error"))
 
-	handler := NewRelayTokenHandler(mockRelayTokenService, mockUserService)
-	router := setupRelayTokenRouter(handler)
-
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-
-	req, _ := http.NewRequest("POST", "/api/v1/users/999/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
-
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-	mockUserService.AssertExpectations(t)
-}
-
-func TestRelayTokenHandler_GenerateRelayToken_DifferentTenant(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-	mockUserService := new(MockUserService)
-
-	// Target user in tenant 2
-	mockUserService.On("GetUserByID", int64(2)).Return(
-		&models.User{ID: 2, Email: "user@other.com", TenantID: 2}, nil,
-	)
-
-	handler := NewRelayTokenHandler(mockRelayTokenService, mockUserService)
-	router := setupRelayTokenRouter(handler)
-
-	// Admin in tenant 1
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-
-	req, _ := http.NewRequest("POST", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
-
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusForbidden, w.Code)
-}
-
-func TestRelayTokenHandler_GenerateRelayToken_NotManager(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-	mockUserService := new(MockUserService)
-
-	mockUserService.On("GetUserByID", int64(2)).Return(
-		&models.User{ID: 2, Email: "member@example.com", TenantID: 1}, nil,
-	)
-
-	handler := NewRelayTokenHandler(mockRelayTokenService, mockUserService)
-	router := setupRelayTokenRouter(handler)
-
-	// Member in tenant 1 (not a manager)
-	memberUser := createTestUser(3, "member@example.com", "Member", "member", 1)
-
-	req, _ := http.NewRequest("POST", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", memberUser.Email)
-	req.Header.Set("X-Test-User-ID", "3")
-	req.Header.Set("X-Test-User-Role", "member")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
-
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusForbidden, w.Code)
-}
-
-// ==================== RevokeRelayToken Tests ====================
-
-func TestRelayTokenHandler_RevokeRelayToken_Success(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-	_, router := setupRelayTokenHandlerWithUser(mockRelayTokenService, adminUser)
-
-	mockRelayTokenService.On("RevokeToken", mock.Anything, int64(2)).Return(nil)
-
-	req, _ := http.NewRequest("DELETE", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
-
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	mockRelayTokenService.AssertExpectations(t)
-}
-
-func TestRelayTokenHandler_RevokeRelayToken_ServiceError(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-	_, router := setupRelayTokenHandlerWithUser(mockRelayTokenService, adminUser)
-
-	mockRelayTokenService.On("RevokeToken", mock.Anything, int64(2)).Return(fmt.Errorf("db error"))
-
-	req, _ := http.NewRequest("DELETE", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
+	req, _ := http.NewRequest("POST", "/api/v1/user/relay-token", nil)
+	for k, v := range memberHeaders(42, 1, "member") {
+		req.Header.Set(k, v)
+	}
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	mockRelayTokenService.AssertExpectations(t)
+	mockService.AssertExpectations(t)
 }
 
-// ==================== GetRelayTokenInfo Tests ====================
+// ==================== GetMyRelayTokenInfo Tests ====================
 
-func TestRelayTokenHandler_GetRelayTokenInfo_Success(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-	_, router := setupRelayTokenHandlerWithUser(mockRelayTokenService, adminUser)
+func TestGetMyRelayTokenInfo_Success(t *testing.T) {
+	_, mockService, router := newTestHandler()
 
 	now := time.Now()
-	mockRelayTokenService.On("GetTokenInfo", mock.Anything, int64(2)).Return(
+	lastUsed := time.Now().Add(1 * time.Hour)
+	mockService.On("GetTokenInfo", mock.Anything, int64(42)).Return(
 		&models.RelayToken{
 			ID:          1,
-			UserID:      2,
+			UserID:      42,
 			TenantID:    1,
 			TokenPrefix: "abc12345",
 			CreatedAt:   now,
+			LastUsedAt:  &lastUsed,
 		}, nil,
 	)
 
-	req, _ := http.NewRequest("GET", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
+	req, _ := http.NewRequest("GET", "/api/v1/user/relay-token", nil)
+	for k, v := range memberHeaders(42, 1, "member") {
+		req.Header.Set(k, v)
+	}
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -327,50 +199,91 @@ func TestRelayTokenHandler_GetRelayTokenInfo_Success(t *testing.T) {
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.Contains(t, response, "prefix")
 	assert.Equal(t, "abc12345", response["prefix"])
+	assert.Contains(t, response, "created_at")
+	assert.Contains(t, response, "last_used_at")
+	// Raw token should NOT be in info response
+	_, hasToken := response["token"]
+	assert.False(t, hasToken)
 
-	mockRelayTokenService.AssertExpectations(t)
+	mockService.AssertExpectations(t)
 }
 
-func TestRelayTokenHandler_GetRelayTokenInfo_NoToken(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
+func TestGetMyRelayTokenInfo_NoToken(t *testing.T) {
+	_, mockService, router := newTestHandler()
 
-	adminUser := createTestUser(1, "admin@example.com", "Admin", "manager", 1)
-	_, router := setupRelayTokenHandlerWithUser(mockRelayTokenService, adminUser)
+	mockService.On("GetTokenInfo", mock.Anything, int64(42)).
+		Return((*models.RelayToken)(nil), fmt.Errorf("not found"))
 
-	mockRelayTokenService.On("GetTokenInfo", mock.Anything, int64(2)).Return(
-		(*models.RelayToken)(nil), fmt.Errorf("not found"),
-	)
-
-	req, _ := http.NewRequest("GET", "/api/v1/users/2/relay-token", nil)
-	req.Header.Set("X-Test-User-Email", adminUser.Email)
-	req.Header.Set("X-Test-User-ID", "1")
-	req.Header.Set("X-Test-User-Role", "manager")
-	req.Header.Set("X-Test-User-Tenant-ID", "1")
+	req, _ := http.NewRequest("GET", "/api/v1/user/relay-token", nil)
+	for k, v := range memberHeaders(42, 1, "member") {
+		req.Header.Set(k, v)
+	}
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
-	mockRelayTokenService.AssertExpectations(t)
+	mockService.AssertExpectations(t)
 }
 
-// ==================== GenerateRelayToken - No User Context ====================
+func TestGetMyRelayTokenInfo_NoUserContext(t *testing.T) {
+	_, _, router := newTestHandler()
 
-func TestRelayTokenHandler_GenerateRelayToken_NoUserContext(t *testing.T) {
-	mockRelayTokenService := new(MockRelayTokenService)
-	mockUserService := new(MockUserService)
+	req, _ := http.NewRequest("GET", "/api/v1/user/relay-token", nil)
 
-	mockUserService.On("GetUserByID", int64(2)).Return(
-		&models.User{ID: 2, Email: "member@example.com", TenantID: 1}, nil,
-	)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
 
-	handler := NewRelayTokenHandler(mockRelayTokenService, mockUserService)
-	router := setupRelayTokenRouter(handler)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
 
-	req, _ := http.NewRequest("POST", "/api/v1/users/2/relay-token", nil)
-	// No user context headers set
+// ==================== RevokeMyRelayToken Tests ====================
+
+func TestRevokeMyRelayToken_Success(t *testing.T) {
+	_, mockService, router := newTestHandler()
+
+	mockService.On("RevokeToken", mock.Anything, int64(42)).Return(nil)
+
+	req, _ := http.NewRequest("DELETE", "/api/v1/user/relay-token", nil)
+	for k, v := range memberHeaders(42, 1, "member") {
+		req.Header.Set(k, v)
+	}
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response, "message")
+
+	mockService.AssertExpectations(t)
+}
+
+func TestRevokeMyRelayToken_ServiceError(t *testing.T) {
+	_, mockService, router := newTestHandler()
+
+	mockService.On("RevokeToken", mock.Anything, int64(42)).Return(fmt.Errorf("db error"))
+
+	req, _ := http.NewRequest("DELETE", "/api/v1/user/relay-token", nil)
+	for k, v := range memberHeaders(42, 1, "member") {
+		req.Header.Set(k, v)
+	}
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	mockService.AssertExpectations(t)
+}
+
+func TestRevokeMyRelayToken_NoUserContext(t *testing.T) {
+	_, _, router := newTestHandler()
+
+	req, _ := http.NewRequest("DELETE", "/api/v1/user/relay-token", nil)
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
