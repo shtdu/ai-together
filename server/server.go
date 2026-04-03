@@ -118,6 +118,17 @@ func startServer() {
 		public.POST("/verify", authHandlers.Verify)
 	}
 
+	// Relay proxy endpoints — separate group with custom auth chain:
+	// 1. RelayTokenAuthMiddleware (validates relay tokens, falls through for JWT)
+	// 2. AuthMiddleware (JWT session auth — catches JWT tokens and rejects invalid relay tokens)
+	// 3. LicenseMiddleware
+	relayGroup := router.Group("/api/v1/relay")
+	relayGroup.Use(middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter))
+	relayGroup.Use(middleware.AuthMiddleware())
+	relayGroup.Use(middleware.LicenseMiddleware(licenseService))
+	relayGroup.POST("/:tool/v1/messages", relayHandlers.RelayMessages)
+	relayGroup.POST("/:tool/v1/chat/completions", relayHandlers.RelayChatCompletions)
+
 	// Protected routes
 	protected := router.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware())
@@ -192,11 +203,6 @@ func startServer() {
 		protected.POST("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "write"), relayTokenHandlers.GenerateRelayToken)
 		protected.DELETE("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "write"), relayTokenHandlers.RevokeRelayToken)
 		protected.GET("/users/:id/relay-token", middleware.RequirePermission(rbacEnforcer, "users", "read"), relayTokenHandlers.GetRelayTokenInfo)
-
-		// Relay endpoints (tool-based routing with failover)
-		// Supports both relay token auth and session JWT auth
-		protected.POST("/relay/:tool/v1/messages", middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter), relayHandlers.RelayMessages)
-		protected.POST("/relay/:tool/v1/chat/completions", middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter), relayHandlers.RelayChatCompletions)
 	}
 
 	// Start the server

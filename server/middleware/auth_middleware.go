@@ -28,6 +28,12 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip JWT auth if user is already authenticated (e.g., by relay token middleware)
+		if _, exists := c.Get("user"); exists {
+			c.Next()
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			requestID := c.GetString("request_id")

@@ -33,6 +33,8 @@ func RelayTokenAuthMiddleware(relayTokenService services.RelayTokenServiceInterf
 			return
 		}
 
+		requestID := c.GetString("request_id")
+
 		// Try relay token validation
 		token, err := relayTokenService.ValidateToken(c.Request.Context(), tokenString)
 		if err != nil {
@@ -43,7 +45,6 @@ func RelayTokenAuthMiddleware(relayTokenService services.RelayTokenServiceInterf
 
 		// Rate limiting check
 		if rateLimiter != nil && !rateLimiter.Allow(token.ID) {
-			requestID := c.GetString("request_id")
 			slog.LogAttrs(c.Request.Context(), slog.LevelWarn, "relay token rate limited",
 				slog.String("request_id", requestID),
 				slog.Int64("token_id", token.ID),
@@ -73,7 +74,6 @@ func RelayTokenAuthMiddleware(relayTokenService services.RelayTokenServiceInterf
 		c.Set("userID", token.UserID)
 		c.Set("tenantID", token.TenantID)
 
-		requestID := c.GetString("request_id")
 		slog.LogAttrs(c.Request.Context(), slog.LevelInfo, "relay token authentication successful",
 			slog.String("request_id", requestID),
 			slog.Int64("user_id", token.UserID),
