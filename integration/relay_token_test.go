@@ -19,10 +19,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"testing"
 	"time"
+
+	integrationclient "github.com/code-together/shared/integration"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,26 +33,81 @@ import (
 )
 
 // RelayTokenTestSuite tests relay token functionality.
-// Extends IntegrationTestSuite but skips bootstrapStandardFixture since
-// relay token tests only need admin auth, not providers/teams/license.
+// This is a standalone suite that does NOT embed IntegrationTestSuite,
+// so it doesn't inherit unrelated test methods (permissions, analytics, etc.).
+// It connects to the test server independently with minimal setup.
 type RelayTokenTestSuite struct {
-	IntegrationTestSuite
+	suite.Suite
+
+	ServerURL  string
+	TestDBURL  string
+	AdminToken string
+	Client     *integrationclient.ClientWithResponses
+	ctx        *TestContext
+	logger     *slog.Logger
 }
 
-// SetupTest runs before each test. Skips bootstrap fixture setup.
-func (s *RelayTokenTestSuite) SetupTest() {
+// SetupSuite connects to the test server and authenticates as admin.
+func (s *RelayTokenTestSuite) SetupSuite() {
+	ctx, err := setupTestContext()
+	s.Require().NoError(err, "Failed to setup test context")
+	s.ctx = ctx
+	s.ServerURL = ctx.ServerURL
+	s.TestDBURL = ctx.TestDBURL
+	s.logger = slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// Login as admin
 	s.loginAdminUser()
-	// Skip bootstrap — relay token tests don't need providers/teams
+
+	s.T().Logf("RelayTokenTestSuite: connected to %s", s.ServerURL)
 }
 
-// TearDownSuite delegates to parent.
+// TearDownSuite cleans up the test context.
 func (s *RelayTokenTestSuite) TearDownSuite() {
-	s.IntegrationTestSuite.TearDownSuite()
+	if s.ctx != nil {
+		cleanupTestContext(s.ctx)
+	}
 }
 
-// TearDownTest delegates to parent.
-func (s *RelayTokenTestSuite) TearDownTest() {
-	s.IntegrationTestSuite.TearDownTest()
+// loginAdminUser authenticates as the admin user and stores the token + client.
+func (s *RelayTokenTestSuite) loginAdminUser() {
+	ctx := context.Background()
+
+	// Login with admin credentials
+	loginBody := map[string]string{
+		"email":    "admin@example.com",
+		"password": "AdminPassword123!",
+	}
+	jsonBody, err := json.Marshal(loginBody)
+	s.Require().NoError(err)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", s.ServerURL+"/auth/login", bytes.NewReader(jsonBody))
+	s.Require().NoError(err)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	s.Require().NoError(err)
+	defer resp.Body.Close()
+
+	s.Require().Equal(http.StatusOK, resp.StatusCode, "Admin login failed")
+
+	var loginResp map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&loginResp)
+	s.Require().NoError(err)
+
+	s.AdminToken = loginResp["access_token"].(string)
+	s.Require().NotEmpty(s.AdminToken, "Admin token is empty")
+
+	// Create API client
+	apiClient, err := integrationclient.NewAuthenticatedClient(
+		s.ServerURL,
+		func() (string, error) { return s.AdminToken, nil },
+		s.logger,
+		false,
+	)
+	s.Require().NoError(err)
+	s.Client = apiClient
 }
 
 // --- Helpers ---
