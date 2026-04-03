@@ -142,6 +142,11 @@ func startServer() {
 		protected.PUT("/user/profile", authHandlers.UpdateProfile)
 		protected.PUT("/user/password", authHandlers.ChangePassword)
 
+		// Relay token management — member-facing endpoints (any authenticated user)
+		protected.POST("/user/relay-token", relayTokenHandlers.MyRelayToken)
+		protected.GET("/user/relay-token", relayTokenHandlers.GetMyRelayTokenInfo)
+		protected.DELETE("/user/relay-token", relayTokenHandlers.RevokeMyRelayToken)
+
 		// Team management
 		protected.GET("/teams", teamHandlers.ListTeams)
 		protected.POST("/teams", teamHandlers.CreateTeam)

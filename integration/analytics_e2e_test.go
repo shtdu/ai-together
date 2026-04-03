@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"time"
 
-	integrationclient "github.com/code-together/shared/integration"
 	integration_manager "github.com/code-together/integration_manager"
+	integrationclient "github.com/code-together/shared/integration"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -736,6 +736,155 @@ func (s *RelayTokenTestSuite) TestRelayTokenResponseStructure() {
 	assert.True(s.T(), isString, "revoke message should be a string")
 }
 
+// --- Member-Facing Endpoint Tests ---
+
+// TestMemberGenerateRelayToken tests that any authenticated user can generate their own relay token.
+func (s *RelayTokenTestSuite) TestMemberGenerateRelayToken() {
+	resp, body := s.adminRequest("POST", "/api/v1/user/relay-token", nil)
+
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode, "Member should be able to generate own relay token")
+	assert.NotEmpty(s.T(), body["token"], "Response should contain raw token")
+	assert.NotEmpty(s.T(), body["prefix"], "Response should contain token prefix")
+	assert.NotEmpty(s.T(), body["created_at"], "Response should contain created_at")
+	assert.Contains(s.T(), body["message"], "Save this token securely")
+
+	rawToken := body["token"].(string)
+	assert.Len(s.T(), rawToken, 64, "Token should be 64 hex chars")
+	assert.Regexp(s.T(), `^[0-9a-f]{64}$`, rawToken)
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/user/relay-token", nil)
+}
+
+// TestMemberGetRelayTokenInfo tests that a user can view their own token info.
+func (s *RelayTokenTestSuite) TestMemberGetRelayTokenInfo() {
+	// Generate token first
+	s.adminRequest("POST", "/api/v1/user/relay-token", nil)
+
+	resp, body := s.adminRequest("GET", "/api/v1/user/relay-token", nil)
+
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	assert.NotEmpty(s.T(), body["prefix"], "Info should contain prefix")
+	assert.NotEmpty(s.T(), body["created_at"], "Info should contain created_at")
+
+	// Raw token should NOT be in info response
+	_, hasRawToken := body["token"]
+	assert.False(s.T(), hasRawToken, "Info response should not contain raw token")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/user/relay-token", nil)
+}
+
+// TestMemberGetRelayTokenInfoNoToken tests 404 when user has no token.
+func (s *RelayTokenTestSuite) TestMemberGetRelayTokenInfoNoToken() {
+	// Ensure no token exists
+	s.adminRequest("DELETE", "/api/v1/user/relay-token", nil)
+
+	resp, _ := s.adminRequest("GET", "/api/v1/user/relay-token", nil)
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode, "Should return 404 when no token exists")
+}
+
+// TestMemberRevokeRelayToken tests that a user can revoke their own token.
+func (s *RelayTokenTestSuite) TestMemberRevokeRelayToken() {
+	// Generate token
+	resp1, _ := s.adminRequest("POST", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp1.StatusCode)
+
+	// Revoke
+	resp2, body2 := s.adminRequest("DELETE", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, resp2.StatusCode)
+	assert.Contains(s.T(), body2["message"], "revoked")
+
+	// Verify gone
+	resp3, _ := s.adminRequest("GET", "/api/v1/user/relay-token", nil)
+	assert.Equal(s.T(), http.StatusNotFound, resp3.StatusCode)
+}
+
+// TestMemberRelayTokenFullLifecycle tests generate → use → info → revoke flow from member perspective.
+func (s *RelayTokenTestSuite) TestMemberRelayTokenFullLifecycle() {
+	ctx := context.Background()
+
+	// Step 1: Generate token as member
+	resp1, body1 := s.adminRequest("POST", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp1.StatusCode)
+	rawToken := body1["token"].(string)
+	prefix := body1["prefix"].(string)
+	require.NotEmpty(s.T(), rawToken)
+
+	// Step 2: View token info
+	resp2, body2 := s.adminRequest("GET", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, resp2.StatusCode)
+	assert.Equal(s.T(), prefix, body2["prefix"], "Prefix should match")
+	_, hasRaw := body2["token"]
+	assert.False(s.T(), hasRaw, "Info should not expose raw token")
+
+	// Step 3: Use token on relay endpoint
+	req, err := http.NewRequestWithContext(ctx, "POST", s.ServerURL+"/api/v1/relay/claude/v1/messages", nil)
+	require.NoError(s.T(), err)
+	req.Header.Set("Authorization", "Bearer "+rawToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	authResp, err := client.Do(req)
+	require.NoError(s.T(), err)
+	defer authResp.Body.Close()
+	assert.NotEqual(s.T(), http.StatusUnauthorized, authResp.StatusCode, "Token should authenticate")
+
+	// Step 4: Revoke token
+	resp4, _ := s.adminRequest("DELETE", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusOK, resp4.StatusCode)
+
+	// Step 5: Verify token no longer works
+	req2, err := http.NewRequestWithContext(ctx, "POST", s.ServerURL+"/api/v1/relay/claude/v1/messages", nil)
+	require.NoError(s.T(), err)
+	req2.Header.Set("Authorization", "Bearer "+rawToken)
+	req2.Header.Set("Content-Type", "application/json")
+
+	authResp2, err := client.Do(req2)
+	require.NoError(s.T(), err)
+	defer authResp2.Body.Close()
+	assert.Equal(s.T(), http.StatusUnauthorized, authResp2.StatusCode, "Revoked token should be rejected")
+}
+
+// TestMemberRelayTokenUnauthorized tests that unauthenticated requests to member endpoints are rejected.
+func (s *RelayTokenTestSuite) TestMemberRelayTokenUnauthorized() {
+	ctx := context.Background()
+
+	// No auth header
+	req, err := http.NewRequestWithContext(ctx, "POST", s.ServerURL+"/api/v1/user/relay-token", nil)
+	require.NoError(s.T(), err)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	require.NoError(s.T(), err)
+	defer resp.Body.Close()
+	assert.Equal(s.T(), http.StatusUnauthorized, resp.StatusCode)
+}
+
+// TestMemberRelayTokenReplaceOldOnRegenerate tests that generating a new member token replaces the old one.
+func (s *RelayTokenTestSuite) TestMemberRelayTokenReplaceOldOnRegenerate() {
+	// Generate first token
+	resp1, body1 := s.adminRequest("POST", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp1.StatusCode)
+	token1 := body1["token"].(string)
+
+	// Verify old token works
+	resp2, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", token1)
+	assert.NotEqual(s.T(), http.StatusUnauthorized, resp2.StatusCode)
+
+	// Generate second token (replaces first)
+	resp3, _ := s.adminRequest("POST", "/api/v1/user/relay-token", nil)
+	require.Equal(s.T(), http.StatusCreated, resp3.StatusCode)
+
+	// Old token should no longer work
+	resp4, _ := s.relayTokenRequest("POST", "/api/v1/relay/claude/v1/messages", token1)
+	assert.Equal(s.T(), http.StatusUnauthorized, resp4.StatusCode, "Old token should be invalid after regeneration")
+
+	// Clean up
+	s.adminRequest("DELETE", "/api/v1/user/relay-token", nil)
+}
+
 // TestRelayTokenTestSuite is the testify entry point.
 func TestRelayTokenTestSuite(t *testing.T) {
 	suite.Run(t, new(RelayTokenTestSuite))
