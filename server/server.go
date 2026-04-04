@@ -71,6 +71,7 @@ func startServer() {
 		log.Fatal("Failed to initialize license service:", err)
 	}
 	relayTokenService := services.NewRelayTokenService(relayTokenRepo)
+	defer relayTokenService.Close()
 	relayRateLimiter := services.NewRateLimiter(60, time.Minute) // 60 req/min per token
 
 	// Initialize Gin router

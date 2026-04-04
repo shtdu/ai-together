@@ -22,6 +22,8 @@ type MockRelayTokenService struct {
 	mock.Mock
 }
 
+func (m *MockRelayTokenService) Close() {}
+
 func (m *MockRelayTokenService) GenerateToken(ctx context.Context, userID, tenantID int64) (*models.RelayToken, string, error) {
 	args := m.Called(ctx, userID, tenantID)
 	if args.Get(0) == nil {

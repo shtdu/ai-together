@@ -20,6 +20,8 @@ type MockRelayTokenServiceForMiddleware struct {
 	mock.Mock
 }
 
+func (m *MockRelayTokenServiceForMiddleware) Close() {}
+
 func (m *MockRelayTokenServiceForMiddleware) GenerateToken(ctx context.Context, userID, tenantID int64) (*models.RelayToken, string, error) {
 	args := m.Called(ctx, userID, tenantID)
 	if args.Get(0) == nil {
@@ -133,7 +135,7 @@ func TestRelayTokenAuthMiddleware_InvalidRelayToken_FallsThrough(t *testing.T) {
 	router := setupMiddlewareTestRouter(mockService, nil)
 
 	mockService.On("ValidateToken", mock.Anything, "invalidhex").
-		Return((*models.RelayToken)(nil), fmt.Errorf("not found"))
+		Return((*models.RelayToken)(nil), services.ErrTokenNotFound)
 
 	req, _ := http.NewRequest("POST", "/test", nil)
 	req.Header.Set("Authorization", "Bearer invalidhex")
@@ -179,6 +181,24 @@ func TestRelayTokenAuthMiddleware_RateLimited(t *testing.T) {
 	w2 := httptest.NewRecorder()
 	router.ServeHTTP(w2, req2)
 	assert.Equal(t, http.StatusTooManyRequests, w2.Code)
+
+	mockService.AssertExpectations(t)
+}
+
+func TestRelayTokenAuthMiddleware_DBError_Returns500(t *testing.T) {
+	mockService := new(MockRelayTokenServiceForMiddleware)
+	router := setupMiddlewareTestRouter(mockService, nil)
+
+	// DB error (not ErrTokenNotFound or ErrInvalidTokenFormat) should return 500
+	mockService.On("ValidateToken", mock.Anything, mock.AnythingOfType("string")).
+		Return((*models.RelayToken)(nil), fmt.Errorf("connection refused"))
+
+	req, _ := http.NewRequest("POST", "/test", nil)
+	req.Header.Set("Authorization", "Bearer abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	mockService.AssertExpectations(t)
 }

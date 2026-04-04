@@ -5,11 +5,13 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"switch-server/models"
 	"switch-server/repository"
 )
@@ -19,6 +21,17 @@ const (
 	TokenBytes = 32
 	// TokenPrefixLength is the number of chars shown for identification
 	TokenPrefixLength = 8
+	// lastUsedWorkerCount is the number of background workers for last-used updates
+	lastUsedWorkerCount = 4
+	// lastUsedQueueSize is the max buffered updates before workers block
+	lastUsedQueueSize = 1024
+)
+
+var (
+	// ErrTokenNotFound is returned when a relay token does not exist (revoked or never created).
+	ErrTokenNotFound = errors.New("relay token not found")
+	// ErrInvalidTokenFormat is returned when the token string doesn't match expected format.
+	ErrInvalidTokenFormat = errors.New("invalid token format")
 )
 
 // RateLimiter provides per-token in-memory rate limiting using a sliding window
@@ -95,15 +108,59 @@ type RelayTokenServiceInterface interface {
 	RevokeToken(ctx context.Context, userID int64) error
 	GetTokenInfo(ctx context.Context, userID int64) (*models.RelayToken, error)
 	ValidateToken(ctx context.Context, rawToken string) (*models.RelayToken, error)
+	Close()
 }
 
 // RelayTokenService handles relay token business logic
 type RelayTokenService struct {
-	repo repository.RelayTokenRepositoryInterface
+	repo       repository.RelayTokenRepositoryInterface
+	lastUsedCh chan int64
+	closeCh    chan struct{}
+	wg         sync.WaitGroup
 }
 
 func NewRelayTokenService(repo repository.RelayTokenRepositoryInterface) *RelayTokenService {
-	return &RelayTokenService{repo: repo}
+	s := &RelayTokenService{
+		repo:       repo,
+		lastUsedCh: make(chan int64, lastUsedQueueSize),
+		closeCh:    make(chan struct{}),
+	}
+
+	// Start bounded workers for last-used updates
+	s.wg.Add(lastUsedWorkerCount)
+	for i := 0; i < lastUsedWorkerCount; i++ {
+		go s.lastUsedWorker(i)
+	}
+
+	return s
+}
+
+// Close shuts down background workers. Call this during graceful shutdown.
+func (s *RelayTokenService) Close() {
+	close(s.closeCh)
+	s.wg.Wait()
+}
+
+// lastUsedWorker processes last-used update requests from the bounded queue.
+// Each worker uses a timeout context to prevent slow DB from blocking indefinitely.
+func (s *RelayTokenService) lastUsedWorker(id int) {
+	defer s.wg.Done()
+	for {
+		select {
+		case <-s.closeCh:
+			return
+		case tokenID := <-s.lastUsedCh:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			if err := s.repo.UpdateRelayTokenLastUsed(ctx, tokenID); err != nil {
+				slog.Warn("failed to update relay token last-used",
+					"worker_id", id,
+					"token_id", tokenID,
+					"error", err,
+				)
+			}
+			cancel()
+		}
+	}
 }
 
 // GenerateToken creates a new relay token for a user.
@@ -156,22 +213,41 @@ func (s *RelayTokenService) GetTokenInfo(ctx context.Context, userID int64) (*mo
 	return token, nil
 }
 
-// ValidateToken checks if a raw token is valid and returns the associated token record
+// ValidateToken checks if a raw token is valid and returns the associated token record.
+// Returns ErrTokenNotFound if the token doesn't exist, ErrInvalidTokenFormat if the
+// format is wrong, or a wrapped DB error for infrastructure failures.
 func (s *RelayTokenService) ValidateToken(ctx context.Context, rawToken string) (*models.RelayToken, error) {
-	if len(rawToken) < TokenPrefixLength {
-		return nil, fmt.Errorf("invalid token format")
+	// Strict format validation: must be exactly 64 hex characters
+	if len(rawToken) != TokenBytes*2 {
+		return nil, ErrInvalidTokenFormat
+	}
+	for _, c := range rawToken {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return nil, ErrInvalidTokenFormat
+		}
 	}
 
 	tokenHash := hashToken(rawToken)
 	token, err := s.repo.GetRelayTokenByHash(ctx, tokenHash)
 	if err != nil {
-		return nil, fmt.Errorf("invalid relay token")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTokenNotFound
+		}
+		// Preserve the original DB error so the caller can differentiate
+		// not-found from infrastructure failures
+		return nil, fmt.Errorf("failed to validate relay token: %w", err)
 	}
 
-	// Update last used asynchronously
-	go func() {
-		_ = s.repo.UpdateRelayTokenLastUsed(context.Background(), token.ID)
-	}()
+	// Enqueue async last-used update via bounded worker pool
+	select {
+	case s.lastUsedCh <- token.ID:
+		// enqueued successfully
+	default:
+		// queue full — skip this update rather than blocking the request
+		slog.Warn("last-used update queue full, skipping",
+			"token_id", token.ID,
+		)
+	}
 
 	return token, nil
 }

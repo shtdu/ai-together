@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -38,7 +39,23 @@ func RelayTokenAuthMiddleware(relayTokenService services.RelayTokenServiceInterf
 		// Try relay token validation
 		token, err := relayTokenService.ValidateToken(c.Request.Context(), tokenString)
 		if err != nil {
-			// Not a valid relay token, fall through to session auth
+			// If this is a DB/storage error (not token-not-found), return 500
+			// so operators can detect infrastructure issues instead of silently
+			// falling through to JWT auth which would also fail.
+			if !errors.Is(err, services.ErrTokenNotFound) && !errors.Is(err, services.ErrInvalidTokenFormat) {
+				slog.LogAttrs(c.Request.Context(), slog.LevelError, "relay token validation DB error",
+					slog.String("request_id", requestID),
+					slog.String("error", err.Error()),
+				)
+				c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+					Error:   "Internal error validating relay token",
+					Code:    models.ErrCodeInternal,
+					Request: requestID,
+				})
+				c.Abort()
+				return
+			}
+			// Token not found or invalid format — fall through to session auth
 			c.Next()
 			return
 		}
