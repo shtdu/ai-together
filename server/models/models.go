@@ -94,6 +94,19 @@ type UsageRecord struct {
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`                   // Timestamp when the request was made
 }
 
+// RelayToken represents a relay token for API key-based authentication
+// Each token is scoped to a specific user and tenant
+type RelayToken struct {
+	ID          int64      `json:"id" db:"id"`
+	TokenHash   string     `json:"-" db:"token_hash"`
+	UserID      int64      `json:"user_id" db:"user_id"`
+	TenantID    int64      `json:"tenant_id" db:"tenant_id"`
+	TokenPrefix string     `json:"token_prefix" db:"token_prefix"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	LastUsedAt  *time.Time `json:"last_used_at" db:"last_used_at"`
+	RevokedAt   *time.Time `json:"revoked_at" db:"revoked_at"`
+}
+
 // TeamUsageSummary provides aggregated usage statistics for a team
 // This enables efficient retrieval of usage metrics without complex queries
 type TeamUsageSummary struct {

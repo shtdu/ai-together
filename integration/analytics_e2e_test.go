@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"time"
 
-	integrationclient "github.com/code-together/shared/integration"
 	integration_manager "github.com/code-together/integration_manager"
+	integrationclient "github.com/code-together/shared/integration"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -827,13 +827,13 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 	require.Equal(s.T(), 200, batchResp.StatusCode())
 	require.Equal(s.T(), 3, batchResp.JSON200.SyncedCount, "Should sync all 3 records")
 
-	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
-	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().Add(-24 * time.Hour)
+	endDate := time.Now()
 
 	// Query personal analytics as admin via manager client - should only see admin's 2 records
 	adminAnalyticsResp, err := s.ManagerClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalParams{
-		StartDate: openapi_types.Date(startDate),
-		EndDate:   endDate,
+		StartDate: openapi_types.Date{Time: startDate},
+		EndDate:   openapi_types.Date{Time: endDate},
 	})
 	require.NoError(s.T(), err, "Manager personal analytics request failed")
 	require.Equal(s.T(), 200, adminAnalyticsResp.StatusCode(), "Manager should be able to access personal analytics")
@@ -870,8 +870,8 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsFilterOptions() {
 func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 	ctx := context.Background()
 
-	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
-	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().Add(-24 * time.Hour)
+	endDate := time.Now()
 
 	// Create anonymous (unauthenticated) manager client
 	anonManagerClient, err := integration_manager.NewClientWithResponses(s.ServerURL)
@@ -879,16 +879,16 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 
 	// Personal analytics requires auth
 	personalResp, err := anonManagerClient.GetApiV1AnalyticsPersonalWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalParams{
-		StartDate: openapi_types.Date(startDate),
-		EndDate:   endDate,
+		StartDate: openapi_types.Date{Time: startDate},
+		EndDate:   openapi_types.Date{Time: endDate},
 	})
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), 401, personalResp.StatusCode(), "Personal analytics should require auth")
 
 	// Personal history requires auth
 	historyResp, err := anonManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
-		StartDate: openapi_types.Date(startDate),
-		EndDate:   endDate,
+		StartDate: openapi_types.Date{Time: startDate},
+		EndDate:   openapi_types.Date{Time: endDate},
 	})
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), 401, historyResp.StatusCode(), "Personal history should require auth")
@@ -950,15 +950,15 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 	require.Equal(s.T(), 200, batchResp.StatusCode())
 	require.Equal(s.T(), 5, batchResp.JSON200.SyncedCount, "Should sync all 5 records")
 
-	startDate := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
-	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().Add(-24 * time.Hour)
+	endDate := time.Now()
 
 	// Page 1 with limit=2 via manager client
 	sortBy := integration_manager.CreatedAt
 	sortOrder := integration_manager.Desc
 	page1Resp, err := s.ManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
-		StartDate: openapi_types.Date(startDate),
-		EndDate:   endDate,
+		StartDate: openapi_types.Date{Time: startDate},
+		EndDate:   openapi_types.Date{Time: endDate},
 		Page:      intPointer(1),
 		Limit:     intPointer(2),
 		SortBy:    &sortBy,
@@ -975,8 +975,8 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 
 	// Page 2 with limit=2
 	page2Resp, err := s.ManagerClient.GetApiV1AnalyticsPersonalHistoryWithResponse(ctx, &integration_manager.GetApiV1AnalyticsPersonalHistoryParams{
-		StartDate: openapi_types.Date(startDate),
-		EndDate:   endDate,
+		StartDate: openapi_types.Date{Time: startDate},
+		EndDate:   openapi_types.Date{Time: endDate},
 		Page:      intPointer(2),
 		Limit:     intPointer(2),
 		SortBy:    &sortBy,

@@ -54,6 +54,8 @@ func HTTPStatus(code string) int {
 		return http.StatusUnprocessableEntity
 	case "SERVICE_UNAVAILABLE":
 		return http.StatusServiceUnavailable
+	case "RATE_LIMITED":
+		return http.StatusTooManyRequests
 	default:
 		return http.StatusInternalServerError
 	}
@@ -69,6 +71,7 @@ const (
 	ErrCodeBusinessRule       = "BUSINESS_RULE_VIOLATION"
 	ErrCodeInternal           = "INTERNAL_ERROR"
 	ErrCodeServiceUnavailable = "SERVICE_UNAVAILABLE"
+	ErrCodeRateLimited        = "RATE_LIMITED"
 )
 
 // Common error responses

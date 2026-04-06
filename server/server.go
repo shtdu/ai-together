@@ -17,6 +17,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"switch-server/config"
 	"switch-server/handlers"
@@ -58,6 +59,7 @@ func startServer() {
 	providerRepo := repository.NewProviderRepository(database)
 	usageRepo := repository.NewUsageRepository(database)
 	licenseRepo := repository.NewLicenseRepository(database)
+	relayTokenRepo := repository.NewRelayTokenRepository(database)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo)
@@ -68,6 +70,9 @@ func startServer() {
 	if err != nil {
 		log.Fatal("Failed to initialize license service:", err)
 	}
+	relayTokenService := services.NewRelayTokenService(relayTokenRepo)
+	defer relayTokenService.Close()
+	relayRateLimiter := services.NewRateLimiter(60, time.Minute) // 60 req/min per token
 
 	// Initialize Gin router
 	gin.SetMode(gin.ReleaseMode)
@@ -92,6 +97,7 @@ func startServer() {
 	analyticsHandlers := handlers.NewAnalyticsHandler(usageService, userService)
 	userHandlers := handlers.NewUserHandler(userService)
 	licenseHandlers := handlers.NewLicenseHandler(licenseService)
+	relayTokenHandlers := handlers.NewRelayTokenHandler(relayTokenService)
 
 	// Health check endpoint (public)
 	router.GET("/health", healthHandlers.HealthCheck)
@@ -113,6 +119,17 @@ func startServer() {
 		public.POST("/verify", authHandlers.Verify)
 	}
 
+	// Relay proxy endpoints — separate group with custom auth chain:
+	// 1. RelayTokenAuthMiddleware (validates relay tokens, falls through for JWT)
+	// 2. AuthMiddleware (JWT session auth — catches JWT tokens and rejects invalid relay tokens)
+	// 3. LicenseMiddleware
+	relayGroup := router.Group("/api/v1/relay")
+	relayGroup.Use(middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter))
+	relayGroup.Use(middleware.AuthMiddleware())
+	relayGroup.Use(middleware.LicenseMiddleware(licenseService))
+	relayGroup.POST("/:tool/v1/messages", relayHandlers.RelayMessages)
+	relayGroup.POST("/:tool/v1/chat/completions", relayHandlers.RelayChatCompletions)
+
 	// Protected routes
 	protected := router.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware())
@@ -125,6 +142,11 @@ func startServer() {
 		protected.GET("/user/profile", authHandlers.GetProfile)
 		protected.PUT("/user/profile", authHandlers.UpdateProfile)
 		protected.PUT("/user/password", authHandlers.ChangePassword)
+
+		// Relay token management — member-facing endpoints (any authenticated user)
+		protected.POST("/user/relay-token", relayTokenHandlers.MyRelayToken)
+		protected.GET("/user/relay-token", relayTokenHandlers.GetMyRelayTokenInfo)
+		protected.DELETE("/user/relay-token", relayTokenHandlers.RevokeMyRelayToken)
 
 		// Team management
 		protected.GET("/teams", teamHandlers.ListTeams)
@@ -183,9 +205,6 @@ func startServer() {
 		// Public tier info
 		router.GET("/tiers", licenseHandlers.GetTiers)
 
-		// Relay endpoints (tool-based routing with failover)
-		protected.POST("/relay/:tool/v1/messages", relayHandlers.RelayMessages)
-		protected.POST("/relay/:tool/v1/chat/completions", relayHandlers.RelayChatCompletions)
 	}
 
 	// Start the server
