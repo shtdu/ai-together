@@ -13,7 +13,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
-	github.com/vitalvas/go-license v1.1.2
+	github.com/vitalvas/go-license v1.2.0
 	golang.org/x/crypto v0.49.0
 )
 
