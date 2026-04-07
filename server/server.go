@@ -89,7 +89,7 @@ func startServer() {
 	// Initialize handlers
 	authHandlers := handlers.NewAuthHandler(userService, teamService)
 	teamHandlers := handlers.NewTeamHandler(teamService, userService, licenseService)
-	providerHandlers := handlers.NewProviderHandler(providerService, usageService)
+	providerHandlers := handlers.NewProviderHandler(providerService, usageService, relayTokenService)
 	usageHandlers := handlers.NewUsageHandler(usageService)
 	relayHandlers := handlers.NewRelayHandler(providerService, usageService)
 	healthHandlers := handlers.NewHealthHandler(database.Pool(), ServerVersion)

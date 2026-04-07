@@ -66,20 +66,25 @@ func TestProviderHandler_ListProviders_Manager(t *testing.T) {
 func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
+	mockRelayTokenService := new(MockRelayTokenService)
 
 	providers := []models.Provider{
-		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true, APIKey: "secret-key-1"},
-		{ID: 2, Name: "Provider 2", TeamID: 1, Enabled: false, APIKey: "secret-key-2"},
+		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true, APIURL: "https://api.anthropic.com", APIKey: "secret-key-1", Kind: "claude"},
+		{ID: 2, Name: "Provider 2", TeamID: 1, Enabled: false, APIURL: "https://api.openai.com", APIKey: "secret-key-2", Kind: "codex"},
 	}
 
 	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
+	mockRelayTokenService.On("GenerateToken", mock.Anything, int64(1), int64(1)).
+		Return(&models.RelayToken{UserID: 1, TenantID: 1, TokenPrefix: "relay"}, "relay-token-123", nil)
 
-	handler := NewProviderHandler(mockProviderService, mockUsageService)
+	handler := NewProviderHandler(mockProviderService, mockUsageService, mockRelayTokenService)
 	router := setupProviderRouter(handler)
 
 	testUser := createTestUser(1, "member@example.com", "Member", "member", 1)
 
 	req, _ := http.NewRequest("GET", "/providers", nil)
+	req.Host = "server.example.com"
+	req.Header.Set("X-Forwarded-Proto", "https")
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, setUserContext(req, testUser))
 
@@ -91,10 +96,63 @@ func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	// Members should only see enabled providers
 	assert.Len(t, response, 1)
 	assert.Equal(t, "Provider 1", response[0].Name)
-	// Members should NOT see API keys
-	assert.Empty(t, response[0].APIKey, "API key should be redacted for member users")
+	assert.Equal(t, "relay-token-123", response[0].APIKey)
+	assert.Equal(t, "https://server.example.com/api/v1/relay/claude", response[0].APIURL)
 
 	mockProviderService.AssertExpectations(t)
+	mockRelayTokenService.AssertExpectations(t)
+}
+
+// Regression test: member users should NOT receive the real provider api_url
+// or api_key. Instead, they should get the server relay endpoint and token so they
+// route requests through the server relay, which holds the real credentials.
+// See: https://github.com/shtdu/ai-together/issues/148
+func TestProviderHandler_ListProviders_Member_NoRealProviderURL(t *testing.T) {
+	mockProviderService := new(MockProviderService)
+	mockUsageService := new(MockUsageService)
+	mockRelayTokenService := new(MockRelayTokenService)
+
+	providers := []models.Provider{
+		{
+			ID:      1,
+			Name:    "Claude Direct",
+			TeamID:  1,
+			Enabled: true,
+			APIURL:  "https://api.anthropic.com",
+			APIKey:  "sk-ant-secret-key-12345",
+			Kind:    "claude",
+		},
+	}
+
+	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
+	mockRelayTokenService.On("GenerateToken", mock.Anything, int64(1), int64(1)).
+		Return(&models.RelayToken{UserID: 1, TenantID: 1, TokenPrefix: "relay"}, "relay-token-123", nil)
+
+	handler := NewProviderHandler(mockProviderService, mockUsageService, mockRelayTokenService)
+	router := setupProviderRouter(handler)
+
+	testUser := createTestUser(1, "member@example.com", "Member", "member", 1)
+
+	req, _ := http.NewRequest("GET", "/providers", nil)
+	req.Host = "server.example.com"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response []models.Provider
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	require.Len(t, response, 1)
+
+	assert.Equal(t, "relay-token-123", response[0].APIKey, "member users should receive a relay token, not a provider key")
+	assert.NotEqual(t, "https://api.anthropic.com", response[0].APIURL,
+		"Real provider API URL should not be exposed to member users; server relay URL should be used instead")
+	assert.Equal(t, "https://server.example.com/api/v1/relay/claude", response[0].APIURL)
+
+	mockProviderService.AssertExpectations(t)
+	mockRelayTokenService.AssertExpectations(t)
 }
 
 func TestProviderHandler_CreateProvider_Success(t *testing.T) {
