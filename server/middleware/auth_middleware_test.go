@@ -25,10 +25,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// testJWTSecret is the secret used across all middleware tests.
+const testJWTSecret = "test-secret-for-middleware"
+
 func TestAuthMiddleware_MissingAuthorizationHeader(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -44,7 +47,7 @@ func TestAuthMiddleware_MissingAuthorizationHeader(t *testing.T) {
 func TestAuthMiddleware_InvalidAuthHeaderFormat(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -61,7 +64,7 @@ func TestAuthMiddleware_InvalidAuthHeaderFormat(t *testing.T) {
 func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -80,7 +83,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		user, exists := c.Get("user")
 		if exists {
@@ -104,7 +107,7 @@ func TestAuthMiddleware_ExpiredToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -124,7 +127,7 @@ func TestAuthMiddleware_SetsContextValues(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		userID, _ := c.Get("user_id")
 		tenantID, _ := c.Get("tenant_id")
@@ -202,7 +205,7 @@ func generateTestToken(userID int64, email, role string, tenantID int64, duratio
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 	return tokenString
 }
 
@@ -222,11 +225,11 @@ func TestAuthMiddleware_WrongSigningAlgorithm(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})
@@ -253,11 +256,11 @@ func TestAuthMiddleware_MissingUserIDClaim(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -293,11 +296,11 @@ func TestAuthMiddleware_MissingEmailClaim(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -331,11 +334,11 @@ func TestAuthMiddleware_MissingRoleClaim(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -369,11 +372,11 @@ func TestAuthMiddleware_MissingTenantIDClaim(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -408,11 +411,11 @@ func TestAuthMiddleware_InvalidUserIDType(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -447,11 +450,11 @@ func TestAuthMiddleware_InvalidEmailType(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -486,11 +489,11 @@ func TestAuthMiddleware_InvalidRoleType(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -525,11 +528,11 @@ func TestAuthMiddleware_InvalidTenantIDType(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -560,11 +563,11 @@ func TestAuthMiddleware_AllClaimsMissing(t *testing.T) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 
 	// Recover from panic to verify it occurs
 	defer func() {
@@ -601,11 +604,11 @@ func TestAuthMiddleware_MalformedClaimsStructure(t *testing.T) {
 	})
 
 	// Sign it correctly but then we'll test that the middleware handles edge cases
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	router.Use(AuthMiddleware())
+	router.Use(AuthMiddleware(testJWTSecret))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "success"})
 	})

@@ -30,12 +30,14 @@ import (
 type AuthHandler struct {
 	userService services.UserServiceInterface
 	teamService services.TeamServiceInterface
+	jwtSecret  string
 }
 
-func NewAuthHandler(userService services.UserServiceInterface, teamService services.TeamServiceInterface) *AuthHandler {
+func NewAuthHandler(userService services.UserServiceInterface, teamService services.TeamServiceInterface, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		teamService: teamService,
+		jwtSecret:  jwtSecret,
 	}
 }
 
@@ -101,7 +103,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Generate tokens
-	accessToken, accessExp, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 24*time.Hour)
+	accessToken, accessExp, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 24*time.Hour, h.jwtSecret)
 	if err != nil {
 		requestID := c.GetString("request_id")
 		log.Printf("[ERROR] [%s] Failed to generate access token - user_id=%d error=%v", requestID, user.ID, err)
@@ -113,7 +115,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	refreshToken, _, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 7*24*time.Hour)
+	refreshToken, _, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 7*24*time.Hour, h.jwtSecret)
 	if err != nil {
 		requestID := c.GetString("request_id")
 		log.Printf("[ERROR] [%s] Failed to generate refresh token - user_id=%d error=%v", requestID, user.ID, err)
@@ -164,7 +166,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	// Generate tokens
-	accessToken, accessExp, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 24*time.Hour)
+	accessToken, accessExp, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 24*time.Hour, h.jwtSecret)
 	if err != nil {
 		requestID := c.GetString("request_id")
 		log.Printf("[ERROR] [%s] Failed to generate access token - user_id=%d error=%v", requestID, user.ID, err)
@@ -176,7 +178,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	refreshToken, _, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 7*24*time.Hour)
+	refreshToken, _, err := generateToken(user.ID, user.Email, user.Role, user.TenantID, 7*24*time.Hour, h.jwtSecret)
 	if err != nil {
 		requestID := c.GetString("request_id")
 		log.Printf("[ERROR] [%s] Failed to generate refresh token - user_id=%d error=%v", requestID, user.ID, err)
@@ -213,7 +215,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("default_secret_key_for_development"), nil
+		return []byte(h.jwtSecret), nil
 	})
 
 	if err != nil || !token.Valid {
@@ -246,13 +248,13 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	tenantID := int64(claims["tenant_id"].(float64))
 
 	// Generate new tokens
-	accessToken, accessExp, err := generateToken(userID, email, role, tenantID, 24*time.Hour)
+	accessToken, accessExp, err := generateToken(userID, email, role, tenantID, 24*time.Hour, h.jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
 	}
 
-	refreshToken, _, err := generateToken(userID, email, role, tenantID, 7*24*time.Hour)
+	refreshToken, _, err := generateToken(userID, email, role, tenantID, 7*24*time.Hour, h.jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
 		return
@@ -315,7 +317,7 @@ func (h *AuthHandler) Verify(c *gin.Context) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("default_secret_key_for_development"), nil
+		return []byte(h.jwtSecret), nil
 	})
 
 	if err != nil || !token.Valid {
@@ -531,7 +533,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 }
 
 // Helper function to generate JWT tokens
-func generateToken(userID int64, email, role string, tenantID int64, duration time.Duration) (string, time.Time, error) {
+func generateToken(userID int64, email, role string, tenantID int64, duration time.Duration, jwtSecret string) (string, time.Time, error) {
 	expirationTime := time.Now().Add(duration)
 	claims := &jwt.MapClaims{
 		"user_id":   userID,
@@ -542,7 +544,7 @@ func generateToken(userID int64, email, role string, tenantID int64, duration ti
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, err := token.SignedString([]byte(jwtSecret))
 	if err != nil {
 		return "", time.Time{}, err
 	}

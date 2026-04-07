@@ -29,13 +29,15 @@ type TeamHandler struct {
 	teamService    services.TeamServiceInterface
 	userService    services.UserServiceInterface
 	licenseService services.LicenseServiceInterface
+	jwtSecret      string
 }
 
-func NewTeamHandler(teamService services.TeamServiceInterface, userService services.UserServiceInterface, licenseService services.LicenseServiceInterface) *TeamHandler {
+func NewTeamHandler(teamService services.TeamServiceInterface, userService services.UserServiceInterface, licenseService services.LicenseServiceInterface, jwtSecret string) *TeamHandler {
 	return &TeamHandler{
 		teamService:    teamService,
 		userService:    userService,
 		licenseService: licenseService,
+		jwtSecret:      jwtSecret,
 	}
 }
 
@@ -388,7 +390,7 @@ func (h *TeamHandler) generateToken(userID int64, email, role string, tenantID i
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, err := token.SignedString([]byte(h.jwtSecret))
 	if err != nil {
 		return "", time.Time{}, err
 	}

@@ -31,6 +31,8 @@ import (
 	"switch-server/services"
 )
 
+const testJWTSecret = "test-secret-for-handler"
+
 // MockUserService is a mock implementation of UserServiceInterface using testify/mock
 type MockUserService struct {
 	mock.Mock
@@ -369,7 +371,7 @@ func TestLoginHandler_Success(t *testing.T) {
 	mockService.On("ValidatePassword", testUser, "password123").Return(true)
 
 	// Create handler with mock service
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	// Create request
@@ -407,7 +409,7 @@ func TestLoginHandler_UserNotFound(t *testing.T) {
 	// Set up mock to return error (user not found)
 	mockService.On("GetUserByEmail", "nonexistent@example.com").Return(nil, assert.AnError)
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	reqBody := map[string]interface{}{
@@ -438,7 +440,7 @@ func TestLoginHandler_InvalidPassword(t *testing.T) {
 	mockService.On("GetUserByEmail", "test@example.com").Return(testUser, nil)
 	mockService.On("ValidatePassword", testUser, "wrongpassword").Return(false)
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	reqBody := map[string]interface{}{
@@ -466,7 +468,7 @@ func TestLoginHandler_ValidationError(t *testing.T) {
 	mockService := new(MockUserService)
 	// No expectations set - should fail validation before calling service
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	tests := []struct {
@@ -524,7 +526,7 @@ func TestRegisterHandler_Success(t *testing.T) {
 	mockService.On("CreateUser", "newuser@example.com", "password123", "New User", "member", int64(1)).
 		Return(testUser, nil)
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	reqBody := map[string]interface{}{
@@ -558,7 +560,7 @@ func TestRegisterHandler_UserExists(t *testing.T) {
 	mockService.On("CreateUser", "existing@example.com", "password123", "Existing User", "member", int64(1)).
 		Return(nil, assert.AnError)
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	reqBody := map[string]interface{}{
@@ -591,7 +593,7 @@ func TestGetProfileHandler_Success(t *testing.T) {
 	mockService.On("GetUserByID", int64(1)).Return(testUser, nil)
 	mockTeamService.On("GetTeamsByUserID", int64(1)).Return([]models.Team{}, nil)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -632,7 +634,7 @@ func TestGetProfileHandler_UserNotFound(t *testing.T) {
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 	mockService.On("GetUserByID", int64(1)).Return(nil, assert.AnError)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -667,7 +669,7 @@ func TestRefreshHandler_Success(t *testing.T) {
 	// Allow optional GetUserByID call for refresh
 	mockService.On("GetUserByID", int64(1)).Return(testUser, nil).Maybe()
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -714,7 +716,7 @@ func TestRefreshHandler_Success(t *testing.T) {
 func TestVerifyHandler_Success(t *testing.T) {
 	mockService := new(MockUserService)
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -739,7 +741,7 @@ func TestVerifyHandler_Success(t *testing.T) {
 // TestRegisterHandler_ValidationError tests registration validation errors
 func TestRegisterHandler_ValidationErrors(t *testing.T) {
 	mockService := new(MockUserService)
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	tests := []struct {
@@ -811,7 +813,7 @@ func TestLoginHandler_ConcurrentRequests(t *testing.T) {
 	mockService.On("GetUserByEmail", "test@example.com").Return(testUser, nil)
 	mockService.On("ValidatePassword", testUser, "password123").Return(true)
 
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 	router := setupTestRouter(handler)
 
 	// Make multiple concurrent requests
@@ -845,7 +847,7 @@ func TestLoginHandler_ConcurrentRequests(t *testing.T) {
 // TestLogoutHandler_Success tests the logout endpoint
 func TestLogoutHandler_Success(t *testing.T) {
 	mockService := new(MockUserService)
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -867,7 +869,7 @@ func TestLogoutHandler_Success(t *testing.T) {
 // TestLogoutHandler_MethodNotAllowed tests that only POST is allowed
 func TestLogoutHandler_MethodNotAllowed(t *testing.T) {
 	mockService := new(MockUserService)
-	handler := NewAuthHandler(mockService, nil)
+	handler := NewAuthHandler(mockService, nil, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -895,7 +897,7 @@ func TestGetProfile_Success(t *testing.T) {
 	mockUserService.On("GetUserByID", int64(1)).Return(testUser, nil)
 	mockTeamService.On("GetTeamsByUserID", int64(1)).Return(testTeams, nil)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -924,7 +926,7 @@ func TestGetProfile_MissingUserContext(t *testing.T) {
 	mockUserService := new(MockUserService)
 	mockTeamService := new(MockTeamService)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -946,7 +948,7 @@ func TestGetProfile_InvalidUserType(t *testing.T) {
 	mockUserService := new(MockUserService)
 	mockTeamService := new(MockTeamService)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -975,7 +977,7 @@ func TestGetProfile_UserNotFound(t *testing.T) {
 
 	mockUserService.On("GetUserByID", int64(1)).Return((*models.User)(nil), assert.AnError)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1007,7 +1009,7 @@ func TestGetProfile_TeamsError(t *testing.T) {
 	mockUserService.On("GetUserByID", int64(1)).Return(testUser, nil)
 	mockTeamService.On("GetTeamsByUserID", int64(1)).Return([]models.Team{}, assert.AnError)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1035,7 +1037,7 @@ func TestRefreshToken_InvalidTokenFormat(t *testing.T) {
 	mockUserService := new(MockUserService)
 	mockTeamService := new(MockTeamService)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1061,7 +1063,7 @@ func TestVerifyToken_MissingAuthHeader(t *testing.T) {
 	mockUserService := new(MockUserService)
 	mockTeamService := new(MockTeamService)
 
-	handler := NewAuthHandler(mockUserService, mockTeamService)
+	handler := NewAuthHandler(mockUserService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1090,7 +1092,7 @@ func TestUpdateProfile_Success(t *testing.T) {
 
 	mockService.On("UpdateProfileName", int64(1), "New Name").Return(updatedUser, nil)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1123,7 +1125,7 @@ func TestUpdateProfile_MissingUserContext(t *testing.T) {
 	mockService := new(MockUserService)
 	mockTeamService := new(MockTeamService)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1144,7 +1146,7 @@ func TestUpdateProfile_MissingName(t *testing.T) {
 
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1170,7 +1172,7 @@ func TestUpdateProfile_ServiceError(t *testing.T) {
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 	mockService.On("UpdateProfileName", int64(1), "New Name").Return((*models.User)(nil), assert.AnError)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1204,7 +1206,7 @@ func TestChangePassword_Success(t *testing.T) {
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 	mockService.On("ChangePassword", int64(1), "oldPass123", "newPass456").Return(nil)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1234,7 +1236,7 @@ func TestChangePassword_MissingUserContext(t *testing.T) {
 	mockService := new(MockUserService)
 	mockTeamService := new(MockTeamService)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1255,7 +1257,7 @@ func TestChangePassword_ShortNewPassword(t *testing.T) {
 
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1280,7 +1282,7 @@ func TestChangePassword_MissingFields(t *testing.T) {
 
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1318,7 +1320,7 @@ func TestChangePassword_WrongCurrentPassword(t *testing.T) {
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 	mockService.On("ChangePassword", int64(1), "wrongPass", "newPass456").Return(services.ErrIncorrectPassword)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -1350,7 +1352,7 @@ func TestChangePassword_InternalError(t *testing.T) {
 	testUser := createTestUser(1, "test@example.com", "Test User", "manager", 1)
 	mockService.On("ChangePassword", int64(1), "oldPass123", "newPass456").Return(assert.AnError)
 
-	handler := NewAuthHandler(mockService, mockTeamService)
+	handler := NewAuthHandler(mockService, mockTeamService, testJWTSecret)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

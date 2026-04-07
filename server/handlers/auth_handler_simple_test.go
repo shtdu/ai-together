@@ -41,7 +41,7 @@ func generateTestToken(userID int64, email, role string, tenantID int64, duratio
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte("default_secret_key_for_development"))
+	tokenString, _ := token.SignedString([]byte(testJWTSecret))
 	return tokenString
 }
 
@@ -87,7 +87,7 @@ func TestGenerateToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, expiration, err := generateToken(tt.userID, tt.email, tt.role, tt.tenantID, tt.duration)
+			token, expiration, err := generateToken(tt.userID, tt.email, tt.role, tt.tenantID, tt.duration, testJWTSecret)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -100,7 +100,7 @@ func TestGenerateToken(t *testing.T) {
 
 				// Verify token can be parsed and contains correct claims
 				parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-					return []byte("default_secret_key_for_development"), nil
+					return []byte(testJWTSecret), nil
 				})
 				require.NoError(t, err)
 				require.True(t, parsedToken.Valid)
@@ -165,7 +165,7 @@ func TestLoginRequestValidation(t *testing.T) {
 			router := gin.New()
 
 			// Create a handler with nil service
-			handler := &AuthHandler{userService: nil}
+			handler := &AuthHandler{userService: nil, jwtSecret: testJWTSecret}
 
 			// Create a wrapper that recovers from panics
 			wrappedHandler := func(c *gin.Context) {
@@ -256,7 +256,7 @@ func TestRegisterRequestValidation(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			router := gin.New()
 
-			handler := &AuthHandler{userService: nil}
+			handler := &AuthHandler{userService: nil, jwtSecret: testJWTSecret}
 
 			// Create a wrapper that recovers from panics
 			wrappedHandler := func(c *gin.Context) {
@@ -322,7 +322,7 @@ func TestRefreshRequestValidation(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			router := gin.New()
 
-			handler := &AuthHandler{userService: nil}
+			handler := &AuthHandler{userService: nil, jwtSecret: testJWTSecret}
 			router.POST("/refresh", handler.Refresh)
 
 			body, _ := json.Marshal(tt.requestBody)
@@ -376,7 +376,7 @@ func TestVerifyEndpoint(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			router := gin.New()
 
-			handler := &AuthHandler{userService: nil}
+			handler := &AuthHandler{userService: nil, jwtSecret: testJWTSecret}
 
 			// Create a wrapper that recovers from panics
 			wrappedHandler := func(c *gin.Context) {
@@ -401,6 +401,57 @@ func TestVerifyEndpoint(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 		})
 	}
+}
+
+// TestAuthHandler_CustomJWTSecret tests that non-default JWT secrets are enforced (#74)
+func TestAuthHandler_CustomJWTSecret(t *testing.T) {
+	customSecret := "my-custom-secret-not-default"
+
+	// Sign a token with the custom secret
+	tokenString, _, err := generateToken(1, "test@example.com", "manager", 1, 24*time.Hour, customSecret)
+	require.NoError(t, err)
+
+	// Handler configured with the custom secret should accept the token
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	handler := &AuthHandler{userService: nil, jwtSecret: customSecret}
+
+	wrappedHandler := func(c *gin.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			}
+		}()
+		handler.Verify(c)
+	}
+	router.POST("/verify", wrappedHandler)
+
+	req, _ := http.NewRequest("POST", "/verify", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code) // 500 because service is nil, but NOT 401
+
+	// Same token should be REJECTED by a handler with a different secret
+	router2 := gin.New()
+	handler2 := &AuthHandler{userService: nil, jwtSecret: "different-secret"}
+	wrappedHandler2 := func(c *gin.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			}
+		}()
+		handler2.Verify(c)
+	}
+	router2.POST("/verify", wrappedHandler2)
+
+	req2, _ := http.NewRequest("POST", "/verify", nil)
+	req2.Header.Set("Authorization", "Bearer "+tokenString)
+	w2 := httptest.NewRecorder()
+	router2.ServeHTTP(w2, req2)
+
+	assert.Equal(t, http.StatusUnauthorized, w2.Code)
 }
 
 // TestAuthResponseStruct tests the AuthResponse struct
@@ -439,6 +490,6 @@ func TestAuthResponseStruct(t *testing.T) {
 // BenchmarkGenerateToken benchmarks the token generation
 func BenchmarkGenerateToken(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _, _ = generateToken(1, "test@example.com", "manager", 1, 24*time.Hour)
+		_, _, _ = generateToken(1, "test@example.com", "manager", 1, 24*time.Hour, testJWTSecret)
 	}
 }
