@@ -376,13 +376,38 @@ func (h *ProviderHandler) DeleteProvider(c *gin.Context) {
 		return
 	}
 
-	// Authorization is handled by RBAC middleware at route level
-	// No need to check ownership here - RBAC enforces permissions
+	// Get user from context (set by AuthMiddleware)
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error: "User not found in context",
+			Code:  models.ErrCodeUnauthorized,
+		})
+		return
+	}
+
+	currentUser, ok := user.(*models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Invalid user type in context",
+			Code:  models.ErrCodeInternal,
+		})
+		return
+	}
 
 	// Check if provider exists FIRST
 	provider, err := h.providerService.GetProviderByID(providerID)
 	if err != nil || provider == nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "Provider not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
+	// Verify the provider belongs to the current user's tenant
+	if provider.TeamID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
 			Error: "Provider not found",
 			Code:  models.ErrCodeNotFound,
 		})

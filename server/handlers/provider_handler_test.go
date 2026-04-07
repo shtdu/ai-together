@@ -17,7 +17,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -260,21 +259,21 @@ func TestProviderHandler_DeleteProvider_AccessDenied(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
 
-	existingProvider := &models.Provider{ID: 1, TeamID: 999} // Different team
+	existingProvider := &models.Provider{ID: 1, TeamID: 999} // Different tenant
 
 	mockProviderService.On("GetProviderByID", int64(1)).Return(existingProvider, nil)
-	mockProviderService.On("DeleteProvider", int64(1)).Return(errors.New("access denied")) // Team check happens in service layer
+	// DeleteProvider should NOT be called for cross-tenant requests
 
 	handler := NewProviderHandler(mockProviderService, mockUsageService)
 	router := setupProviderRouter(handler)
 
-	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1) // TenantID: 1
 
 	req, _ := http.NewRequest("DELETE", "/providers/1", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, setUserContext(req, testUser))
 
-	assert.Equal(t, http.StatusInternalServerError, w.Code) // Handler returns 500 when service.DeleteProvider fails
+	assert.Equal(t, http.StatusForbidden, w.Code)
 
 	mockProviderService.AssertExpectations(t)
 }
