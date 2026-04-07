@@ -751,6 +751,9 @@ func float32Pointer(f float32) *float32 {
 func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 	ctx := context.Background()
 
+	// Ensure clean state — this test depends on exact record counts
+	s.requireCleanUsageData()
+
 	// Bootstrap standard fixture (creates admin + member users)
 	s.bootstrapStandardFixture()
 
@@ -819,13 +822,20 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsDataIsolation() {
 		},
 	}
 
-	// Upload all records using client spec (for batch upload)
-	allRecords := append(adminRecords, memberRecords...)
-	batchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(allRecords)
-	batchResp, err := s.Client.PostApiV1UsageBatchWithResponse(ctx, batchReq)
-	require.NoError(s.T(), err, "Failed to upload usage records")
-	require.Equal(s.T(), 200, batchResp.StatusCode())
-	require.Equal(s.T(), 3, batchResp.JSON200.SyncedCount, "Should sync all 3 records")
+	// Upload 2 admin records using admin client
+	adminBatchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(adminRecords)
+	adminBatchResp, err := s.Client.PostApiV1UsageBatchWithResponse(ctx, adminBatchReq)
+	require.NoError(s.T(), err, "Failed to upload admin usage records")
+	require.Equal(s.T(), 200, adminBatchResp.StatusCode())
+	require.Equal(s.T(), 2, adminBatchResp.JSON200.SyncedCount, "Should sync 2 admin records")
+
+	// Upload 1 member record using member client (member can only upload for their own user_id)
+	memberClient := s.createAuthenticatedClient(s.MemberToken)
+	memberBatchReq := integrationclient.PostApiV1UsageBatchJSONRequestBody(memberRecords)
+	memberBatchResp, err := memberClient.PostApiV1UsageBatchWithResponse(ctx, memberBatchReq)
+	require.NoError(s.T(), err, "Failed to upload member usage records")
+	require.Equal(s.T(), 200, memberBatchResp.StatusCode())
+	require.Equal(s.T(), 1, memberBatchResp.JSON200.SyncedCount, "Should sync 1 member record")
 
 	startDate := time.Now().Add(-24 * time.Hour)
 	endDate := time.Now()
@@ -903,6 +913,9 @@ func (s *IntegrationTestSuite) TestPersonalAnalyticsRequiresAuth() {
 // supports pagination using the manager client.
 func (s *IntegrationTestSuite) TestPersonalAnalyticsHistoryPagination() {
 	ctx := context.Background()
+
+	// Ensure clean state — this test depends on exact record counts
+	s.requireCleanUsageData()
 
 	s.bootstrapStandardFixture()
 

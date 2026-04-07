@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'shared/**'
+      - 'integration/**'
+      - '.github/workflows/integration-test.yml'
   workflow_dispatch: # Allow manual triggering
 
 jobs:

@@ -16,14 +16,17 @@ package integration
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	integration_manager "github.com/code-together/integration_manager"
 	integrationclient "github.com/code-together/shared/integration"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -37,6 +40,7 @@ type IntegrationTestSuite struct {
 
 	ServerURL       string
 	TestDBURL       string
+	db              *sql.DB
 	Logger          *slog.Logger
 	AnonymousClient *integrationclient.ClientWithResponses
 	Client          *integrationclient.ClientWithResponses
@@ -66,11 +70,20 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.AnonymousClient = anonClient
 
 	s.Logger.Info("Test suite setup complete")
+
+	// Connect to test database for cleanup
+	db, err := sql.Open("pgx", s.TestDBURL)
+	s.Require().NoError(err, "Failed to connect to test database")
+	s.db = db
 }
 
 // TearDownSuite runs once after all tests in the suite.
 func (s *IntegrationTestSuite) TearDownSuite() {
 	s.Logger.Info("Tearing down test suite")
+
+	if s.db != nil {
+		s.db.Close()
+	}
 
 	if s.TestContext != nil {
 		cleanupTestContext(s.TestContext)
@@ -124,6 +137,22 @@ func (s *IntegrationTestSuite) TearDownTest() {
 	}
 
 	s.Logger.Info("Test cleanup complete")
+}
+
+func (s *IntegrationTestSuite) cleanupUsageRecords() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cleanupSQL := `DELETE FROM request_log; DELETE FROM team_usage_summary`
+	if _, err := s.db.ExecContext(ctx, cleanupSQL); err != nil {
+		s.Logger.Warn("Failed to cleanup usage records", "error", err)
+	}
+}
+
+// requireCleanUsageData ensures request_log is empty before tests that depend on
+// knowing the exact record count. Should be called at the start of such tests.
+func (s *IntegrationTestSuite) requireCleanUsageData() {
+	s.cleanupUsageRecords()
 }
 
 // loginAdminUser logs in the admin user that was created by test-server.sh.

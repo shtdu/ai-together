@@ -35,8 +35,8 @@ func TestProviderHandler_ListProviders_Manager(t *testing.T) {
 	mockUsageService := new(MockUsageService)
 
 	providers := []models.Provider{
-		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true},
-		{ID: 2, Name: "Provider 2", TeamID: 1, Enabled: false},
+		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true, APIKey: "secret-key-1"},
+		{ID: 2, Name: "Provider 2", TeamID: 1, Enabled: false, APIKey: "secret-key-2"},
 	}
 
 	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
@@ -56,6 +56,9 @@ func TestProviderHandler_ListProviders_Manager(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 	assert.Len(t, response, 2)
+	// Managers should see API keys
+	assert.Equal(t, "secret-key-1", response[0].APIKey)
+	assert.Equal(t, "secret-key-2", response[1].APIKey)
 
 	mockProviderService.AssertExpectations(t)
 }
@@ -65,8 +68,8 @@ func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	mockUsageService := new(MockUsageService)
 
 	providers := []models.Provider{
-		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true},
-		{ID: 2, Name: "Provider 2", TeamID: 1, Enabled: false},
+		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true, APIKey: "secret-key-1"},
+		{ID: 2, Name: "Provider 2", TeamID: 1, Enabled: false, APIKey: "secret-key-2"},
 	}
 
 	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
@@ -87,6 +90,9 @@ func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	require.NoError(t, err)
 	// Members should only see enabled providers
 	assert.Len(t, response, 1)
+	assert.Equal(t, "Provider 1", response[0].Name)
+	// Members should NOT see API keys
+	assert.Empty(t, response[0].APIKey, "API key should be redacted for member users")
 
 	mockProviderService.AssertExpectations(t)
 }

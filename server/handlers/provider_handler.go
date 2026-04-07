@@ -111,8 +111,8 @@ func (h *ProviderHandler) ListProviders(c *gin.Context) {
 		filteredProviders := make([]models.Provider, 0)
 		for _, provider := range providers {
 			if provider.Enabled {
-				// // Omit API key for members
-				// provider.APIKey = ""
+				// Omit API key for members
+				provider.APIKey = ""
 				filteredProviders = append(filteredProviders, provider)
 			}
 		}
