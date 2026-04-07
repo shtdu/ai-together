@@ -393,7 +393,7 @@ func detectProviderType(apiURL string) string {
 }
 
 // convertAPIProvidersToLocal converts API Provider format to local Provider format
-func (cs *ConfigSyncService) convertAPIProvidersToLocal(apiProviders []integration.Provider) map[string][]Provider {
+func (cs *ConfigSyncService) convertAPIProvidersToLocal(apiProviders []integration.Provider, relayToken string) map[string][]Provider {
 	providersByType := map[string][]Provider{
 		"claude":   {},
 		"codex":    {},
@@ -427,6 +427,9 @@ func (cs *ConfigSyncService) convertAPIProvidersToLocal(apiProviders []integrati
 		// Handle optional fields
 		if apiProvider.ApiKey != nil {
 			localProvider.APIKey = *apiProvider.ApiKey
+		}
+		if localProvider.APIKey == "" && relayToken != "" && isServerRelayURL(localProvider.APIURL) {
+			localProvider.APIKey = relayToken
 		}
 
 		// Handle ModelMapping
@@ -470,6 +473,26 @@ func (cs *ConfigSyncService) convertAPIProvidersToLocal(apiProviders []integrati
 	return providersByType
 }
 
+func isServerRelayURL(apiURL string) bool {
+	return strings.Contains(strings.ToLower(apiURL), "/api/v1/relay/")
+}
+
+func (cs *ConfigSyncService) relayTokenForProviders(ctx context.Context, apiProviders []integration.Provider) (string, error) {
+	if cs.authService == nil {
+		return "", nil
+	}
+
+	for _, apiProvider := range apiProviders {
+		if apiProvider.ApiKey == nil && isServerRelayURL(apiProvider.ApiUrl) {
+			return cs.authService.GetRelayToken(ctx)
+		}
+		if apiProvider.ApiKey != nil && *apiProvider.ApiKey == "" && isServerRelayURL(apiProvider.ApiUrl) {
+			return cs.authService.GetRelayToken(ctx)
+		}
+	}
+	return "", nil
+}
+
 // syncProvidersFromAPI fetches providers from the Provider API endpoint and saves them
 func (cs *ConfigSyncService) syncProvidersFromAPI() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -495,8 +518,13 @@ func (cs *ConfigSyncService) syncProvidersFromAPI() error {
 		return nil
 	}
 
+	relayToken, err := cs.relayTokenForProviders(ctx, apiProviders)
+	if err != nil {
+		return fmt.Errorf("failed to get relay token: %w", err)
+	}
+
 	// Convert API providers to local format
-	providersByType := cs.convertAPIProvidersToLocal(apiProviders)
+	providersByType := cs.convertAPIProvidersToLocal(apiProviders, relayToken)
 
 	// Save providers by type
 	totalImported := 0

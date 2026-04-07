@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,8 +55,9 @@ type AuthTokens struct {
 
 // AuthConfig stores authentication data
 type AuthConfig struct {
-	Tokens AuthTokens `json:"tokens"`
-	User   User       `json:"user"`
+	Tokens     AuthTokens `json:"tokens"`
+	User       User       `json:"user"`
+	RelayToken string     `json:"relay_token,omitempty"`
 }
 
 // AuthResponse represents a successful auth response from server
@@ -64,6 +66,10 @@ type AuthResponse struct {
 	RefreshToken string    `json:"refresh_token"`
 	User         User      `json:"user"`
 	ExpiresAt    time.Time `json:"expires_at"`
+}
+
+type relayTokenResponse struct {
+	Token string `json:"token"`
 }
 
 // AuthService handles authentication with the server
@@ -318,6 +324,77 @@ func (a *AuthService) GetAccessToken() (string, error) {
 	return config.Tokens.AccessToken, nil
 }
 
+// GetRelayToken returns the cached raw relay token, creating one if needed.
+// Relay tokens are stored with the auth config so provider sync can stay read-only.
+func (a *AuthService) GetRelayToken(ctx context.Context) (string, error) {
+	config, err := a.loadAuthConfig()
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(config.RelayToken) != "" {
+		return config.RelayToken, nil
+	}
+
+	return a.GenerateRelayToken(ctx)
+}
+
+// GenerateRelayToken creates a new relay token for the current user and caches it locally.
+func (a *AuthService) GenerateRelayToken(ctx context.Context) (string, error) {
+	serverURL, err := a.getServerURL()
+	if err != nil {
+		return "", err
+	}
+
+	accessToken, err := a.GetAccessToken()
+	if err != nil {
+		return "", fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(serverURL, "/")+"/api/v1/user/relay-token", nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create relay token request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("relay token request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if err := a.wrapAPIError(resp, "generate relay token"); err != nil {
+		return "", err
+	}
+
+	var tokenResp relayTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return "", fmt.Errorf("failed to decode relay token response: %w", err)
+	}
+	if strings.TrimSpace(tokenResp.Token) == "" {
+		return "", fmt.Errorf("server returned empty relay token")
+	}
+
+	if err := a.saveRelayToken(tokenResp.Token); err != nil {
+		return "", fmt.Errorf("failed to cache relay token: %w", err)
+	}
+
+	return tokenResp.Token, nil
+}
+
+func (a *AuthService) saveRelayToken(rawToken string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	config, err := a.loadAuthConfigLocked()
+	if err != nil {
+		return err
+	}
+
+	config.RelayToken = rawToken
+	return a.saveAuthConfigLocked(*config)
+}
+
 // refreshToken attempts to refresh the access token
 func (a *AuthService) refreshToken() error {
 	config, err := a.loadAuthConfig()
@@ -379,6 +456,10 @@ func (a *AuthService) loadAuthConfig() (*AuthConfig, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
+	return a.loadAuthConfigLocked()
+}
+
+func (a *AuthService) loadAuthConfigLocked() (*AuthConfig, error) {
 	config := &AuthConfig{}
 
 	data, err := os.ReadFile(a.configPath)
@@ -405,6 +486,8 @@ func (a *AuthService) saveAuthConfig(authResp *AuthResponse) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
+	existing, _ := a.loadAuthConfigLocked()
+
 	config := AuthConfig{
 		Tokens: AuthTokens{
 			AccessToken:  authResp.AccessToken,
@@ -413,7 +496,14 @@ func (a *AuthService) saveAuthConfig(authResp *AuthResponse) error {
 		},
 		User: authResp.User,
 	}
+	if existing != nil && existing.User.ID == authResp.User.ID && existing.User.TenantID == authResp.User.TenantID {
+		config.RelayToken = existing.RelayToken
+	}
 
+	return a.saveAuthConfigLocked(config)
+}
+
+func (a *AuthService) saveAuthConfigLocked(config AuthConfig) error {
 	dir := filepath.Dir(a.configPath)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err

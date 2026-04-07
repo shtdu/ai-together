@@ -44,20 +44,14 @@ func isValidProviderKind(kind string) bool {
 }
 
 type ProviderHandler struct {
-	providerService   services.ProviderServiceInterface
-	usageService      services.UsageServiceInterface
-	relayTokenService services.RelayTokenServiceInterface
+	providerService services.ProviderServiceInterface
+	usageService    services.UsageServiceInterface
 }
 
-func NewProviderHandler(providerService services.ProviderServiceInterface, usageService services.UsageServiceInterface, relayTokenService ...services.RelayTokenServiceInterface) *ProviderHandler {
-	var tokenService services.RelayTokenServiceInterface
-	if len(relayTokenService) > 0 {
-		tokenService = relayTokenService[0]
-	}
+func NewProviderHandler(providerService services.ProviderServiceInterface, usageService services.UsageServiceInterface) *ProviderHandler {
 	return &ProviderHandler{
-		providerService:   providerService,
-		usageService:      usageService,
-		relayTokenService: tokenService,
+		providerService: providerService,
+		usageService:    usageService,
 	}
 }
 
@@ -114,19 +108,6 @@ func (h *ProviderHandler) ListProviders(c *gin.Context) {
 	// - Managers see all providers including disabled ones (with API keys)
 	// - Members only see enabled providers (without API keys)
 	if authenticatedUser.Role == "member" {
-		relayToken := ""
-		if h.relayTokenService != nil {
-			_, rawToken, err := h.relayTokenService.GenerateToken(c.Request.Context(), authenticatedUser.ID, authenticatedUser.TenantID)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-					Error: "Failed to generate relay token",
-					Code:  models.ErrCodeInternal,
-				})
-				return
-			}
-			relayToken = rawToken
-		}
-
 		// Filter to only enabled providers and omit API keys for members
 		filteredProviders := make([]models.Provider, 0)
 		for _, provider := range providers {
@@ -136,8 +117,8 @@ func (h *ProviderHandler) ListProviders(c *gin.Context) {
 					providerKind = ProviderKindClaude
 				}
 
-				// Members route through server relay with a relay token, never direct provider credentials.
-				provider.APIKey = relayToken
+				// Members route through server relay, never direct provider credentials.
+				provider.APIKey = ""
 				provider.APIURL = relayProviderBaseURL(c, providerKind)
 				filteredProviders = append(filteredProviders, provider)
 			}

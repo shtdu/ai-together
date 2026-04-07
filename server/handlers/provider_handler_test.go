@@ -66,7 +66,6 @@ func TestProviderHandler_ListProviders_Manager(t *testing.T) {
 func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	mockRelayTokenService := new(MockRelayTokenService)
 
 	providers := []models.Provider{
 		{ID: 1, Name: "Provider 1", TeamID: 1, Enabled: true, APIURL: "https://api.anthropic.com", APIKey: "secret-key-1", Kind: "claude"},
@@ -74,10 +73,8 @@ func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	}
 
 	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
-	mockRelayTokenService.On("GenerateToken", mock.Anything, int64(1), int64(1)).
-		Return(&models.RelayToken{UserID: 1, TenantID: 1, TokenPrefix: "relay"}, "relay-token-123", nil)
 
-	handler := NewProviderHandler(mockProviderService, mockUsageService, mockRelayTokenService)
+	handler := NewProviderHandler(mockProviderService, mockUsageService)
 	router := setupProviderRouter(handler)
 
 	testUser := createTestUser(1, "member@example.com", "Member", "member", 1)
@@ -96,21 +93,19 @@ func TestProviderHandler_ListProviders_Member(t *testing.T) {
 	// Members should only see enabled providers
 	assert.Len(t, response, 1)
 	assert.Equal(t, "Provider 1", response[0].Name)
-	assert.Equal(t, "relay-token-123", response[0].APIKey)
+	assert.Empty(t, response[0].APIKey)
 	assert.Equal(t, "https://server.example.com/api/v1/relay/claude", response[0].APIURL)
 
 	mockProviderService.AssertExpectations(t)
-	mockRelayTokenService.AssertExpectations(t)
 }
 
 // Regression test: member users should NOT receive the real provider api_url
-// or api_key. Instead, they should get the server relay endpoint and token so they
+// or api_key. Instead, they should get the server relay endpoint so they
 // route requests through the server relay, which holds the real credentials.
 // See: https://github.com/shtdu/ai-together/issues/148
 func TestProviderHandler_ListProviders_Member_NoRealProviderURL(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
-	mockRelayTokenService := new(MockRelayTokenService)
 
 	providers := []models.Provider{
 		{
@@ -125,10 +120,8 @@ func TestProviderHandler_ListProviders_Member_NoRealProviderURL(t *testing.T) {
 	}
 
 	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
-	mockRelayTokenService.On("GenerateToken", mock.Anything, int64(1), int64(1)).
-		Return(&models.RelayToken{UserID: 1, TenantID: 1, TokenPrefix: "relay"}, "relay-token-123", nil)
 
-	handler := NewProviderHandler(mockProviderService, mockUsageService, mockRelayTokenService)
+	handler := NewProviderHandler(mockProviderService, mockUsageService)
 	router := setupProviderRouter(handler)
 
 	testUser := createTestUser(1, "member@example.com", "Member", "member", 1)
@@ -146,13 +139,12 @@ func TestProviderHandler_ListProviders_Member_NoRealProviderURL(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, response, 1)
 
-	assert.Equal(t, "relay-token-123", response[0].APIKey, "member users should receive a relay token, not a provider key")
+	assert.Empty(t, response[0].APIKey, "provider API key should not be exposed to member users")
 	assert.NotEqual(t, "https://api.anthropic.com", response[0].APIURL,
 		"Real provider API URL should not be exposed to member users; server relay URL should be used instead")
 	assert.Equal(t, "https://server.example.com/api/v1/relay/claude", response[0].APIURL)
 
 	mockProviderService.AssertExpectations(t)
-	mockRelayTokenService.AssertExpectations(t)
 }
 
 func TestProviderHandler_CreateProvider_Success(t *testing.T) {
