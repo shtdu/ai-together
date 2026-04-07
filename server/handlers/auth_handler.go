@@ -30,14 +30,14 @@ import (
 type AuthHandler struct {
 	userService services.UserServiceInterface
 	teamService services.TeamServiceInterface
-	jwtSecret  string
+	jwtSecret   string
 }
 
 func NewAuthHandler(userService services.UserServiceInterface, teamService services.TeamServiceInterface, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		teamService: teamService,
-		jwtSecret:  jwtSecret,
+		jwtSecret:   jwtSecret,
 	}
 }
 
