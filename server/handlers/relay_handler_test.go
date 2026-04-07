@@ -320,11 +320,20 @@ func TestRelayHandler_RelayChatCompletions_CompatRoute(t *testing.T) {
 	mockProviderService := new(MockProviderService)
 	mockUsageService := new(MockUsageService)
 
+	var upstreamPath string
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upstreamPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"choices":[]}`))
+	}))
+	defer upstream.Close()
+
 	providers := []models.Provider{
 		{
 			ID:              1,
 			Name:            "Test Provider",
-			APIURL:          "https://api.invalid.example.com",
+			APIURL:          upstream.URL + "/v1",
 			APIKey:          "test-key",
 			TeamID:          1,
 			Kind:            "opencode",
@@ -353,12 +362,8 @@ func TestRelayHandler_RelayChatCompletions_CompatRoute(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, setUserContext(req, testUser))
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	require.NoError(t, err)
-	assert.Contains(t, response["error"], "all")
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "/v1/chat/completions", upstreamPath)
 
 	mockProviderService.AssertExpectations(t)
 }
@@ -622,7 +627,7 @@ func setupRelayRouter(handler *RelayHandler) *gin.Engine {
 	router.POST("/relay/:tool/v1/messages", handler.RelayMessages)
 	router.POST("/relay/:tool/v1/chat/completions", handler.RelayChatCompletions)
 	router.POST("/relay/:tool/responses", handler.RelayResponses)
-	router.POST("/relay/:tool/chat/completions", handler.RelayChatCompletions)
+	router.POST("/relay/:tool/chat/completions", handler.RelayChatCompletionsCompat)
 
 	return router
 }
