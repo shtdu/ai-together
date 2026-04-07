@@ -87,8 +87,8 @@ func startServer() {
 	router.Use(gin.Recovery())                      // Recovery from panics
 
 	// Initialize handlers
-	authHandlers := handlers.NewAuthHandler(userService, teamService)
-	teamHandlers := handlers.NewTeamHandler(teamService, userService, licenseService)
+	authHandlers := handlers.NewAuthHandler(userService, teamService, cfg.JWTSecret)
+	teamHandlers := handlers.NewTeamHandler(teamService, userService, licenseService, cfg.JWTSecret)
 	providerHandlers := handlers.NewProviderHandler(providerService, usageService)
 	usageHandlers := handlers.NewUsageHandler(usageService)
 	relayHandlers := handlers.NewRelayHandler(providerService, usageService)
@@ -125,14 +125,14 @@ func startServer() {
 	// 3. LicenseMiddleware
 	relayGroup := router.Group("/api/v1/relay")
 	relayGroup.Use(middleware.RelayTokenAuthMiddleware(relayTokenService, relayRateLimiter))
-	relayGroup.Use(middleware.AuthMiddleware())
+	relayGroup.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	relayGroup.Use(middleware.LicenseMiddleware(licenseService))
 	relayGroup.POST("/:tool/v1/messages", relayHandlers.RelayMessages)
 	relayGroup.POST("/:tool/v1/chat/completions", relayHandlers.RelayChatCompletions)
 
 	// Protected routes
 	protected := router.Group("/api/v1")
-	protected.Use(middleware.AuthMiddleware())
+	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	protected.Use(middleware.LicenseMiddleware(licenseService))
 	{
 		// Auth

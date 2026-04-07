@@ -41,7 +41,7 @@ func TestTeamHandler_ListTeams_Success(t *testing.T) {
 
 	mockTeamService.On("GetTeamsByUserID", int64(1)).Return(testTeams, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -70,7 +70,7 @@ func TestTeamHandler_CreateTeam_Success(t *testing.T) {
 		Return(testTeam, nil)
 	mockLicenseService.On("CanCreateTeam", mock.Anything, int64(1)).Return(true, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -101,7 +101,7 @@ func TestTeamHandler_CreateTeam_ValidationError(t *testing.T) {
 	mockLicenseService := new(MockLicenseService)
 	mockUserService := new(MockUserService)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -131,7 +131,7 @@ func TestTeamHandler_UpdateTeam_Success(t *testing.T) {
 	mockTeamService.On("UpdateTeam", int64(1), "Updated Name", "", map[string]string(nil)).Return(nil)
 	mockTeamService.On("GetTeamByID", int64(1)).Once().Return(updatedTeam, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -165,7 +165,7 @@ func TestTeamHandler_UpdateTeam_PermissionDenied(t *testing.T) {
 
 	mockTeamService.On("GetTeamByID", int64(1)).Return(existingTeam, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -199,7 +199,7 @@ func TestTeamHandler_DeleteTeam_Success(t *testing.T) {
 	mockTeamService.On("GetTeamByID", int64(1)).Return(existingTeam, nil)
 	mockTeamService.On("DeleteTeam", int64(1)).Return(nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -229,7 +229,7 @@ func TestTeamHandler_ListTeamMembers_Success(t *testing.T) {
 
 	mockTeamService.On("GetTeamMembers", int64(1)).Return(members, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -261,7 +261,7 @@ func TestTeamHandler_AddTeamMember_Success(t *testing.T) {
 	mockUserService.On("GetUserByEmail", "member@example.com").Return(existingUser, nil)
 	mockTeamService.On("AddTeamMember", int64(1), int64(2), "member").Return(nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -297,7 +297,7 @@ func TestTeamHandler_AddTeamMember_CreateNewUser(t *testing.T) {
 		Return(newUser, nil)
 	mockTeamService.On("AddTeamMember", int64(1), int64(2), "member").Return(nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -324,7 +324,7 @@ func TestTeamHandler_AddTeamMember_ValidationError(t *testing.T) {
 	mockLicenseService := new(MockLicenseService)
 	mockUserService := new(MockUserService)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -352,7 +352,7 @@ func TestTeamHandler_AddTeamMember_PermissionDenied(t *testing.T) {
 
 	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -383,7 +383,7 @@ func TestTeamHandler_RemoveTeamMember_Success(t *testing.T) {
 	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
 	mockTeamService.On("RemoveTeamMember", int64(1), int64(2)).Return(nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -410,7 +410,7 @@ func TestTeamHandler_RemoveTeamMember_PermissionDenied(t *testing.T) {
 
 	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -429,7 +429,7 @@ func TestTeamHandler_GetTeamSettings_Success(t *testing.T) {
 	mockLicenseService := new(MockLicenseService)
 	mockUserService := new(MockUserService)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -458,7 +458,7 @@ func TestTeamHandler_UpdateTeamSettings_Success(t *testing.T) {
 	mockTeamService.On("UpdateTeam", int64(1), "", "", map[string]string{"newKey": "newValue"}).Return(nil)
 	mockTeamService.On("GetTeamByID", int64(1)).Return(updatedTeam, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
@@ -485,7 +485,7 @@ func TestTeamHandler_UpdateTeamSettings_PermissionDenied(t *testing.T) {
 
 	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
 
-	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService)
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
 	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)

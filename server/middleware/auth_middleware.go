@@ -26,7 +26,7 @@ import (
 	"switch-server/models"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip JWT auth if user is already authenticated (e.g., by relay token middleware)
 		if _, exists := c.Get("user"); exists {
@@ -78,7 +78,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte("default_secret_key_for_development"), nil
+			return []byte(jwtSecret), nil
 		})
 
 		if err != nil || !token.Valid {
