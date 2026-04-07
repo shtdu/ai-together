@@ -269,6 +269,100 @@ func TestRelayHandler_RelayChatCompletions_ValidTool(t *testing.T) {
 	mockProviderService.AssertExpectations(t)
 }
 
+func TestRelayHandler_RelayResponses_ValidTool(t *testing.T) {
+	mockProviderService := new(MockProviderService)
+	mockUsageService := new(MockUsageService)
+
+	providers := []models.Provider{
+		{
+			ID:              1,
+			Name:            "Test Provider",
+			APIURL:          "https://api.invalid.example.com",
+			APIKey:          "test-key",
+			TeamID:          1,
+			Kind:            "codex",
+			Enabled:         true,
+			ModelMapping:    map[string]string{},
+			SupportedModels: []string{"gpt-4"},
+			Level:           1,
+		},
+	}
+	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
+	mockUsageService.On("CreateUsageRecord", mock.Anything, mock.Anything).Return(nil)
+
+	handler := NewRelayHandler(mockProviderService, mockUsageService)
+	router := setupRelayRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
+
+	reqBody := map[string]interface{}{
+		"model": "gpt-4",
+		"input": "hello",
+	}
+	body, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/relay/codex/responses", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response["error"], "all")
+
+	mockProviderService.AssertExpectations(t)
+}
+
+func TestRelayHandler_RelayChatCompletions_CompatRoute(t *testing.T) {
+	mockProviderService := new(MockProviderService)
+	mockUsageService := new(MockUsageService)
+
+	providers := []models.Provider{
+		{
+			ID:              1,
+			Name:            "Test Provider",
+			APIURL:          "https://api.invalid.example.com",
+			APIKey:          "test-key",
+			TeamID:          1,
+			Kind:            "opencode",
+			Enabled:         true,
+			ModelMapping:    map[string]string{},
+			SupportedModels: []string{"gpt-4"},
+			Level:           1,
+		},
+	}
+	mockProviderService.On("GetProvidersByTeamID", int64(1)).Return(providers, nil)
+	mockUsageService.On("CreateUsageRecord", mock.Anything, mock.Anything).Return(nil)
+
+	handler := NewRelayHandler(mockProviderService, mockUsageService)
+	router := setupRelayRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
+
+	reqBody := map[string]interface{}{
+		"model":    "gpt-4",
+		"messages": []interface{}{map[string]string{"role": "user", "content": "hello"}},
+	}
+	body, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/relay/opencode/chat/completions", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Contains(t, response["error"], "all")
+
+	mockProviderService.AssertExpectations(t)
+}
+
 // ==================== filterProvidersByKind Tests ====================
 
 func TestRelayHandler_FilterProvidersByKind_AllFilters(t *testing.T) {
@@ -527,6 +621,8 @@ func setupRelayRouter(handler *RelayHandler) *gin.Engine {
 	// Register relay routes
 	router.POST("/relay/:tool/v1/messages", handler.RelayMessages)
 	router.POST("/relay/:tool/v1/chat/completions", handler.RelayChatCompletions)
+	router.POST("/relay/:tool/responses", handler.RelayResponses)
+	router.POST("/relay/:tool/chat/completions", handler.RelayChatCompletions)
 
 	return router
 }
