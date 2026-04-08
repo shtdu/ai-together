@@ -996,3 +996,71 @@ func (s *IntegrationTestSuite) TestLicenseUsageFieldAccuracy() {
 	// Teams are now tracked
 	assert.NotNil(s.T(), usage.ProviderCounts, "Should have provider counts field")
 }
+
+func (s *IntegrationTestSuite) TestLicenseCommercialEndpointsBlockedWithoutLicense() {
+	s.skipBootstrap = true
+	s.SetupTest()
+
+	// Activate Open Source license (no commercial features)
+	s.activateLicenseFixture(LicenseOpenSource)
+
+	client := &http.Client{}
+
+	// Commercial endpoints should return 403
+	commercialEndpoints := []string{
+		"/api/v1/analytics/providers",
+		"/api/v1/analytics/users",
+		"/api/v1/analytics/history",
+		"/api/v1/analytics/filters",
+		"/api/v1/dashboard/rankings",
+		"/api/v1/dashboard/members",
+	}
+
+	for _, path := range commercialEndpoints {
+		s.T().Run(path, func(t *testing.T) {
+			req, _ := http.NewRequest("GET", s.ServerURL+path, nil)
+			req.Header.Set("Authorization", "Bearer "+s.AdminToken)
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusForbidden, resp.StatusCode,
+				"%s should return 403 without commercial license", path)
+
+			var body map[string]interface{}
+			json.NewDecoder(resp.Body).Decode(&body)
+			assert.Equal(t, "license_required", body["code"])
+		})
+	}
+}
+
+func (s *IntegrationTestSuite) TestLicenseCommercialEndpointsAllowedWithLicense() {
+	s.skipBootstrap = true
+	s.SetupTest()
+
+	// Activate Commercial license
+	s.activateLicenseFixture(LicenseCommercial)
+
+	client := &http.Client{}
+
+	commercialEndpoints := []string{
+		"/api/v1/analytics/providers",
+		"/api/v1/analytics/users",
+		"/api/v1/analytics/history",
+		"/api/v1/dashboard/rankings",
+		"/api/v1/dashboard/members",
+	}
+
+	for _, path := range commercialEndpoints {
+		s.T().Run(path, func(t *testing.T) {
+			req, _ := http.NewRequest("GET", s.ServerURL+path, nil)
+			req.Header.Set("Authorization", "Bearer "+s.AdminToken)
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode,
+				"%s should return 200 with commercial license", path)
+		})
+	}
+}
