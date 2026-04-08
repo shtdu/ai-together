@@ -16,6 +16,8 @@ package integration
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 
 	integrationclient "github.com/code-together/shared/integration"
 	"github.com/stretchr/testify/assert"
