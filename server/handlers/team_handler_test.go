@@ -222,11 +222,13 @@ func TestTeamHandler_ListTeamMembers_Success(t *testing.T) {
 	mockLicenseService := new(MockLicenseService)
 	mockUserService := new(MockUserService)
 
+	team := &models.Team{ID: 1, Name: "Team", OwnerID: 1, TenantID: 1}
 	members := []models.User{
 		*createTestUser(2, "member1@example.com", "Member 1", "member", 1),
 		*createTestUser(3, "member2@example.com", "Member 2", "member", 1),
 	}
 
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
 	mockTeamService.On("GetTeamMembers", int64(1)).Return(members, nil)
 
 	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
@@ -429,6 +431,9 @@ func TestTeamHandler_GetTeamSettings_Success(t *testing.T) {
 	mockLicenseService := new(MockLicenseService)
 	mockUserService := new(MockUserService)
 
+	team := &models.Team{ID: 1, Name: "Team", OwnerID: 1, TenantID: 1}
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+
 	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
 	router := setupTeamRouter(handler)
 
@@ -545,4 +550,148 @@ func setupTeamRouter(handler *TeamHandler) *gin.Engine {
 	router.PUT("/teams/:id/settings", handler.UpdateTeamSettings)
 
 	return router
+}
+
+// --- Cross-tenant regression tests for #78 ---
+
+func TestTeamHandler_ListTeamMembers_CrossTenant(t *testing.T) {
+	mockTeamService := new(MockTeamService)
+	mockLicenseService := new(MockLicenseService)
+
+	// Team belongs to tenant 2, user belongs to tenant 1
+	team := &models.Team{ID: 1, Name: "Other Tenant Team", OwnerID: 1, TenantID: 2}
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+
+	handler := NewTeamHandler(mockTeamService, nil, mockLicenseService, testJWTSecret)
+	router := setupTeamRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1) // TenantID: 1
+
+	req, _ := http.NewRequest("GET", "/teams/1/members", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	mockTeamService.AssertExpectations(t)
+}
+
+func TestTeamHandler_AddTeamMember_CrossTenantTeam(t *testing.T) {
+	mockTeamService := new(MockTeamService)
+	mockLicenseService := new(MockLicenseService)
+	mockUserService := new(MockUserService)
+
+	// Team belongs to tenant 2
+	team := &models.Team{ID: 1, Name: "Other Tenant Team", OwnerID: 1, TenantID: 2}
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
+	router := setupTeamRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1) // TenantID: 1
+
+	reqBody := AddMemberRequest{Email: "member@example.com", Role: "member"}
+	body, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/teams/1/members", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	mockTeamService.AssertExpectations(t)
+}
+
+func TestTeamHandler_AddTeamMember_CrossTenantUser(t *testing.T) {
+	mockTeamService := new(MockTeamService)
+	mockLicenseService := new(MockLicenseService)
+	mockUserService := new(MockUserService)
+
+	// Team and user are in tenant 1, but invited user is in tenant 2
+	team := &models.Team{ID: 1, Name: "Team", OwnerID: 1, TenantID: 1}
+	existingUser := createTestUser(2, "other@example.com", "Other User", "member", 2) // TenantID: 2
+
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+	mockUserService.On("GetUserByEmail", "other@example.com").Return(existingUser, nil)
+
+	handler := NewTeamHandler(mockTeamService, mockUserService, mockLicenseService, testJWTSecret)
+	router := setupTeamRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1)
+
+	reqBody := AddMemberRequest{Email: "other@example.com", Role: "member"}
+	body, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/teams/1/members", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "Cannot add users from other tenants")
+	mockTeamService.AssertExpectations(t)
+	mockUserService.AssertExpectations(t)
+}
+
+func TestTeamHandler_RemoveTeamMember_CrossTenant(t *testing.T) {
+	mockTeamService := new(MockTeamService)
+	mockLicenseService := new(MockLicenseService)
+
+	team := &models.Team{ID: 1, Name: "Other Tenant Team", OwnerID: 1, TenantID: 2}
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+
+	handler := NewTeamHandler(mockTeamService, nil, mockLicenseService, testJWTSecret)
+	router := setupTeamRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1) // TenantID: 1
+
+	req, _ := http.NewRequest("DELETE", "/teams/1/members/2", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	mockTeamService.AssertExpectations(t)
+}
+
+func TestTeamHandler_GetTeamSettings_CrossTenant(t *testing.T) {
+	mockTeamService := new(MockTeamService)
+	mockLicenseService := new(MockLicenseService)
+
+	team := &models.Team{ID: 1, Name: "Other Tenant Team", OwnerID: 1, TenantID: 2}
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+
+	handler := NewTeamHandler(mockTeamService, nil, mockLicenseService, testJWTSecret)
+	router := setupTeamRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1) // TenantID: 1
+
+	req, _ := http.NewRequest("GET", "/teams/1/settings", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	mockTeamService.AssertExpectations(t)
+}
+
+func TestTeamHandler_UpdateTeamSettings_CrossTenant(t *testing.T) {
+	mockTeamService := new(MockTeamService)
+	mockLicenseService := new(MockLicenseService)
+
+	team := &models.Team{ID: 1, Name: "Other Tenant Team", OwnerID: 1, TenantID: 2}
+	mockTeamService.On("GetTeamByID", int64(1)).Return(team, nil)
+
+	handler := NewTeamHandler(mockTeamService, nil, mockLicenseService, testJWTSecret)
+	router := setupTeamRouter(handler)
+
+	testUser := createTestUser(1, "user@example.com", "User", "manager", 1) // TenantID: 1
+
+	settings := map[string]string{"key": "value"}
+	body, _ := json.Marshal(settings)
+	req, _ := http.NewRequest("PUT", "/teams/1/settings", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, setUserContext(req, testUser))
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	mockTeamService.AssertExpectations(t)
 }

@@ -253,6 +253,34 @@ func (h *TeamHandler) ListTeamMembers(c *gin.Context) {
 		return
 	}
 
+	// Verify tenant ownership
+	team, err := h.teamService.GetTeamByID(teamID)
+	if err != nil || team == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error: "User not found in context",
+			Code:  models.ErrCodeUnauthorized,
+		})
+		return
+	}
+	currentUser := user.(*models.User)
+
+	if team.TenantID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
 	// Get team members from the service
 	members, err := h.teamService.GetTeamMembers(teamID)
 	if err != nil {
@@ -298,6 +326,14 @@ func (h *TeamHandler) AddTeamMember(c *gin.Context) {
 	team, err := h.teamService.GetTeamByID(teamID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
+	if team.TenantID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
 			Error: "Team not found",
 			Code:  models.ErrCodeNotFound,
 		})
@@ -353,7 +389,15 @@ func (h *TeamHandler) AddTeamMember(c *gin.Context) {
 		return
 	}
 
-	// If user already exists, add them to the team
+	// If user already exists, reject cross-tenant user addition
+	if existingUser.TenantID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
+			Error: "Cannot add users from other tenants to this team",
+			Code:  models.ErrCodeForbidden,
+		})
+		return
+	}
+
 	err = h.teamService.AddTeamMember(teamID, existingUser.ID, req.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add team member: " + err.Error()})
@@ -439,6 +483,14 @@ func (h *TeamHandler) RemoveTeamMember(c *gin.Context) {
 		return
 	}
 
+	if team.TenantID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
 	if team.OwnerID != currentUser.ID {
 		c.JSON(http.StatusForbidden, models.ErrorResponse{
 			Error: "You don't have permission to remove members from this team",
@@ -471,10 +523,35 @@ func (h *TeamHandler) GetTeamSettings(c *gin.Context) {
 		return
 	}
 
-	// In a real application, get team settings from the database
-	// For now, return empty settings
-	settings := make(map[string]string)
-	c.JSON(http.StatusOK, gin.H{"team_id": teamID, "settings": settings})
+	// Verify tenant ownership
+	team, err := h.teamService.GetTeamByID(teamID)
+	if err != nil || team == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error: "User not found in context",
+			Code:  models.ErrCodeUnauthorized,
+		})
+		return
+	}
+	currentUser := user.(*models.User)
+
+	if team.TenantID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"team_id": teamID, "settings": team.Settings})
 }
 
 func (h *TeamHandler) UpdateTeamSettings(c *gin.Context) {
@@ -512,6 +589,14 @@ func (h *TeamHandler) UpdateTeamSettings(c *gin.Context) {
 	team, err := h.teamService.GetTeamByID(teamID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "Team not found",
+			Code:  models.ErrCodeNotFound,
+		})
+		return
+	}
+
+	if team.TenantID != currentUser.TenantID {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
 			Error: "Team not found",
 			Code:  models.ErrCodeNotFound,
 		})
