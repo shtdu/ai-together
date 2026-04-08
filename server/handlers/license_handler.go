@@ -33,7 +33,17 @@ func NewLicenseHandler(licenseService services.LicenseServiceInterface) *License
 	}
 }
 
-// GetLicense returns the current license status and usage for the tenant
+// GetLicense godoc
+// @Summary      Get license status
+// @Description  Get current license information and usage for the tenant
+// @Tags         License,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "License status and usage"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/license [get]
 func (h *LicenseHandler) GetLicense(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -114,7 +124,19 @@ type ActivateLicenseRequest struct {
 	LicenseKey string `json:"license_key" binding:"required"`
 }
 
-// ActivateLicense activates or upgrades a license with a license key
+// ActivateLicense godoc
+// @Summary      Activate license
+// @Description  Activate or upgrade a license with a license key
+// @Tags         License,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body handlers.ActivateLicenseRequest true "License key"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/license/activate [post]
 func (h *LicenseHandler) ActivateLicense(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -138,7 +160,17 @@ func (h *LicenseHandler) ActivateLicense(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "License activated successfully"})
 }
 
-// GetTiers returns information about available license tiers
+// GetTiers godoc
+// @Summary      Get license tiers
+// @Description  Get information about available license tiers
+// @Tags         License,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "License tiers information"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/license/tiers [get]
 func (h *LicenseHandler) GetTiers(c *gin.Context) {
 	tiers := h.licenseService.GetTiers()
 	c.JSON(http.StatusOK, tiers)

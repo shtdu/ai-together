@@ -92,7 +92,19 @@ type DashboardMembersResponse struct {
 	Members []MemberStats `json:"members"`
 }
 
-// GetMetrics returns time-series metrics for the dashboard
+// GetMetrics godoc
+// @Summary      Get dashboard metrics
+// @Description  Get time-series metrics for the dashboard
+// @Tags         Dashboard,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        range   query     string  false  "Time range: 24h, 7d, 30d"  Enums(24h, 7d, 30d)  default(7d)
+// @Param        interval query     string  false  "Data interval: hour, day"  Enums(hour, day)  default(hour)
+// @Success      200  {object}  handlers.DashboardMetricsResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/dashboard/metrics [get]
 func (h *DashboardHandler) GetMetrics(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -149,7 +161,17 @@ func (h *DashboardHandler) GetMetrics(c *gin.Context) {
 	c.JSON(http.StatusOK, metrics)
 }
 
-// GetRankings returns provider rankings for the last 24 hours
+// GetRankings godoc
+// @Summary      Get provider rankings
+// @Description  Get provider usage rankings for the last 24 hours
+// @Tags         Dashboard,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  handlers.DashboardRankingsResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/dashboard/rankings [get]
 func (h *DashboardHandler) GetRankings(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -167,7 +189,18 @@ func (h *DashboardHandler) GetRankings(c *gin.Context) {
 	c.JSON(http.StatusOK, rankings)
 }
 
-// GetMembers returns member statistics
+// GetMembers godoc
+// @Summary      Get member statistics
+// @Description  Get statistics for all team members (managers only)
+// @Tags         Dashboard,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  handlers.DashboardMembersResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/dashboard/members [get]
 func (h *DashboardHandler) GetMembers(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {

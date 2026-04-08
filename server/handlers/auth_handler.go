@@ -67,6 +67,18 @@ type AuthResponse struct {
 	ExpiresAt    time.Time   `json:"expires_at"`
 }
 
+// Login godoc
+// @Summary      User login
+// @Description  Authenticate user with email and password, returns JWT access and refresh tokens
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handlers.LoginRequest true "Login credentials"
+// @Success      200  {object}  handlers.AuthResponse
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -137,6 +149,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Register godoc
+// @Summary      User registration
+// @Description  Register a new user account with email, password, and name
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handlers.RegisterRequest true "User registration data"
+// @Success      201  {object}  handlers.AuthResponse
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -200,6 +223,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+// Refresh godoc
+// @Summary      Refresh access token
+// @Description  Get a new access token using a valid refresh token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handlers.RefreshRequest true "Refresh token"
+// @Success      200  {object}  handlers.AuthResponse
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -278,6 +313,18 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Verify godoc
+// @Summary      Verify access token
+// @Description  Validate an access token and return user information
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handlers.VerifyRequest false "Access token (can also use Authorization header)"
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "User info with valid flag"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /auth/verify [post]
 func (h *AuthHandler) Verify(c *gin.Context) {
 	// Extract token from body or header
 	tokenString := ""
@@ -373,6 +420,15 @@ func (h *AuthHandler) Verify(c *gin.Context) {
 	})
 }
 
+// Logout godoc
+// @Summary      User logout
+// @Description  Logout endpoint (client should discard stored tokens)
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]string
+// @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// Since JWT is stateless, logout primarily happens on client-side
 	// by removing stored tokens. This endpoint confirms the logout request.
@@ -381,6 +437,17 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
+// GetProfile godoc
+// @Summary      Get user profile
+// @Description  Get current user's profile information and teams
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "User profile with teams"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /auth/profile [get]
 func (h *AuthHandler) GetProfile(c *gin.Context) {
 	// Get user from context (set by AuthMiddleware)
 	user, exists := c.Get("user")

@@ -36,7 +36,23 @@ func NewAnalyticsHandler(usageService services.UsageServiceInterface, userServic
 	}
 }
 
-// GetProviderAnalytics returns provider analytics with filtering
+// GetProviderAnalytics godoc
+// @Summary      Get provider analytics
+// @Description  Get analytics data for providers with filtering options (managers only)
+// @Tags         Analytics,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        start_date query string true "Start date (YYYY-MM-DD)" example(2025-01-01)
+// @Param        end_date query string true "End date (YYYY-MM-DD)" example(2025-01-31)
+// @Param        providers query string false "Comma-separated provider names" example(claude,codex)
+// @Param        models query string false "Comma-separated model names" example(claude-3-5-sonnet,gpt-4)
+// @Success      200  {object}  map[string]interface{} "Provider analytics data"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/analytics/providers [get]
 func (h *AnalyticsHandler) GetProviderAnalytics(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -85,7 +101,23 @@ func (h *AnalyticsHandler) GetProviderAnalytics(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetUserAnalytics returns user analytics with filtering
+// GetUserAnalytics godoc
+// @Summary      Get user analytics
+// @Description  Get analytics data for users with filtering options (managers only)
+// @Tags         Analytics,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        start_date query string true "Start date (YYYY-MM-DD)" example(2025-01-01)
+// @Param        end_date query string true "End date (YYYY-MM-DD)" example(2025-01-31)
+// @Param        user_ids query string false "Comma-separated user IDs" example(1,2,3)
+// @Param        providers query string false "Comma-separated provider names" example(claude,codex)
+// @Success      200  {object}  map[string]interface{} "User analytics data"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/analytics/users [get]
 func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -138,7 +170,28 @@ func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetHistory returns paginated request logs
+// GetHistory godoc
+// @Summary      Get request history
+// @Description  Get paginated request logs with filtering options (managers only)
+// @Tags         Analytics,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        start_date query string true "Start date (YYYY-MM-DD)" example(2025-01-01)
+// @Param        end_date query string true "End date (YYYY-MM-DD)" example(2025-01-31)
+// @Param        page query int false "Page number" default(1) minimum(1)
+// @Param        limit query int false "Items per page" default(50) minimum(1) maximum(100)
+// @Param        user_ids query string false "Comma-separated user IDs" example(1,2,3)
+// @Param        providers query string false "Comma-separated provider names" example(claude,codex)
+// @Param        models query string false "Comma-separated model names" example(claude-3-5-sonnet,gpt-4)
+// @Param        sort_by query string false "Sort field" Enums(created_at,model,provider) default(created_at)
+// @Param        sort_order query string false "Sort order" Enums(asc,desc) default(desc)
+// @Success      200  {object}  map[string]interface{} "Paginated history data"
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/analytics/history [get]
 func (h *AnalyticsHandler) GetHistory(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -209,7 +262,17 @@ func (h *AnalyticsHandler) GetHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetFilterOptions returns available filter options (providers, models, users)
+// GetFilterOptions godoc
+// @Summary      Get filter options
+// @Description  Get available filter options for analytics (providers, models, users)
+// @Tags         Analytics,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "Filter options"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/analytics/filters [get]
 func (h *AnalyticsHandler) GetFilterOptions(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {

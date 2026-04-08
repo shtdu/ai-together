@@ -34,7 +34,18 @@ func NewUserHandler(userService services.UserServiceInterface) *UserHandler {
 	}
 }
 
-// ListUsers returns all users in the tenant
+// ListUsers godoc
+// @Summary      List users
+// @Description  Get all users in the tenant (managers only)
+// @Tags         Users,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "Users array"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -72,7 +83,20 @@ type CreateUserRequest struct {
 	Role     string `json:"role" binding:"required,oneof=manager member"`
 }
 
-// CreateUser creates a new user
+// CreateUser godoc
+// @Summary      Create a user
+// @Description  Create a new user (managers only)
+// @Tags         Users,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body handlers.CreateUserRequest true "User data"
+// @Success      201  {object}  models.User
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -129,7 +153,22 @@ type UpdateUserRequest struct {
 	Password string `json:"password" binding:"omitempty,min=6"`
 }
 
-// UpdateUser updates an existing user
+// UpdateUser godoc
+// @Summary      Update a user
+// @Description  Update user information (managers only)
+// @Tags         Users,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "User ID"  example(1)
+// @Param        request body handlers.UpdateUserRequest true "User data"
+// @Success      200  {object}  models.User
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -189,7 +228,21 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedUser)
 }
 
-// DeleteUser deletes a user
+// DeleteUser godoc
+// @Summary      Delete a user
+// @Description  Delete a user (managers only, cannot delete yourself)
+// @Tags         Users,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "User ID"  example(1)
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      403  {object}  models.ErrorResponse
+// @Failure      404  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {

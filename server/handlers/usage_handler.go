@@ -34,6 +34,17 @@ func NewUsageHandler(usageService services.UsageServiceInterface) *UsageHandler 
 	}
 }
 
+// GetCurrentUsage godoc
+// @Summary      Get current usage
+// @Description  Get current usage statistics for the authenticated user
+// @Tags         Usage,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "Current usage data"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/usage/current [get]
 func (h *UsageHandler) GetCurrentUsage(c *gin.Context) {
 	// Get user from context
 	user, exists := c.Get("user")
@@ -56,6 +67,17 @@ func (h *UsageHandler) GetCurrentUsage(c *gin.Context) {
 	c.JSON(http.StatusOK, usage)
 }
 
+// GetUsageStats godoc
+// @Summary      Get usage statistics
+// @Description  Get usage statistics for the authenticated user's tenant
+// @Tags         Usage,Manager
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{} "Usage statistics"
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/usage/stats [get]
 func (h *UsageHandler) GetUsageStats(c *gin.Context) {
 	// Get user from context
 	user, exists := c.Get("user")
@@ -89,7 +111,19 @@ type BatchUsageResponse struct {
 	Errors      []string `json:"errors"`
 }
 
-// CreateBatchUsageRecords handles batch upload of usage records
+// CreateBatchUsageRecords godoc
+// @Summary      Batch upload usage records
+// @Description  Upload multiple usage records from member clients
+// @Tags         Usage,Member
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        records body []models.UsageRecord true "Array of usage records"
+// @Success      200  {object}  handlers.BatchUsageResponse
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /api/v1/usage/batch [post]
 func (h *UsageHandler) CreateBatchUsageRecords(c *gin.Context) {
 	var records []models.UsageRecord
 	if err := c.ShouldBindJSON(&records); err != nil {

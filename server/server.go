@@ -28,7 +28,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/swaggo/swag"
+	_ "switch-server/docs" // swagger docs
 )
+
+// @title           Code Together API
+// @version         1.0
+// @description     AI Together team collaboration platform API for managing AI coding tools (Claude Code, Codex, OpenCode). Provides centralized provider management, team-level settings, usage statistics, and automatic configuration distribution.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    https://github.com/code-together/ai-together/issues
+// @contact.email  support@ai-together.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 // startServer initializes and starts the server.
 // Extracted to enable testing with coverage collection.
@@ -101,6 +125,9 @@ func startServer() {
 
 	// Health check endpoint (public)
 	router.GET("/health", healthHandlers.HealthCheck)
+
+	// Swagger documentation (public)
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Setup endpoints (public)
 	setupHandlers := handlers.NewSetupHandler(database.Pool())
