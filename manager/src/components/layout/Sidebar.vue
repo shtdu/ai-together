@@ -40,7 +40,7 @@ const filteredItems = computed(() => {
 })
 
 function navigate(item: NavItem) {
-  if (item.requiresCommercial && !licenseStore.hasActiveLicense) {
+  if (item.requiresCommercial && !licenseStore.isCommercial) {
     showUpgradeModal.value = true
     return
   }
@@ -73,14 +73,14 @@ const icons: Record<string, string> = {
         class="w-full flex items-center px-4 py-3 rounded-lg transition-colors"
         :class="{
           'bg-blue-600 text-white': isActive(item.path),
-          'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': !isActive(item.path) && !(item.requiresCommercial && !licenseStore.hasActiveLicense),
-          'text-gray-400 dark:text-gray-500 cursor-pointer': item.requiresCommercial && !licenseStore.hasActiveLicense && !isActive(item.path),
+          'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': !isActive(item.path) && !(item.requiresCommercial && !licenseStore.isCommercial),
+          'text-gray-400 dark:text-gray-500 cursor-pointer': item.requiresCommercial && !licenseStore.isCommercial && !isActive(item.path),
         }"
       >
         <svg class="w-5 h-5 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="icons[item.icon]"></svg>
         <span class="font-medium flex-1 text-left">{{ item.label }}</span>
         <svg
-          v-if="item.requiresCommercial && !licenseStore.hasActiveLicense"
+          v-if="item.requiresCommercial && !licenseStore.isCommercial"
           class="w-4 h-4 shrink-0"
           fill="none"
           stroke="currentColor"

@@ -44,7 +44,7 @@ async function fetchMetrics() {
 }
 
 async function fetchRankings() {
-  if (!licenseStore.hasActiveLicense) return
+  if (!licenseStore.isCommercial) return
   rankingsLoading.value = true
   try {
     rankingsData.value = await dashboardApi.getRankings()

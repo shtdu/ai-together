@@ -132,7 +132,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
   }
 
   // Commercial-only routes
-  if (to.meta.requiresCommercial && !licenseStore.hasActiveLicense) {
+  if (to.meta.requiresCommercial && !licenseStore.isCommercial) {
     return { name: 'dashboard', query: { licenseRequired: to.meta.commercialLabel as string || 'Commercial' } }
   }
 

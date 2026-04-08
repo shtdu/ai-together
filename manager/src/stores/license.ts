@@ -5,6 +5,9 @@ import { getErrorMessage } from '../api/client'
 
 export const useLicenseStore = defineStore('license', () => {
   const hasActiveLicense = ref(false)
+  const isCommercial = computed(() => {
+    return hasActiveLicense.value && licenseType.value === 'commercial'
+  })
   const isInitialized = ref(false)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -47,6 +50,7 @@ export const useLicenseStore = defineStore('license', () => {
 
   return {
     hasActiveLicense,
+    isCommercial,
     isInitialized,
     isLoading,
     error,

@@ -54,8 +54,18 @@ func LicenseMiddleware(licenseService services.LicenseServiceInterface) gin.Hand
 // without an active commercial license. Must be used after LicenseMiddleware.
 func RequireCommercial() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		hasActive, exists := c.Get("has_active_license")
-		if !exists || hasActive == false {
+		licenseObj, exists := c.Get("license")
+		if !exists {
+			c.JSON(http.StatusForbidden, models.ErrorResponse{
+				Error:   "This feature requires a commercial license",
+				Code:    "license_required",
+				Details: "Please activate a commercial license to access this feature",
+			})
+			c.Abort()
+			return
+		}
+		license, ok := licenseObj.(*models.License)
+		if !ok || license.LicenseType != "commercial" {
 			c.JSON(http.StatusForbidden, models.ErrorResponse{
 				Error:   "This feature requires a commercial license",
 				Code:    "license_required",

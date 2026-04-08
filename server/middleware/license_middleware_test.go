@@ -571,12 +571,12 @@ func TestLicenseMiddleware_ContextIsolation(t *testing.T) {
 	mockService.AssertExpectations(t)
 }
 
-func TestRequireCommercial_ActiveLicense(t *testing.T) {
+func TestRequireCommercial_ActiveCommercialLicense(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
-		c.Set("has_active_license", true)
+		c.Set("license", &models.License{LicenseType: "commercial", TenantID: 1})
 		c.Next()
 	})
 	router.Use(RequireCommercial())
@@ -591,12 +591,12 @@ func TestRequireCommercial_ActiveLicense(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestRequireCommercial_NoLicense(t *testing.T) {
+func TestRequireCommercial_OpenSourceLicense(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
-		c.Set("has_active_license", false)
+		c.Set("license", &models.License{LicenseType: "open_source", TenantID: 1})
 		c.Next()
 	})
 	router.Use(RequireCommercial())
@@ -615,11 +615,10 @@ func TestRequireCommercial_NoLicense(t *testing.T) {
 	assert.Equal(t, "license_required", response["code"])
 }
 
-func TestRequireCommercial_NoFlagSet(t *testing.T) {
+func TestRequireCommercial_NoLicenseInContext(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	// Don't set has_active_license at all (missing flag)
 	router.Use(RequireCommercial())
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
