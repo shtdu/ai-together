@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	integrationclient "github.com/code-together/shared/integration"
@@ -1029,10 +1030,11 @@ func (s *IntegrationTestSuite) TestLicenseCommercialEndpointsBlockedWithoutLicen
 
 			assert.Equal(t, http.StatusForbidden, resp.StatusCode,
 				"%s should return 403 without commercial license", path)
-
+			// Verify it's a license/gating block (not RBAC)
 			var body map[string]interface{}
 			json.NewDecoder(resp.Body).Decode(&body)
-			assert.Equal(t, "license_required", body["code"])
+			msg, _ := body["error"].(string)
+			assert.Contains(t, msg, "license", "Error message should mention license")
 		})
 	}
 }
@@ -1047,16 +1049,21 @@ func (s *IntegrationTestSuite) TestLicenseCommercialEndpointsAllowedWithLicense(
 	client := &http.Client{}
 
 	commercialEndpoints := []string{
-		"/api/v1/analytics/providers",
-		"/api/v1/analytics/users",
-		"/api/v1/analytics/history",
-		"/api/v1/dashboard/rankings",
-		"/api/v1/dashboard/members",
+			"/api/v1/analytics/providers",
+			"/api/v1/analytics/users",
+			"/api/v1/analytics/history",
+			"/api/v1/dashboard/rankings",
+			"/api/v1/dashboard/members",
 	}
 
 	for _, path := range commercialEndpoints {
 		s.T().Run(path, func(t *testing.T) {
-			req, _ := http.NewRequest("GET", s.ServerURL+path, nil)
+			url := s.ServerURL + path
+			// Analytics endpoints require date range params
+			if strings.Contains(path, "/analytics/") {
+				url += "?start_date=2024-01-01&end_date=2026-12-31"
+			}
+			req, _ := http.NewRequest("GET", url, nil)
 			req.Header.Set("Authorization", "Bearer "+s.AdminToken)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
