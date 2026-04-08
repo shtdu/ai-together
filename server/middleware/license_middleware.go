@@ -15,6 +15,8 @@
 package middleware
 
 import (
+	"net/http"
+
 	"switch-server/models"
 	"switch-server/services"
 
@@ -44,6 +46,24 @@ func LicenseMiddleware(licenseService services.LicenseServiceInterface) gin.Hand
 		// Optionally set a flag indicating if using default/fallback license
 		c.Set("has_active_license", licenseService.HasActiveLicense(c.Request.Context(), authenticatedUser.TenantID))
 
+		c.Next()
+	}
+}
+
+// RequireCommercial returns a middleware that blocks requests from tenants
+// without an active commercial license. Must be used after LicenseMiddleware.
+func RequireCommercial() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		hasActive, exists := c.Get("has_active_license")
+		if !exists || hasActive == false {
+			c.JSON(http.StatusForbidden, models.ErrorResponse{
+				Error:   "This feature requires a commercial license",
+				Code:    "license_required",
+				Details: "Please activate a commercial license to access this feature",
+			})
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }
