@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { useAuthStore } from '../stores/auth'
+import { useLicenseStore } from '../stores/license'
 import { dashboardApi } from '../api/dashboard'
 import type { DashboardMetricsResponse, DashboardRankingsResponse, DashboardMembersResponse } from '../types/api'
 import ActivityChart from '../components/charts/ActivityChart.vue'
@@ -10,6 +11,7 @@ import MemberStatsTable from '../components/charts/MemberStatsTable.vue'
 import DateRangePicker from '../components/common/DateRangePicker.vue'
 
 const authStore = useAuthStore()
+const licenseStore = useLicenseStore()
 
 type TimeRange = '24h' | '7d' | '30d' | 'custom'
 const timeRange = ref<TimeRange>('7d')
@@ -42,6 +44,7 @@ async function fetchMetrics() {
 }
 
 async function fetchRankings() {
+  if (!licenseStore.hasActiveLicense) return
   rankingsLoading.value = true
   try {
     rankingsData.value = await dashboardApi.getRankings()
@@ -62,7 +65,9 @@ async function fetchMembers() {
 
 function handleRefresh() {
   fetchMetrics()
-  fetchRankings()
+  if (licenseStore.hasActiveLicense) {
+    fetchRankings()
+  }
   if (authStore.isAdmin) {
     fetchMembers()
   }
@@ -87,7 +92,9 @@ function formatTokens(value: number): string {
 
 onMounted(() => {
   fetchMetrics()
-  fetchRankings()
+  if (licenseStore.hasActiveLicense) {
+    fetchRankings()
+  }
   if (authStore.isAdmin) {
     fetchMembers()
   }
@@ -162,7 +169,8 @@ onMounted(() => {
           :is-loading="metricsLoading"
         />
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <!-- Provider Rankings (Commercial only) -->
+      <div v-if="licenseStore.hasActiveLicense" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <ProviderRankingChart
           :rankings="rankingsData?.rankings || []"
           :is-loading="rankingsLoading"
@@ -170,8 +178,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Member Stats Table (Admin only) -->
-    <div v-if="authStore.isAdmin" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <!-- Member Stats Table (Admin + Commercial only) -->
+    <div v-if="authStore.isAdmin && licenseStore.hasActiveLicense" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <MemberStatsTable
         :members="membersData?.members || []"
         :is-loading="membersLoading"

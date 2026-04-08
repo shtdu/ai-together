@@ -181,7 +181,7 @@ func startServer() {
 		// Dashboard (team-level metrics require commercial license)
 		protected.GET("/dashboard/metrics", dashboardHandlers.GetMetrics)
 		protected.GET("/dashboard/rankings", middleware.RequireCommercial(), dashboardHandlers.GetRankings)
-		protected.GET("/dashboard/members", middleware.RequireCommercial(), dashboardHandlers.GetMembers)
+		protected.GET("/dashboard/members", dashboardHandlers.GetMembers)
 
 		// Analytics (commercial license required, then RBAC check)
 		protected.GET("/analytics/providers", middleware.RequireCommercial(), middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetProviderAnalytics)

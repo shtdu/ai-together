@@ -1017,7 +1017,6 @@ func (s *IntegrationTestSuite) TestLicenseCommercialEndpointsBlockedWithoutLicen
 		"/api/v1/analytics/history",
 		"/api/v1/analytics/filters",
 		"/api/v1/dashboard/rankings",
-		"/api/v1/dashboard/members",
 	}
 
 	for _, path := range commercialEndpoints {
@@ -1053,7 +1052,6 @@ func (s *IntegrationTestSuite) TestLicenseCommercialEndpointsAllowedWithLicense(
 			"/api/v1/analytics/users",
 			"/api/v1/analytics/history",
 			"/api/v1/dashboard/rankings",
-			"/api/v1/dashboard/members",
 	}
 
 	for _, path := range commercialEndpoints {
