@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw, RouteLocationNormalized } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSetupStore } from '../stores/setup'
+import { useLicenseStore } from '../stores/license'
 
 // Layouts
 import AppLayout from '../components/layout/AppLayout.vue'
@@ -53,19 +54,19 @@ const routes: RouteRecordRaw[] = [
         path: 'analytics/providers',
         name: 'analytics-providers',
         component: TokenProviderPage,
-        meta: { requiresAdmin: true },
+        meta: { requiresAdmin: true, requiresCommercial: true, commercialLabel: 'Team Analytics' },
       },
       {
         path: 'analytics/users',
         name: 'analytics-users',
         component: TokenUserPage,
-        meta: { requiresAdmin: true },
+        meta: { requiresAdmin: true, requiresCommercial: true, commercialLabel: 'User Rankings' },
       },
       {
         path: 'analytics/history',
         name: 'analytics-history',
         component: TokenHistoryPage,
-        meta: { requiresAdmin: true },
+        meta: { requiresAdmin: true, requiresCommercial: true, commercialLabel: 'Request History' },
       },
       {
         path: 'users',
@@ -119,9 +120,20 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
+  // Initialize license store (only after auth is confirmed)
+  const licenseStore = useLicenseStore()
+  if (!licenseStore.isInitialized) {
+    await licenseStore.initialize()
+  }
+
   // Admin-only routes
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     return { name: 'dashboard' }
+  }
+
+  // Commercial-only routes
+  if (to.meta.requiresCommercial && !licenseStore.isCommercial) {
+    return { name: 'dashboard', query: { licenseRequired: to.meta.commercialLabel as string || 'Commercial' } }
   }
 
   return

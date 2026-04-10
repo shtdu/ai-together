@@ -95,6 +95,8 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 // SetupTest runs before each test.
 // Does NOT cleanup - tests should handle existing database state gracefully.
 func (s *IntegrationTestSuite) SetupTest() {
+	s.skipBootstrap = false
+
 	// Login admin user (created by test-server.sh)
 	s.loginAdminUser()
 

@@ -180,16 +180,16 @@ func startServer() {
 		protected.GET("/usage/stats", usageHandlers.GetUsageStats)
 		protected.POST("/usage/batch", usageHandlers.CreateBatchUsageRecords)
 
-		// Dashboard
+		// Dashboard (team-level metrics require commercial license)
 		protected.GET("/dashboard/metrics", dashboardHandlers.GetMetrics)
-		protected.GET("/dashboard/rankings", dashboardHandlers.GetRankings)
+		protected.GET("/dashboard/rankings", middleware.RequireCommercial(), dashboardHandlers.GetRankings)
 		protected.GET("/dashboard/members", dashboardHandlers.GetMembers)
 
-		// Analytics (managers only)
-		protected.GET("/analytics/providers", middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetProviderAnalytics)
-		protected.GET("/analytics/users", middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetUserAnalytics)
-		protected.GET("/analytics/history", middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetHistory)
-		protected.GET("/analytics/filters", analyticsHandlers.GetFilterOptions)
+		// Analytics (commercial license required, then RBAC check)
+		protected.GET("/analytics/providers", middleware.RequireCommercial(), middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetProviderAnalytics)
+		protected.GET("/analytics/users", middleware.RequireCommercial(), middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetUserAnalytics)
+		protected.GET("/analytics/history", middleware.RequireCommercial(), middleware.RequirePermission(rbacEnforcer, "analytics", "read"), analyticsHandlers.GetHistory)
+		protected.GET("/analytics/filters", middleware.RequireCommercial(), analyticsHandlers.GetFilterOptions)
 		// Personal analytics (any authenticated user)
 		protected.GET("/analytics/personal", analyticsHandlers.GetPersonalAnalytics)
 		protected.GET("/analytics/personal/history", analyticsHandlers.GetPersonalHistory)
