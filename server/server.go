@@ -129,6 +129,8 @@ func startServer() {
 	relayGroup.Use(middleware.LicenseMiddleware(licenseService))
 	relayGroup.POST("/:tool/v1/messages", relayHandlers.RelayMessages)
 	relayGroup.POST("/:tool/v1/chat/completions", relayHandlers.RelayChatCompletions)
+	relayGroup.POST("/:tool/responses", relayHandlers.RelayResponses)
+	relayGroup.POST("/:tool/chat/completions", relayHandlers.RelayChatCompletionsCompat)
 
 	// Protected routes
 	protected := router.Group("/api/v1")

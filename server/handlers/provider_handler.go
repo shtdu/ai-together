@@ -19,6 +19,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"switch-server/models"
 	"switch-server/services"
@@ -111,8 +112,14 @@ func (h *ProviderHandler) ListProviders(c *gin.Context) {
 		filteredProviders := make([]models.Provider, 0)
 		for _, provider := range providers {
 			if provider.Enabled {
-				// Omit API key for members
+				providerKind := provider.Kind
+				if providerKind == "" {
+					providerKind = ProviderKindClaude
+				}
+
+				// Members route through server relay, never direct provider credentials.
 				provider.APIKey = ""
+				provider.APIURL = relayProviderBaseURL(c, providerKind)
 				filteredProviders = append(filteredProviders, provider)
 			}
 		}
@@ -122,6 +129,31 @@ func (h *ProviderHandler) ListProviders(c *gin.Context) {
 
 	// Managers get all providers including disabled ones
 	c.JSON(http.StatusOK, providers)
+}
+
+func relayProviderBaseURL(c *gin.Context, providerKind string) string {
+	scheme := firstForwardedValue(c.GetHeader("X-Forwarded-Proto"))
+	if scheme == "" {
+		scheme = "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+	}
+
+	host := firstForwardedValue(c.GetHeader("X-Forwarded-Host"))
+	if host == "" {
+		host = c.Request.Host
+	}
+	if host == "" {
+		return fmt.Sprintf("/api/v1/relay/%s", providerKind)
+	}
+
+	return fmt.Sprintf("%s://%s/api/v1/relay/%s", scheme, host, providerKind)
+}
+
+func firstForwardedValue(header string) string {
+	value, _, _ := strings.Cut(header, ",")
+	return strings.TrimSpace(value)
 }
 
 func (h *ProviderHandler) CreateProvider(c *gin.Context) {

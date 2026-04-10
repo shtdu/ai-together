@@ -67,6 +67,28 @@ func (h *RelayHandler) RelayChatCompletions(c *gin.Context) {
 	h.relayForward(c, tool, "/v1/chat/completions")
 }
 
+// RelayChatCompletionsCompat handles member proxy /chat/completions endpoint.
+func (h *RelayHandler) RelayChatCompletionsCompat(c *gin.Context) {
+	tool := c.Param("tool")
+	if !isValidProviderKind(tool) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid tool kind: %s", tool)})
+		return
+	}
+
+	h.relayForward(c, tool, "/chat/completions")
+}
+
+// RelayResponses handles OpenAI Responses-style /responses endpoint.
+func (h *RelayHandler) RelayResponses(c *gin.Context) {
+	tool := c.Param("tool")
+	if !isValidProviderKind(tool) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid tool kind: %s", tool)})
+		return
+	}
+
+	h.relayForward(c, tool, "/responses")
+}
+
 func (h *RelayHandler) relayForward(c *gin.Context, tool, endpoint string) {
 	// Get user from context
 	user, exists := c.Get("user")
