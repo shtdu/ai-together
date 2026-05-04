@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/oapi-codegen/runtime v1.3.1
-	github.com/pelletier/go-toml/v2 v2.3.0
+	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.60
 	gopkg.in/yaml.v3 v3.0.1
