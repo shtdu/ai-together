@@ -9,7 +9,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/oapi-codegen/runtime v1.3.1
 	github.com/pelletier/go-toml/v2 v2.3.0
-	github.com/tidwall/gjson v1.18.0
+	github.com/tidwall/gjson v1.19.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.60
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.48.0
