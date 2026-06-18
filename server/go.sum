@@ -151,8 +151,8 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.3.1 h1:waO7eEiFDwidsBN6agj1vJQ4AG7lh2yqXyOXqhgQuyY=
 github.com/ugorji/go/codec v1.3.1/go.mod h1:pRBVtBSKl77K30Bv8R2P+cLSGaTtex6fsA2Wjqmfxj4=
-github.com/vitalvas/go-license v1.1.2 h1:Et5RBO18v8KWuVlgOsekOTT712Dmg8LxJv/n4b6gvDY=
-github.com/vitalvas/go-license v1.1.2/go.mod h1:kxZTgsukCkfDLEhwVh++o2WLI9HtJ9PgGlQ9GoAvgaU=
+github.com/vitalvas/go-license v1.2.0 h1:tQGFbacH5X6K6Se+WbGogHbOHFBzG2ZXRuYd6FjyMTw=
+github.com/vitalvas/go-license v1.2.0/go.mod h1:5WyUWzffeC0GVV1e5KYA/Urep0OnqAd0E0143daAIH8=
 go.mongodb.org/mongo-driver/v2 v2.5.0 h1:yXUhImUjjAInNcpTcAlPHiT7bIXhshCTL3jVBkF3xaE=
 go.mongodb.org/mongo-driver/v2 v2.5.0/go.mod h1:yOI9kBsufol30iFsl1slpdq1I0eHPzybRWdyYUs8K/0=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
