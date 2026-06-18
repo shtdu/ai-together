@@ -69,8 +69,6 @@ func (s *IntegrationTestSuite) TestPermissionAdminCanDeleteProvider() {
 }
 
 // TestPermissionMemberCanReadProviders tests that member can read providers.
-// TODO: SERVER FIX REQUIRED - RBAC not working for member read access
-// Server should allow members to read providers, but currently returns 403
 func (s *IntegrationTestSuite) TestPermissionMemberCanReadProviders() {
 	ctx := context.Background()
 
@@ -89,8 +87,6 @@ func (s *IntegrationTestSuite) TestPermissionMemberCanReadProviders() {
 }
 
 // TestPermissionMemberCannotCreateProvider tests that member cannot create providers.
-// TODO: SERVER FIX REQUIRED - RBAC not blocking member write operations
-// Server should return 403 when member tries to create provider
 func (s *IntegrationTestSuite) TestPermissionMemberCannotCreateProvider() {
 	ctx := context.Background()
 
@@ -114,9 +110,6 @@ func (s *IntegrationTestSuite) TestPermissionMemberCannotCreateProvider() {
 }
 
 // TestPermissionMemberCannotUpdateProvider tests that member cannot update providers.
-// TODO: Server RBAC not properly rejecting member write operations on providers
-// TODO: SERVER FIX REQUIRED - RBAC not blocking member write operations
-// Server should return 403 when member tries to update provider
 func (s *IntegrationTestSuite) TestPermissionMemberCannotUpdateProvider() {
 	ctx := context.Background()
 
@@ -143,8 +136,6 @@ func (s *IntegrationTestSuite) TestPermissionMemberCannotUpdateProvider() {
 }
 
 // TestPermissionMemberCannotDeleteProvider tests that member cannot delete providers.
-// TODO: SERVER FIX REQUIRED - RBAC not blocking member write operations
-// Server should return 403 when member tries to delete provider
 func (s *IntegrationTestSuite) TestPermissionMemberCannotDeleteProvider() {
 	ctx := context.Background()
 
@@ -178,8 +169,6 @@ func (s *IntegrationTestSuite) TestPermissionMemberCannotDeleteProvider() {
 }
 
 // TestPermissionMemberCannotAccessLicenseWrite tests that member cannot write to license.
-// TODO: SERVER FIX REQUIRED - RBAC not blocking member license write operations
-// Server should return 403 when member tries to activate license
 func (s *IntegrationTestSuite) TestPermissionMemberCannotAccessLicenseWrite() {
 	ctx := context.Background()
 
@@ -201,8 +190,6 @@ func (s *IntegrationTestSuite) TestPermissionMemberCannotAccessLicenseWrite() {
 }
 
 // TestPermissionMemberCanGetLicense tests that member can read license info.
-// TODO: SERVER FIX REQUIRED - RBAC not allowing member to read license
-// Server should allow members to read license information
 func (s *IntegrationTestSuite) TestPermissionMemberCanGetLicense() {
 	ctx := context.Background()
 
